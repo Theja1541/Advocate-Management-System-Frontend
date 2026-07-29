@@ -5,7 +5,7 @@ import { getRoles, getRoleById } from '../services/roleService';
 const AuthContext = createContext(null);
 
 export const DEMO_CREDENTIALS = [
-  { name: 'P. Raghavendra Rao', role: 'Super Admin', email: 'raghavendra@legaldesk.in', password: 'password' },
+  { name: 'A.Theja', role: 'Super Admin', email: 'amasatheja1541@gmail.com', password: 'Teja@1541' },
   { name: 'Office Admin', role: 'Admin', email: 'admin@legaldesk.in', password: 'password' },
   { name: 'Sub Admin', role: 'Sub Admin', email: 'subadmin@legaldesk.in', password: 'password' },
   { name: 'M. Sailaja', role: 'Advocate', email: 'advocate@legaldesk.in', password: 'password' },
