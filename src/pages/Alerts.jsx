@@ -3,6 +3,7 @@ import PageHeader from '../components/ui/PageHeader';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
+import { useLegalData } from '../context/DataContext';
 import {
   getAlerts,
   createAlert,
@@ -30,7 +31,7 @@ export default function Alerts() {
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('cases', 'E');
 
-  const [alerts, setAlerts] = useState([]);
+  const { alerts, setAlerts } = useLegalData();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

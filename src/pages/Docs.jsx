@@ -8,6 +8,8 @@ import { DOC_CATS } from '../data/mockData';
 import {
   getDocuments,
   uploadDocument,
+  updateDocument,
+  previewDocument,
   downloadDocument,
   deleteDocument,
 } from '../services/documentService';
@@ -43,6 +45,7 @@ export default function Docs() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
   const loadData = useCallback(async () => {
@@ -90,6 +93,7 @@ export default function Docs() {
   });
 
   const openModal = () => {
+    setEditingDoc(null);
     setForm({
       ...emptyForm,
       caseId: cases[0] ? String(cases[0].id) : '',
@@ -99,8 +103,21 @@ export default function Docs() {
     setIsModalOpen(true);
   };
 
+  const openEditModal = (doc) => {
+    setEditingDoc(doc);
+    setForm({
+      name: doc.name || '',
+      category: doc.category || DOC_CATS[0],
+      caseId: doc.caseId != null ? String(doc.caseId) : '',
+      file: null,
+    });
+    setError('');
+    setIsModalOpen(true);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
+    setEditingDoc(null);
     setForm(emptyForm);
   };
 
@@ -110,24 +127,46 @@ export default function Docs() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.caseId || !form.file) {
-      setError('Please fill out all required fields and choose a file.');
+    if (!form.name.trim() || !form.caseId) {
+      setError('Please fill out all required fields.');
+      return;
+    }
+    if (!editingDoc && !form.file) {
+      setError('Please select a file to upload.');
+      return;
+    }
+
+    // Optional client-side size check (e.g., 10MB limit)
+    if (form.file && form.file.size > 10 * 1024 * 1024) {
+      setError('File size must be less than 10MB.');
       return;
     }
 
     setSaving(true);
     setError('');
     try {
-      const created = await uploadDocument({
-        name: form.name.trim(),
-        category: form.category,
-        caseId: Number(form.caseId),
-        file: form.file,
-      });
-      setDocuments((prev) => [created, ...prev]);
+      if (editingDoc) {
+        const updated = await updateDocument(editingDoc.id, {
+          name: form.name.trim(),
+          category: form.category,
+          caseId: Number(form.caseId),
+          file: form.file,
+        });
+        setDocuments((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item))
+        );
+      } else {
+        const created = await uploadDocument({
+          name: form.name.trim(),
+          category: form.category,
+          caseId: Number(form.caseId),
+          file: form.file,
+        });
+        setDocuments((prev) => [created, ...prev]);
+      }
       closeModal();
     } catch (err) {
-      setError(err.message || 'Failed to upload document');
+      setError(err.message || 'Failed to save document');
     } finally {
       setSaving(false);
     }
@@ -139,6 +178,17 @@ export default function Docs() {
       await downloadDocument(doc.id, `${doc.documentCode}-${doc.name}`);
     } catch (err) {
       setError(err.message || 'Failed to download document');
+    }
+  };
+
+  const handlePreview = async (doc) => {
+    setError('');
+    try {
+      const blob = await previewDocument(doc.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (err) {
+      setError(err.message || 'Failed to preview document');
     }
   };
 
@@ -273,24 +323,42 @@ export default function Docs() {
                 <button
                   type="button"
                   className="btn g sm"
+                  onClick={() => handlePreview(d)}
+                  style={{ marginRight: '6px' }}
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  className="btn g sm"
                   onClick={() => handleDownload(d)}
                   style={{ marginRight: canEdit ? '6px' : 0 }}
                 >
                   Download
                 </button>
                 {canEdit && (
-                  <button
-                    type="button"
-                    className="btn sm"
-                    onClick={() => handleDelete(d)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--tape)',
-                      color: 'var(--tape)',
-                    }}
-                  >
-                    Delete
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className="btn g sm"
+                      onClick={() => openEditModal(d)}
+                      style={{ marginRight: '6px' }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="btn sm"
+                      onClick={() => handleDelete(d)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--tape)',
+                        color: 'var(--tape)',
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </>
                 )}
               </td>
             </tr>
@@ -310,7 +378,7 @@ export default function Docs() {
         </div>
       </div>
 
-      <Modal isOpen={isModalOpen} onClose={closeModal} title="Upload Document">
+      <Modal isOpen={isModalOpen} onClose={closeModal} title={editingDoc ? 'Edit Document' : 'Upload Document'}>
         <form
           onSubmit={handleSubmit}
           className="fgrid"
@@ -363,7 +431,7 @@ export default function Docs() {
             </select>
           </div>
           <div className="f">
-            <label>File</label>
+            <label>{editingDoc ? 'Replace File (Optional)' : 'File'}</label>
             <input
               type="file"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
@@ -378,7 +446,7 @@ export default function Docs() {
                       : ''),
                 }))
               }
-              required
+              required={!editingDoc}
             />
           </div>
           <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
@@ -386,7 +454,7 @@ export default function Docs() {
               Cancel
             </button>
             <button type="submit" className="btn" disabled={saving}>
-              {saving ? 'Uploading…' : 'Upload Document'}
+              {saving ? (editingDoc ? 'Saving…' : 'Uploading…') : (editingDoc ? 'Save Changes' : 'Upload Document')}
             </button>
           </div>
         </form>

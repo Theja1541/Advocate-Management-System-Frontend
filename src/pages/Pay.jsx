@@ -223,9 +223,6 @@ export default function Pay() {
       return;
     }
 
-    setSaving(true);
-    setError('');
-
     const payload = {
       receiptNo: form.receiptNo.trim() || undefined,
       caseId: Number(form.caseId),
@@ -236,6 +233,14 @@ export default function Pay() {
       transactionDate: form.transactionDate,
       status: form.status,
     };
+
+    if (payload.amountReceived < 0 || payload.amountOutstanding < 0) {
+      setError('Amounts must be non-negative.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
 
     try {
       if (editingPayment) {

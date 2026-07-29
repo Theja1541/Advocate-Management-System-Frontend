@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Modal from '../components/ui/Modal';
 import DataTable from '../components/ui/DataTable';
-import { getReport, exportReportCsv } from '../services/reportService';
+import { getReport, exportReport } from '../services/reportService';
 
 const REPORTS = [
   {
@@ -47,11 +47,25 @@ const REPORTS = [
   },
 ];
 
-const humanizeKey = (key) =>
-  String(key)
+const humanizeKey = (key) => {
+  const k = String(key);
+  if (k === 'advocateId') return 'ADV. ID';
+  if (k === 'advocateName') return 'ADVOCATE';
+  if (k === 'clientId') return 'CL. ID';
+  if (k === 'clientName') return 'CLIENT';
+  if (k === 'nextHearing') return 'NEXT DATE';
+  if (k === 'caseValue') return 'VALUE';
+  if (k === 'caseNo') return 'CASE NO';
+  if (k === 'caseCount') return 'CASES';
+  if (k === 'activeCount') return 'ACTIVE';
+  if (k === 'closedCount') return 'CLOSED';
+  if (k === 'pendingCount') return 'PENDING';
+
+  return k
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 const isPlainObject = (value) =>
   value != null && typeof value === 'object' && !Array.isArray(value);
@@ -114,17 +128,30 @@ export default function Reports() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeReport, setActiveReport] = useState(null);
 
+  // Filters State
+  const [date, setDate] = useState('');
+  const [month, setMonth] = useState('');
+  const [year, setYear] = useState(new Date().getFullYear().toString());
+
   const tables = useMemo(
     () => (activeReport ? extractReportTables(activeReport) : []),
     [activeReport]
   );
+
+  const getCleanParams = () => {
+    const params = {};
+    if (date) params.date = date;
+    if (month) params.month = month;
+    if (year) params.year = year;
+    return params;
+  };
 
   const handleGenerate = async (reportDef) => {
     if (busyType) return;
     setError('');
     setBusyType(reportDef.type);
     try {
-      const report = await getReport(reportDef.type);
+      const report = await getReport(reportDef.type, getCleanParams());
       setActiveReport(report);
       setModalOpen(true);
     } catch (err) {
@@ -134,12 +161,12 @@ export default function Reports() {
     }
   };
 
-  const handleExport = async (reportDef) => {
+  const handleExport = async (reportDef, format = 'xlsx') => {
     if (busyType) return;
     setError('');
     setBusyType(reportDef.type);
     try {
-      await exportReportCsv(reportDef.type);
+      await exportReport(reportDef.type, format, getCleanParams());
     } catch (err) {
       setError(err.message || `Failed to export ${reportDef.title}`);
     } finally {
@@ -165,19 +192,85 @@ export default function Reports() {
         </div>
       ) : null}
 
+      <div className="card" style={{ marginBottom: '14px' }}>
+        <div className="card-t" style={{ fontSize: '13.5px', marginBottom: '8px' }}>Report Filters</div>
+        <div className="fgrid">
+          <div className="f" style={{ flex: 1 }}>
+            <label>Specific Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setMonth('');
+              }}
+            />
+          </div>
+          <div className="f" style={{ flex: 1 }}>
+            <label>Month</label>
+            <select
+              value={month}
+              onChange={(e) => {
+                setMonth(e.target.value);
+                setDate('');
+              }}
+            >
+              <option value="">All Months</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+          <div className="f" style={{ flex: 1 }}>
+            <label>Year</label>
+            <input
+              type="number"
+              placeholder="e.g. 2026"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn g"
+              onClick={() => {
+                setDate('');
+                setMonth('');
+                setYear(new Date().getFullYear().toString());
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="grid3">
         {REPORTS.map((r) => (
-          <div className="card" style={{ margin: 0 }} key={r.type}>
-            <div className="card-t" style={{ fontSize: '14px' }}>{r.title}</div>
-            <div className="mut" style={{ fontSize: '11.5px', lineHeight: 1.5, margin: '5px 0 11px', minHeight: '34px' }}>
-              {r.description}
+          <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} key={r.type}>
+            <div>
+              <div className="card-t" style={{ fontSize: '14px' }}>{r.title}</div>
+              <div className="mut" style={{ fontSize: '11.5px', lineHeight: 1.5, margin: '5px 0 11px', minHeight: '34px' }}>
+                {r.description}
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 className="btn sm"
                 disabled={busyType === r.type}
                 onClick={() => handleGenerate(r)}
+                style={{ flex: '1 1 auto' }}
               >
                 {busyType === r.type ? 'Loading…' : 'Generate'}
               </button>
@@ -185,9 +278,19 @@ export default function Reports() {
                 type="button"
                 className="btn g sm"
                 disabled={busyType === r.type}
-                onClick={() => handleExport(r)}
+                onClick={() => handleExport(r, 'xlsx')}
+                style={{ fontSize: '11px', padding: '4px 6px' }}
               >
-                Export
+                Excel
+              </button>
+              <button
+                type="button"
+                className="btn g sm"
+                disabled={busyType === r.type}
+                onClick={() => handleExport(r, 'csv')}
+                style={{ fontSize: '11px', padding: '4px 6px' }}
+              >
+                CSV
               </button>
             </div>
           </div>
@@ -219,23 +322,30 @@ export default function Reports() {
             });
 
             return (
-              <div key={table.name} style={{ marginBottom: '16px' }}>
+              <div key={table.name} className={`report-table-wrapper report-table-${table.name.toLowerCase().replace(/\s+/g, '-')}`} style={{ marginBottom: '16px' }}>
                 <div className="card-t" style={{ fontSize: '13px', marginBottom: '8px' }}>
                   {table.name}
                 </div>
                 <DataTable
-                  headers={columns.map((key) => ({
-                    label: humanizeKey(key),
-                    className: 'mono',
-                  }))}
+                  headers={columns.map((key) => {
+                    const isNum = key.toLowerCase().includes('value') || key.toLowerCase().includes('count') || key.toLowerCase().includes('amount') || key.toLowerCase().includes('fee') || key === 'id' || key.toLowerCase().includes('id');
+                    return {
+                      label: humanizeKey(key),
+                      className: `mono ${isNum ? 'num' : ''}`,
+                      style: { textAlign: isNum ? 'right' : 'left' }
+                    };
+                  })}
                 >
                   {table.rows.map((row, rowIndex) => (
                     <tr key={`${table.name}-${rowIndex}`}>
-                      {columns.map((col) => (
-                        <td key={col} className="mono" style={{ fontSize: '11px' }}>
-                          {formatCell(row[col])}
-                        </td>
-                      ))}
+                      {columns.map((col) => {
+                        const isNum = typeof row[col] === 'number' || col.toLowerCase().includes('value') || col.toLowerCase().includes('count') || col.toLowerCase().includes('amount') || col.toLowerCase().includes('fee') || col === 'id' || col.toLowerCase().includes('id');
+                        return (
+                          <td key={col} className={`mono ${isNum ? 'num' : ''}`} style={{ fontSize: '11px', textAlign: isNum ? 'right' : 'left' }}>
+                            {formatCell(row[col])}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))}
                 </DataTable>
@@ -246,24 +356,46 @@ export default function Reports() {
           <div className="empty">No rows returned for this report.</div>
         )}
 
-        <div className="modal-foot" style={{ margin: '0 -16px -16px', borderRadius: '0 0 8px 8px' }}>
+        <div className="modal-foot" style={{ margin: '0 -16px -16px', borderRadius: '0 0 8px 8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button type="button" className="btn g" onClick={closeModal}>
             Close
           </button>
+          <button
+            type="button"
+            className="btn g"
+            onClick={() => window.print()}
+          >
+            Print Report
+          </button>
           {activeReport?.reportType ? (
-            <button
-              type="button"
-              className="btn"
-              disabled={!!busyType}
-              onClick={() =>
-                handleExport({
-                  type: activeReport.reportType,
-                  title: activeReport.title,
-                })
-              }
-            >
-              Export CSV
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn"
+                disabled={!!busyType}
+                onClick={() =>
+                  handleExport({
+                    type: activeReport.reportType,
+                    title: activeReport.title,
+                  }, 'xlsx')
+                }
+              >
+                Export Excel
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={!!busyType}
+                onClick={() =>
+                  handleExport({
+                    type: activeReport.reportType,
+                    title: activeReport.title,
+                  }, 'csv')
+                }
+              >
+                Export CSV
+              </button>
+            </>
           ) : null}
         </div>
       </Modal>

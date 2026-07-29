@@ -1004,4 +1004,185 @@ footer .fr{border-top:1px solid var(--rule);padding-top:12px;font-family:'IBM Pl
   }
 }
 
+/* ---- Toast Animations ---- */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Numeric column alignment */
+th.num, td.num {
+  text-align: right !important;
+}
+
+/* ---- Print Styles ---- */
+@media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 20mm 15mm !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+  /* Hide main content app wrapper and control buttons */
+  .wrap, .btn, .tbl-foot, .modal-close, .modal-foot, ::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Reset absolute containers, allow vertical overflow */
+  *, .modal-overlay, .modal-content, .modal-body, .tbl-card, table, tr, td, th {
+    overflow: visible !important;
+    overflow-x: visible !important;
+  }
+  
+  .modal-overlay {
+    position: static !important;
+    background: none !important;
+    padding: 0 !important;
+    display: block !important;
+    z-index: auto !important;
+  }
+  .modal-content {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    animation: none !important;
+    background: none !important;
+  }
+  .modal-body {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  .tbl-card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: none !important;
+    overflow: visible !important;
+  }
+  /* Scale tables and wrap cells properly */
+  table {
+    width: 100% !important;
+    table-layout: auto !important;
+    border-collapse: collapse !important;
+    margin-bottom: 24px !important;
+  }
+  
+  .report-table-rows table {
+    table-layout: fixed !important;
+  }
+  .report-table-rows th:nth-child(1), .report-table-rows td:nth-child(1) { width: 3% !important; }
+  .report-table-rows th:nth-child(2), .report-table-rows td:nth-child(2) { width: 10% !important; }
+  .report-table-rows th:nth-child(3), .report-table-rows td:nth-child(3) { width: 22% !important; }
+  .report-table-rows th:nth-child(4), .report-table-rows td:nth-child(4) { width: 9% !important; }
+  .report-table-rows th:nth-child(5), .report-table-rows td:nth-child(5) { width: 6% !important; }
+  .report-table-rows th:nth-child(6), .report-table-rows td:nth-child(6) { width: 9% !important; }
+  .report-table-rows th:nth-child(7), .report-table-rows td:nth-child(7) { width: 5% !important; }
+  .report-table-rows th:nth-child(8), .report-table-rows td:nth-child(8) { width: 14% !important; }
+  .report-table-rows th:nth-child(9), .report-table-rows td:nth-child(9) { width: 5% !important; }
+  .report-table-rows th:nth-child(10), .report-table-rows td:nth-child(10) { width: 14% !important; }
+  .report-table-rows th:nth-child(11), .report-table-rows td:nth-child(11) { width: 8% !important; }
+
+  .report-table-by-court table {
+    table-layout: fixed !important;
+  }
+  .report-table-by-court th:nth-child(1), .report-table-by-court td:nth-child(1) { width: 40% !important; }
+  .report-table-by-court th:nth-child(2), .report-table-by-court td:nth-child(2) { width: 15% !important; }
+  .report-table-by-court th:nth-child(3), .report-table-by-court td:nth-child(3) { width: 15% !important; }
+  .report-table-by-court th:nth-child(4), .report-table-by-court td:nth-child(4) { width: 15% !important; }
+  .report-table-by-court th:nth-child(5), .report-table-by-court td:nth-child(5) { width: 15% !important; }
+
+  .report-table-summary table {
+    table-layout: fixed !important;
+  }
+  .report-table-summary th:nth-child(1), .report-table-summary td:nth-child(1) { width: 80% !important; }
+  .report-table-summary th:nth-child(2), .report-table-summary td:nth-child(2) { width: 20% !important; }
+  
+  th {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    font-weight: 700 !important;
+    border: 1px solid #cbd5e1 !important;
+    font-size: 8px !important;
+    padding: 6px 8px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+    white-space: nowrap !important;
+  }
+  
+  td {
+    border: 1px solid #e2e8f0 !important;
+    font-size: 8px !important;
+    padding: 6px 8px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    word-break: normal !important;
+  }
+  
+  /* Right align numerical/financial values for perfect accounting grid UI/UX */
+  th.num, td.num {
+    text-align: right !important;
+  }
+  
+  /* Specific styling for Titles and Section Headers */
+  h1, h2, h3, .modal-h h3 {
+    font-family: 'Spectral', Georgia, serif !important;
+    color: #0f172a !important;
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+  }
+  h3, .modal-h h3 {
+    font-size: 18px !important;
+    border-bottom: 2.5px solid #0f172a !important;
+    padding-bottom: 6px !important;
+  }
+  .card-t {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    border-bottom: 1.5px solid #94a3b8 !important;
+    padding-bottom: 4px !important;
+    margin-top: 20px !important;
+    margin-bottom: 8px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+  }
+  
+  .mut {
+    font-size: 9.5px !important;
+    color: #475569 !important;
+    margin-bottom: 16px !important;
+  }
+
+  #main {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  .print-area {
+    display: block !important;
+  }
+}
+
 
