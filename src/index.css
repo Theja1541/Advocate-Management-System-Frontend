@@ -685,3 +685,323 @@ footer .fr{border-top:1px solid var(--rule);padding-top:12px;font-family:'IBM Pl
   }
 }
 
+/* ==========================================================================
+   ADVANCED ADVOCATE PORTAL LOGIN PAGE STYLING
+   ========================================================================== */
+
+.login-page {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  width: 100vw;
+  height: 100vh;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+/* LEFT SIDE: Brand Branding panel */
+.login-brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 50px;
+  background: linear-gradient(135deg, rgba(20, 27, 46, 0.95) 0%, rgba(38, 49, 77, 0.95) 100%),
+              url('https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=1200') no-repeat center center;
+  background-size: cover;
+  border-right: 3px solid var(--brass);
+  color: #F1F2EE;
+}
+
+.login-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.login-seal {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--brass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Spectral', Georgia, serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--brass);
+  background: rgba(20, 27, 46, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.login-brand-hero {
+  max-width: 520px;
+  margin-top: -40px;
+}
+
+.login-brand-name {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 42px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+}
+
+.login-brand-line {
+  width: 60px;
+  height: 3px;
+  background: var(--brass);
+  margin-bottom: 24px;
+}
+
+.login-brand-headline {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 14px;
+  font-weight: 500;
+}
+
+.login-brand-sub {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0;
+}
+
+.login-brand-foot {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* RIGHT SIDE: Action Panel */
+.login-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  padding: 40px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.login-panel-inner {
+  width: 100%;
+  max-width: 440px;
+}
+
+.login-panel-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.login-panel-title {
+  font-family: 'Spectral', Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.login-panel-desc {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 0 0 32px;
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.login-field input {
+  font-size: 14px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 6px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-field input:focus {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 3px rgba(168, 118, 62, 0.12);
+}
+
+.login-error {
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  background-color: rgba(140, 47, 57, 0.07);
+  border-left: 3px solid var(--tape);
+  color: var(--tape);
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.login-submit {
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: var(--ink);
+  border: 1.5px solid var(--ink);
+  color: #F1F2EE;
+  padding: 13px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  margin-top: 10px;
+}
+
+.login-submit:hover {
+  background: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+.login-submit:active {
+  transform: scale(0.995);
+}
+
+.login-submit:disabled {
+  background: var(--muted-2);
+  border-color: var(--muted-2);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Demo Credential Widgets */
+.login-demos {
+  margin-top: 40px;
+  border-top: 1px solid var(--rule);
+  padding-top: 28px;
+}
+
+.login-demos-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-weight: 600;
+}
+
+.login-demos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-demo {
+  background: var(--card);
+  border: 1.5px solid var(--rule-2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  gap: 12px;
+}
+
+.login-demo:hover {
+  border-color: var(--brass);
+  background: var(--panel);
+}
+
+.login-demo.is-active {
+  border-color: var(--brass);
+  background: var(--brass-l);
+}
+
+.login-demo-role {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.login-demo-email {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.login-demo-pass {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--brass);
+  background: rgba(168, 118, 62, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* RESPONSIVE LAYOUT FOR MOBILE */
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .login-brand {
+    border-right: none;
+    border-bottom: 3px solid var(--brass);
+    padding: 32px 24px;
+    height: auto;
+  }
+  
+  .login-brand-hero {
+    margin-top: 32px;
+    margin-bottom: 24px;
+  }
+  
+  .login-brand-name {
+    font-size: 32px;
+  }
+  
+  .login-brand-headline {
+    font-size: 18px;
+  }
+  
+  .login-panel {
+    padding: 32px 24px;
+    align-items: flex-start;
+  }
+}
+
+

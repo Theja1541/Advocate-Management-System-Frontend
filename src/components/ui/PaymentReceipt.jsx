@@ -11,10 +11,21 @@ export default function PaymentReceipt({
   payment,
   caseNo,
   partyName,
-  formatDate,
+  formatDate: propFormatDate,
   onClose,
 }) {
   const printRef = useRef(null);
+
+  const formatDate = propFormatDate || ((value) => {
+    if (!value) return '—';
+    const d = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  });
 
   if (!payment) return null;
 
