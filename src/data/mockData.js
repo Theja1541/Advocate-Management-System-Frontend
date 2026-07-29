@@ -1,6 +1,6 @@
 export const NAV = [
  { g: 'Today', items: [{ k: 'dash', l: 'Dashboard' }] },
- { g: 'Matters', items: [{ k: 'cases', l: 'Civil Cases' }, { k: 'approve', l: 'Case Approval' }, { k: 'diary', l: 'Case Diary' }, { k: 'docs', l: 'Documents' }, { k: 'refs', l: 'References' }] },
+ { g: 'Matters', items: [{ k: 'cases', l: 'Civil Cases' }, { k: 'approve', l: 'Case Approval' }, { k: 'diary', l: 'Case Diary' }, { k: 'tasks', l: 'Tasks' }, { k: 'docs', l: 'Documents' }, { k: 'refs', l: 'References' }] },
  { g: 'Land & Title', items: [
    { k: 'land', l: 'Land Details' }, 
    { k: 'opinions', l: 'Legal Opinions' }

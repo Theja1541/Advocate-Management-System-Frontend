@@ -67,6 +67,33 @@ export const downloadDocument = async (id, fallbackName = 'document') => {
   }
 };
 
+export const updateDocument = async (id, { name, category, caseId, file }) => {
+  const formData = new FormData();
+  if (name !== undefined) formData.append('name', name);
+  if (category !== undefined) formData.append('category', category);
+  if (caseId !== undefined) formData.append('caseId', String(caseId));
+  if (file !== undefined && file !== null) formData.append('file', file);
+
+  const { data } = await api.put(`/documents/${id}`, formData, {
+    transformRequest: [
+      (body, headers) => {
+        if (body instanceof FormData) {
+          delete headers['Content-Type'];
+        }
+        return body;
+      },
+    ],
+  });
+  return data?.data?.document;
+};
+
+export const previewDocument = async (id) => {
+  const response = await api.get(`/documents/${id}/download`, {
+    responseType: 'blob',
+  });
+  return new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
+};
+
 export const deleteDocument = async (id) => {
   await api.delete(`/documents/${id}`);
 };
@@ -75,6 +102,8 @@ export default {
   getDocuments,
   getDocumentById,
   uploadDocument,
+  updateDocument,
+  previewDocument,
   downloadDocument,
   deleteDocument,
 };

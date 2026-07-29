@@ -103,6 +103,9 @@ export const downloadActPdf = async (id, fallbackName = 'bare-act.pdf') => {
 
 export const getAmendments = async (params = {}) => {
   const { data } = await api.get('/amendments', { params });
+  if (params.limit !== undefined || params.offset !== undefined) {
+    return data?.data || { amendments: [], totalCount: 0 };
+  }
   return data?.data?.amendments || [];
 };
 
@@ -135,6 +138,29 @@ export const restoreAct = async (id) => {
   return data?.data?.act;
 };
 
+export const createAmendment = async (payload) => {
+  const { data } = await api.post('/amendments', payload);
+  return data?.data?.amendment;
+};
+
+export const updateAmendment = async (id, payload) => {
+  const { data } = await api.put(`/amendments/${id}`, payload);
+  return data?.data?.amendment;
+};
+
+export const deleteAmendment = async (id) => {
+  await api.delete(`/amendments/${id}`);
+};
+
+export const importAmendments = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await api.post('/amendments/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data?.data || { totalRows: 0, imported: 0, duplicates: 0, errors: [] };
+};
+
 export default {
   getActs,
   getActById,
@@ -142,6 +168,10 @@ export default {
   openActPdf,
   downloadActPdf,
   getAmendments,
+  createAmendment,
+  updateAmendment,
+  deleteAmendment,
+  importAmendments,
   createAct,
   updateAct,
   replaceActPdf,

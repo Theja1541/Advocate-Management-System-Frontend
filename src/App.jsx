@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
+import { ToastProvider } from './context/ToastContext';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import Footer from './components/layout/Footer';
@@ -13,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
 import CaseApproval from './pages/CaseApproval';
 import Diary from './pages/Diary';
+import Tasks from './pages/Tasks';
 import Docs from './pages/Docs';
 import Refs from './pages/Refs';
 import Land from './pages/Land';
@@ -69,6 +71,7 @@ const AppContent = () => {
             <Route path="/cases" element={<ProtectedRoute element={<Cases />} moduleKey="cases" />} />
             <Route path="/approve" element={<ProtectedRoute element={<CaseApproval />} moduleKey="approve" />} />
             <Route path="/diary" element={<ProtectedRoute element={<Diary />} moduleKey="diary" />} />
+            <Route path="/tasks" element={<ProtectedRoute element={<Tasks />} moduleKey="cases" />} />
             <Route path="/docs" element={<ProtectedRoute element={<Docs />} moduleKey="docs" />} />
             <Route path="/refs" element={<ProtectedRoute element={<Refs />} moduleKey="refs" />} />
             <Route path="/land" element={<ProtectedRoute element={<Land />} moduleKey="land" />} />
@@ -98,10 +101,12 @@ export default function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <AppContent />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <AppContent />
+          </BrowserRouter>
+        </ToastProvider>
       </DataProvider>
     </AuthProvider>
   );

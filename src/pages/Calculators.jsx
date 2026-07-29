@@ -76,26 +76,44 @@ export default function Calculators() {
         <div className="card">
           <div className="card-t">Advocate fee calculator</div>
           <div className="card-s">SUIT VALUE × AGREED PERCENTAGE, SHARED ACROSS SENIOR, JUNIOR AND REFERRAL</div>
-          <div className="fgrid">
-            <div className="f">
+          <div className="fgrid" style={{ alignItems: 'flex-end' }}>
+            <div className="f" style={{ flex: '2 1 200px' }}>
               <label>Suit value (₹)</label>
-              <input type="number" className="mono" value={fv} onChange={e => setFv(Number(e.target.value))} />
+              <input type="number" className="mono" value={fv || ''} onChange={e => setFv(Number(e.target.value) || 0)} />
             </div>
-            <div className="f" style={{ maxWidth: '120px' }}>
+            <div className="f" style={{ flex: '1 1 120px' }}>
               <label>Fee %</label>
-              <input type="number" className="mono" value={fp} step="0.5" onChange={e => setFp(Number(e.target.value))} />
+              <input type="number" className="mono" value={fp || ''} step="0.5" onChange={e => setFp(Number(e.target.value) || 0)} />
             </div>
-            <div className="f" style={{ maxWidth: '120px' }}>
-              <label>Senior %</label>
-              <input type="number" className="mono" value={fs} onChange={e => setFs(Number(e.target.value))} />
+            <div className="f" style={{ flex: '1.5 1 180px', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                {[5, 10, 15, 20].map(val => (
+                  <button
+                    key={val}
+                    type="button"
+                    className={`btn sm ${fp === val ? '' : 'g'}`}
+                    style={{ padding: '6px 10px', fontSize: '11px', minWidth: 'auto', flex: 1 }}
+                    onClick={() => setFp(val)}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="f" style={{ maxWidth: '120px' }}>
-              <label>Junior %</label>
-              <input type="number" className="mono" value={fj} onChange={e => setFj(Number(e.target.value))} />
+          </div>
+
+          <div className="fgrid" style={{ marginTop: '14px' }}>
+            <div className="f" style={{ flex: 1 }}>
+              <label>Senior share %</label>
+              <input type="number" className="mono" value={fs || ''} onChange={e => setFs(Number(e.target.value) || 0)} />
             </div>
-            <div className="f" style={{ maxWidth: '120px' }}>
-              <label>Referral %</label>
-              <input type="number" className="mono" value={fr} onChange={e => setFr(Number(e.target.value))} />
+            <div className="f" style={{ flex: 1 }}>
+              <label>Junior share %</label>
+              <input type="number" className="mono" value={fj || ''} onChange={e => setFj(Number(e.target.value) || 0)} />
+            </div>
+            <div className="f" style={{ flex: 1 }}>
+              <label>Referral share %</label>
+              <input type="number" className="mono" value={fr || ''} onChange={e => setFr(Number(e.target.value) || 0)} />
             </div>
           </div>
 
@@ -106,9 +124,9 @@ export default function Calculators() {
           </div>
 
           {totalSharePercentage !== 100 && (
-            <div className="card" style={{ margin: '12px 0 0', borderColor: 'var(--tape)', backgroundColor: 'var(--tape-l)' }}>
-              <div style={{ fontSize: '12px', color: 'var(--tape)' }}>
-                <b>Shares total {totalSharePercentage}%.</b> Adjust senior, junior and referral so they add up to 100% before recording this against a case.
+            <div className="card" style={{ margin: '12px 0 0', borderColor: 'var(--tape)', borderLeft: '3px solid var(--tape)', padding: '10px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--tape)', fontWeight: 'bold' }}>
+                ⚠️ Shares total {totalSharePercentage}%. Adjust senior, junior and referral so they add up to 100% before recording this against a case.
               </div>
             </div>
           )}
@@ -138,15 +156,15 @@ export default function Calculators() {
           <div className="fgrid">
             <div className="f">
               <label>Value (₹)</label>
-              <input type="number" className="mono" value={pv} onChange={e => setPv(Number(e.target.value))} />
+              <input type="number" className="mono" value={pv || ''} onChange={e => setPv(Number(e.target.value) || 0)} />
             </div>
             <div className="f" style={{ maxWidth: '130px' }}>
               <label>Percentage</label>
-              <input type="number" className="mono" value={pp} step="0.25" onChange={e => setPp(Number(e.target.value))} />
+              <input type="number" className="mono" value={pp || ''} step="0.25" onChange={e => setPp(Number(e.target.value) || 0)} />
             </div>
             <div className="f">
               <label>Part amount (₹)</label>
-              <input type="number" className="mono" value={pa} onChange={e => setPa(Number(e.target.value))} />
+              <input type="number" className="mono" value={pa || ''} onChange={e => setPa(Number(e.target.value) || 0)} />
             </div>
           </div>
 
@@ -172,19 +190,19 @@ export default function Calculators() {
           <div className="fgrid">
             <div className="f">
               <label>Suit value (₹)</label>
-              <input type="number" className="mono" value={cv} onChange={e => setCv(Number(e.target.value))} />
+              <input type="number" className="mono" value={cv || ''} onChange={e => setCv(Number(e.target.value) || 0)} />
             </div>
             <div className="f" style={{ maxWidth: '150px' }}>
               <label>Court fee %</label>
-              <input type="number" className="mono" value={cp} step="0.25" onChange={e => setCp(Number(e.target.value))} />
+              <input type="number" className="mono" value={cp || ''} step="0.25" onChange={e => setCp(Number(e.target.value) || 0)} />
             </div>
             <div className="f" style={{ maxWidth: '150px' }}>
               <label>Advocate fee %</label>
-              <input type="number" className="mono" value={ca} step="0.5" onChange={e => setCa(Number(e.target.value))} />
+              <input type="number" className="mono" value={ca || ''} step="0.5" onChange={e => setCa(Number(e.target.value) || 0)} />
             </div>
             <div className="f" style={{ maxWidth: '150px' }}>
               <label>Misc. & process (₹)</label>
-              <input type="number" className="mono" value={cm} onChange={e => setCm(Number(e.target.value))} />
+              <input type="number" className="mono" value={cm || ''} onChange={e => setCm(Number(e.target.value) || 0)} />
             </div>
           </div>
 
@@ -207,7 +225,7 @@ export default function Calculators() {
           <div className="fgrid">
             <div className="f" style={{ maxWidth: '180px' }}>
               <label>Value</label>
-              <input type="number" className="mono" value={av} step="any" onChange={e => setAv(Number(e.target.value))} />
+              <input type="number" className="mono" value={av || ''} step="any" onChange={e => setAv(Number(e.target.value) || 0)} />
             </div>
             <div className="f" style={{ maxWidth: '200px' }}>
               <label>Unit</label>

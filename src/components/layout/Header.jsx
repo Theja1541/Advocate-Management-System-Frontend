@@ -9,7 +9,7 @@ export default function Header({ toggleSidebar }) {
   const navigate = useNavigate();
 
   const [searchVal, setSearchVal] = useState('');
-  const urgentCount = alerts.filter(a => a.sev === 'tape' && !a.isResolved).length;
+  const unreadCount = alerts.filter(a => !a.isResolved).length;
   const avatar = user?.av || (user?.n || '?').split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
 
   const handleSearchSubmit = (e) => {
@@ -69,7 +69,7 @@ export default function Header({ toggleSidebar }) {
               <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.7 21a2 2 0 01-3.4 0" />
             </svg>
-            {urgentCount > 0 && <span className="b" id="bc">{urgentCount}</span>}
+            {unreadCount > 0 && <span className="b" id="bc">{unreadCount}</span>}
           </div>
           <div className="me" style={{ gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

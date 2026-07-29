@@ -10,10 +10,10 @@ export const getReport = async (reportType, params = {}) => {
   return data?.data?.report;
 };
 
-export const exportReportCsv = async (reportType, params = {}) => {
+export const exportReport = async (reportType, format = 'xlsx', params = {}) => {
   try {
     const response = await api.get(`/reports/${reportType}/export`, {
-      params: { ...params, format: 'csv' },
+      params: { ...params, format },
       responseType: 'blob',
     });
 
@@ -21,10 +21,14 @@ export const exportReportCsv = async (reportType, params = {}) => {
     const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i);
     const filename = match
       ? decodeURIComponent(match[1].replace(/['"]/g, ''))
-      : `${reportType}-report.csv`;
+      : `${reportType}-report.${format}`;
+
+    const contentType = format === 'csv'
+      ? 'text/csv;charset=utf-8'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
     const url = window.URL.createObjectURL(
-      new Blob([response.data], { type: 'text/csv;charset=utf-8' })
+      new Blob([response.data], { type: contentType })
     );
     const link = document.createElement('a');
     link.href = url;
@@ -50,4 +54,4 @@ export const exportReportCsv = async (reportType, params = {}) => {
   }
 };
 
-export default { getReportTypes, getReport, exportReportCsv };
+export default { getReportTypes, getReport, exportReport };
