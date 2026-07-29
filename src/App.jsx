@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Router, Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import Header from './components/layout/Header';

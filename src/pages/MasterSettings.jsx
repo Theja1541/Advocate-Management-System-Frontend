@@ -226,13 +226,17 @@ export default function MasterSettings() {
       </div>
 
       <div className="card" style={{ marginBottom: '14px' }}>
-        <input 
-          type="text" 
-          placeholder="Search items by code or name..." 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)} 
-          style={{ width: '100%' }}
-        />
+        <div className="fgrid">
+          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+            <label>Search masters</label>
+            <input 
+              type="text" 
+              placeholder="Search items by code or name..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+            />
+          </div>
+        </div>
       </div>
 
       {error && !isModalOpen && (

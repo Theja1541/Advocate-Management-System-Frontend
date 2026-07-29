@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { LADDER } from '../data/mockData';
 import { getCases, updateCase } from '../services/caseService';
 import { getClients } from '../services/clientService';
+import { getCaseTypes } from '../services/caseMastersService';
 
 const PAGE_SIZE = 5;
 const TITLE_META_SEP = ' :: ';
@@ -62,11 +63,13 @@ export default function CaseApproval() {
 
   const [cases, setCases] = useState([]);
   const [clients, setClients] = useState([]);
+  const [caseTypes, setCaseTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState(null);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
+  const [caseTypeFilter, setCaseTypeFilter] = useState('all');
   const [pendingPage, setPendingPage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
 
@@ -74,9 +77,14 @@ export default function CaseApproval() {
     setLoading(true);
     setError('');
     try {
-      const [caseList, clientList] = await Promise.all([getCases(), getClients()]);
+      const [caseList, clientList, typeList] = await Promise.all([
+        getCases(),
+        getClients(),
+        getCaseTypes(true),
+      ]);
       setCases(caseList);
       setClients(clientList);
+      setCaseTypes(typeList);
     } catch (err) {
       setError(err.message || 'Failed to load approval queue');
     } finally {
@@ -90,28 +98,34 @@ export default function CaseApproval() {
 
   useEffect(() => {
     setPendingPage(1);
-  }, [query, levelFilter]);
+    setHistoryPage(1);
+  }, [query, levelFilter, caseTypeFilter]);
 
   const getClientName = (id) => {
     const client = clients.find((c) => String(c.id) === String(id));
     return client ? client.name : id ? String(id) : '—';
   };
 
-  const enriched = cases.map((c) => ({
-    ...c,
-    ...parseTitle(c.title),
-    lvl: getApprovalLevel(c),
-  }));
+  const enriched = cases.map((c) => {
+    const legacyParsed = parseTitle(c.title);
+    return {
+      ...c,
+      ...legacyParsed,
+      caseTypeDisplay: c.caseType?.name || legacyParsed.caseType,
+      lvl: getApprovalLevel(c),
+    };
+  });
 
   const q = query.trim().toLowerCase();
 
   const pendingCases = enriched.filter((c) => {
     if (c.status !== 'Pending Approval') return false;
     if (levelFilter !== 'all' && String(c.lvl) !== levelFilter) return false;
+    if (caseTypeFilter !== 'all' && c.caseTypeDisplay !== caseTypeFilter) return false;
     if (!q) return true;
     const haystack = [
       c.caseNo,
-      c.caseType,
+      c.caseTypeDisplay,
       c.opponent,
       c.court,
       getClientName(c.clientId),
@@ -126,8 +140,9 @@ export default function CaseApproval() {
   const completedCases = enriched.filter((c) => {
     if (c.lvl < 4) return false;
     if (c.status !== 'Active' && c.status !== 'Closed') return false;
+    if (caseTypeFilter !== 'all' && c.caseTypeDisplay !== caseTypeFilter) return false;
     if (!q) return true;
-    const haystack = [c.caseNo, c.caseType, c.opponent, getClientName(c.clientId)]
+    const haystack = [c.caseNo, c.caseTypeDisplay, c.opponent, getClientName(c.clientId)]
       .filter(Boolean)
       .join(' ')
       .toLowerCase();
@@ -199,6 +214,20 @@ export default function CaseApproval() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+            <label>Case Type</label>
+            <select
+              value={caseTypeFilter}
+              onChange={(e) => setCaseTypeFilter(e.target.value)}
+            >
+              <option value="all">All Case Types</option>
+              {caseTypes.map((t) => (
+                <option key={t.id} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -255,7 +284,7 @@ export default function CaseApproval() {
                   {c.opponent}
                 </div>
                 <div className="card-s" style={{ margin: 0 }}>
-                  {String(c.caseType || '—').toUpperCase()}
+                  {String(c.caseTypeDisplay || '—').toUpperCase()}
                   {c.court ? ` · ${String(c.court).toUpperCase()}` : ''}
                   {c.val ? ` · ${inr(c.val)}` : ''}
                 </div>

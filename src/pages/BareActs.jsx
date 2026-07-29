@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLegalData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -82,18 +82,18 @@ export default function BareActs() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch acts including deleted ones if selected
-  const fetchDisplayActs = async () => {
+  const fetchDisplayActs = useCallback(async () => {
     try {
       const data = await getActs({ includeDeleted: showDeleted });
       setDisplayActs(data.map(toUiAct));
     } catch (err) {
       setError('Failed to fetch acts from server');
     }
-  };
+  }, [showDeleted, getActs]);
 
   useEffect(() => {
     fetchDisplayActs();
-  }, [showDeleted, acts]);
+  }, [fetchDisplayActs, acts]);
 
   const clearAlerts = () => {
     setError('');

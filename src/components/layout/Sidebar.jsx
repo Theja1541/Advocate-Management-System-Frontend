@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { NAV } from '../../data/mockData';
 import { useLegalData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -178,7 +178,6 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
     opinions
   } = useLegalData();
   const { hasPermission } = useAuth();
-  const location = useLocation();
 
   // Manage collapsed state for dropdown menus (groups)
   const [collapsedGroups, setCollapsedGroups] = useState({
@@ -190,31 +189,6 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
     Tools: false,
     Admin: false,
   });
-
-  const getCount = (key) => {
-    switch (key) {
-      case 'cases':
-        return <span className="ct">{cases.length}</span>;
-      case 'approve':
-        const pendingCount = cases.filter(c => c.st === 'pending').length;
-        return pendingCount > 0 ? <span className="urg">{pendingCount}</span> : null;
-      case 'alerts':
-        const urgentCount = alerts.filter(a => a.sev === 'tape').length;
-        return urgentCount > 0 ? <span className="urg">{urgentCount}</span> : null;
-      case 'daybook':
-        return <span className="ct">{daybook.length}</span>;
-      case 'advs':
-        return <span className="ct">{advocates.length}</span>;
-      case 'clients':
-        return <span className="ct">{clients.length}</span>;
-      case 'land':
-        return <span className="ct">{lands.length}</span>;
-      case 'opinions':
-        return <span className="ct">{opinions.length}</span>;
-      default:
-        return null;
-    }
-  };
 
   const getRoutePath = (key) => {
     if (key === 'dash') return '/';

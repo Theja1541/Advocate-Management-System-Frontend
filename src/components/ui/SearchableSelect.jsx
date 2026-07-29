@@ -11,7 +11,7 @@ export default function SearchableSelect({
   error = '',
   name = '',
   clearable = true,
-  registerProps = {},
+  _registerProps = {},
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

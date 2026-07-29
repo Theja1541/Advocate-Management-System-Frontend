@@ -13,6 +13,8 @@ import {
 } from '../services/landService';
 import { getClients } from '../services/clientService';
 import { getCases } from '../services/caseService';
+import SearchableSelect from '../components/ui/SearchableSelect';
+
 
 const PAGE_SIZE = 10;
 
