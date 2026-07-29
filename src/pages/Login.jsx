@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, DEMO_CREDENTIALS } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
+import { DEMO_CREDENTIALS } from '../data/credentials';
 import { login as loginRequest } from '../services/authService';
 
 
