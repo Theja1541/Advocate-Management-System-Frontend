@@ -26,7 +26,7 @@ export const LADDER = [
 export const INITIAL_DIARY = [];
 export const INITIAL_DAYBOOK = [];
 export const DB_CATS = ['Party Meeting', 'Court Visit', 'Office Visit', 'Field Visit', 'Client Payment', 'Advocate Payment', 'Office Expense', 'Misc'];
-export const DOC_CATS = ['Petitions', 'Affidavits', 'Orders', 'Judgments', 'Evidence', 'Client Documents', 'Agreements'];
+
 export const PAYS = [];
 export const MEMB = [];
 export const DOCS = [];

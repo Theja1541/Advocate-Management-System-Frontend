@@ -10,10 +10,10 @@ export const getDocumentById = async (id) => {
   return data?.data?.document;
 };
 
-export const uploadDocument = async ({ name, category, caseId, file }) => {
+export const uploadDocument = async ({ name, documentCategoryId, caseId, file }) => {
   const formData = new FormData();
   formData.append('name', name);
-  formData.append('category', category);
+  formData.append('documentCategoryId', String(documentCategoryId));
   formData.append('caseId', String(caseId));
   formData.append('file', file);
 
@@ -42,7 +42,7 @@ export const downloadDocument = async (id, fallbackName = 'document') => {
       ? decodeURIComponent(match[1].replace(/['"]/g, ''))
       : fallbackName;
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const url = window.URL.createObjectURL(response.data);
     const link = document.createElement('a');
     link.href = url;
     link.setAttribute('download', filename);
@@ -67,10 +67,10 @@ export const downloadDocument = async (id, fallbackName = 'document') => {
   }
 };
 
-export const updateDocument = async (id, { name, category, caseId, file }) => {
+export const updateDocument = async (id, { name, documentCategoryId, caseId, file }) => {
   const formData = new FormData();
   if (name !== undefined) formData.append('name', name);
-  if (category !== undefined) formData.append('category', category);
+  if (documentCategoryId !== undefined) formData.append('documentCategoryId', String(documentCategoryId));
   if (caseId !== undefined) formData.append('caseId', String(caseId));
   if (file !== undefined && file !== null) formData.append('file', file);
 
@@ -91,7 +91,12 @@ export const previewDocument = async (id) => {
   const response = await api.get(`/documents/${id}/download`, {
     responseType: 'blob',
   });
-  return new Blob([response.data], { type: response.headers['content-type'] || 'application/pdf' });
+  return response.data;
+};
+
+export const getDocumentText = async (id) => {
+  const { data } = await api.get(`/documents/${id}/text`);
+  return data?.data?.content || { text: '' };
 };
 
 export const deleteDocument = async (id) => {
@@ -104,6 +109,7 @@ export default {
   uploadDocument,
   updateDocument,
   previewDocument,
+  getDocumentText,
   downloadDocument,
   deleteDocument,
 };

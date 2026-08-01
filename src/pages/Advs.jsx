@@ -10,6 +10,7 @@ import {
   deleteAdvocate,
 } from '../services/advocateService';
 import { getCases } from '../services/caseService';
+import { getRoles } from '../services/roleService';
 
 const emptyForm = {
   name: '',
@@ -22,6 +23,7 @@ const emptyForm = {
   status: 'active',
   createLogin: true,
   password: '',
+  roleId: '',
 };
 
 const STATUS_FILTERS = [
@@ -77,14 +79,16 @@ export default function Advs() {
   const [selectedViewAdvocate, setSelectedViewAdvocate] = useState(null);
   const [editingAdvocate, setEditingAdvocate] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [roles, setRoles] = useState([]);
 
   const loadAdvocates = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [list, caseList] = await Promise.all([getAdvocates(), getCases()]);
+      const [list, caseList, roleList] = await Promise.all([getAdvocates(), getCases(), getRoles()]);
       setAdvocates(list);
       setCases(caseList);
+      setRoles(roleList);
     } catch (err) {
       setError(err.message || 'Failed to load advocates');
     } finally {
@@ -157,6 +161,7 @@ export default function Advs() {
       status: advocate.status || 'active',
       createLogin: !advocate.hasLogin,
       password: '',
+      roleId: advocate.roleId || '',
     });
     setError('');
     setIsModalOpen(true);
@@ -211,6 +216,14 @@ export default function Advs() {
       relation: form.relation,
       status: form.status,
     };
+
+    if (wantsLogin && !form.roleId) {
+      // Find 'Advocate' role as default if not selected
+      const defaultRole = roles.find(r => r.name === 'Advocate' || r.name === 'Sub Admin');
+      if (defaultRole) payload.roleId = defaultRole.id;
+    } else if (wantsLogin) {
+      payload.roleId = form.roleId;
+    }
 
     if (!editingAdvocate) {
       payload.createLogin = Boolean(form.createLogin && form.email.trim());
@@ -651,29 +664,59 @@ export default function Advs() {
                 <label htmlFor="createLogin" style={{ textTransform: 'none', fontSize: '12.5px', color: 'var(--ink)' }}>Enable Advocate Portal Login</label>
               </div>
               {form.createLogin && (
-                <div className="f">
-                  <label>Initial Password</label>
-                  <input
-                    type="password"
-                    placeholder="At least 6 characters"
-                    value={form.password}
-                    onChange={setField('password')}
-                    required
-                  />
-                </div>
+                <>
+                  <div className="f">
+                    <label>Initial Password</label>
+                    <input
+                      type="password"
+                      placeholder="At least 6 characters"
+                      value={form.password}
+                      onChange={setField('password')}
+                      required
+                    />
+                  </div>
+                  <div className="f" style={{ marginTop: '12px' }}>
+                    <label>System Access Role</label>
+                    <select
+                      value={form.roleId}
+                      onChange={setField('roleId')}
+                      required
+                    >
+                      <option value="">Select Role</option>
+                      {roles.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
               )}
             </div>
           )}
 
           {editingAdvocate && editingAdvocate.hasLogin && (
-            <div className="f" style={{ marginTop: '12px' }}>
-              <label>Reset Password (leave blank to keep current)</label>
-              <input
-                type="password"
-                placeholder="New password (min 6 chars)"
-                value={form.password}
-                onChange={setField('password')}
-              />
+            <div style={{ marginTop: '12px', border: '1px solid var(--rule)', padding: '12px', borderRadius: '5px', background: 'var(--panel)' }}>
+              <div className="f">
+                <label>System Access Role</label>
+                <select
+                  value={form.roleId}
+                  onChange={setField('roleId')}
+                  required
+                >
+                  <option value="">Select Role</option>
+                  {roles.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="f" style={{ marginTop: '12px' }}>
+                <label>Reset Password (leave blank to keep current)</label>
+                <input
+                  type="password"
+                  placeholder="New password (min 6 chars)"
+                  value={form.password}
+                  onChange={setField('password')}
+                />
+              </div>
             </div>
           )}
 
