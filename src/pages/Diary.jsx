@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import PageHeader from '../components/ui/PageHeader';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
@@ -73,6 +74,7 @@ const toDisplayTime = (value) => {
 };
 
 export default function Diary() {
+  const location = useLocation();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('diary', 'E');
 
@@ -88,10 +90,20 @@ export default function Diary() {
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [viewingEntry, setViewingEntry] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [formFiles, setFormFiles] = useState([]);
   const [viewMode, setViewMode] = useState('list');
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const incomingQuery = params.get('search') || '';
+    if (incomingQuery) {
+      setQuery(incomingQuery);
+      setViewMode('list');
+    }
+  }, [location.search]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -521,8 +533,9 @@ export default function Diary() {
             pagedDiaries.map((e) => (
               <div
                 className="card"
-                style={{ borderLeft: '3px solid var(--brass)' }}
+                style={{ borderLeft: '3px solid var(--brass)', cursor: 'pointer' }}
                 key={e.id}
+                onClick={() => setViewingEntry(e)}
               >
                 <div
                   style={{
@@ -604,14 +617,20 @@ export default function Diary() {
                       <button
                         type="button"
                         className="btn g sm"
-                        onClick={() => openEditModal(e)}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          openEditModal(e);
+                        }}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         className="btn sm"
-                        onClick={() => handleDelete(e)}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          handleDelete(e);
+                        }}
                         style={{
                           background: 'transparent',
                           border: '1px solid var(--tape)',
@@ -837,6 +856,104 @@ export default function Diary() {
           </div>
         </form>
       </Modal>
+
+      {viewingEntry && (
+        <Modal
+          isOpen={!!viewingEntry}
+          onClose={() => setViewingEntry(null)}
+          title="Case Diary Details"
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Case Number</label>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', marginTop: '3px' }}>{getCaseNo(viewingEntry)}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Representing Advocate</label>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', marginTop: '3px' }}>{getAdvocateName(viewingEntry)}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Date</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{formatDisplayDate(viewingEntry.hearingDate)}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Time</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{toDisplayTime(viewingEntry.hearingTime)}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Court</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{getCourtName(viewingEntry)}</div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+              <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Note / Summary</label>
+              <div style={{ fontSize: '13.5px', lineHeight: 1.6, marginTop: '5px', whiteSpace: 'pre-wrap', color: 'var(--ink)' }}>
+                {viewingEntry.note}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Hearing Date</label>
+                <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 'bold' }}>{formatDisplayDate(viewingEntry.nextHearingDate)}</div>
+              </div>
+            </div>
+
+            {viewingEntry.attachments && viewingEntry.attachments.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'block' }}>Attachments</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {viewingEntry.attachments.map((att) => (
+                    <button
+                      key={att.id}
+                      type="button"
+                      className="btn g sm"
+                      style={{ fontSize: '10.5px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      onClick={async () => {
+                        try {
+                          await downloadDocument(att.id, att.name);
+                        } catch (err) {
+                          alert(err.message || 'Download failed');
+                        }
+                      }}
+                    >
+                      📎 {att.name} ({att.fileSize})
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="modal-foot" style={{ margin: '16px -16px -16px', borderRadius: '0 0 8px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button
+                type="button"
+                className="btn g"
+                onClick={() => setViewingEntry(null)}
+              >
+                Close
+              </button>
+              {canEdit && (
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    const entryToEdit = viewingEntry;
+                    setViewingEntry(null);
+                    openEditModal(entryToEdit);
+                  }}
+                >
+                  Edit Entry
+                </button>
+              )}
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
