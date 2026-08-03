@@ -1,12 +1,12 @@
 export const NAV = [
  { g: 'Today', items: [{ k: 'dash', l: 'Dashboard' }] },
- { g: 'Matters', items: [{ k: 'cases', l: 'Civil Cases' }, { k: 'approve', l: 'Case Approval' }, { k: 'diary', l: 'Case Diary' }, { k: 'tasks', l: 'Tasks' }, { k: 'docs', l: 'Documents' }, { k: 'refs', l: 'References' }] },
+ { g: 'Matters', items: [{ k: 'cases', l: 'Civil Cases' }, { k: 'approve', l: 'Case Approval' }, { k: 'hearings', l: 'Case Diary' }, { k: 'tasks', l: 'Tasks' }, { k: 'docs', l: 'Documents' }, { k: 'refs', l: 'References' }] },
  { g: 'Land & Title', items: [
    { k: 'land', l: 'Land Details' }, 
    { k: 'opinions', l: 'Legal Opinions' }
  ] },
  { g: 'People', items: [{ k: 'advs', l: 'Advocates' }, { k: 'clients', l: 'Clients' }, { k: 'member', l: 'Membership' }] },
- { g: 'Office', items: [{ k: 'daybook', l: 'Day Book' }, { k: 'pay', l: 'Payments' }, { k: 'alerts', l: 'Alerts' }, { k: 'reports', l: 'Reports' }] },
+ { g: 'Office', items: [{ k: 'daybook', l: 'Day Book' }, { k: 'pay', l: 'Payments' }, { k: 'alerts', l: 'Notification Center' }, { k: 'reports', l: 'Reports' }] },
  { g: 'Library', items: [{ k: 'acts', l: 'Bare Acts' }, { k: 'amend', l: 'Amendment Tracker' }] },
  { g: 'Tools', items: [{ k: 'tools', l: 'Calculators' }] },
  { g: 'Admin', items: [{ k: 'roles', l: 'Roles & Access' }, { k: 'masters', l: 'Master Settings' }] }

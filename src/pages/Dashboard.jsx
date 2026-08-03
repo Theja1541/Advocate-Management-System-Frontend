@@ -5,10 +5,12 @@ import KPICard from '../components/ui/KPICard';
 import Chip from '../components/ui/Chip';
 import { inr } from '../utils/formatters';
 import { getDashboard } from '../services/dashboardService';
+import { getAlerts } from '../services/alertService';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
+  const [activeAlerts, setActiveAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -16,11 +18,16 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const data = await getDashboard();
+      const [data, alerts] = await Promise.all([
+        getDashboard(),
+        getAlerts({ status: 'active' })
+      ]);
       setDashboard(data);
+      setActiveAlerts(alerts);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard');
       setDashboard(null);
+      setActiveAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -30,9 +37,23 @@ export default function Dashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
+  useEffect(() => {
+    const fetchAlertsOnly = async () => {
+      try {
+        const alerts = await getAlerts({ status: 'active' });
+        setActiveAlerts(alerts);
+      } catch (err) {
+        console.error('Background alert fetch failed', err);
+      }
+    };
+    
+    const interval = setInterval(fetchAlertsOnly, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const headerActions = (
     <>
-      <button className="btn g" onClick={() => navigate('/diary')}>Open case diary</button>
+      <button className="btn g" onClick={() => navigate('/hearings')}>Open hearings</button>
       <button className="btn" onClick={() => navigate('/cases')}>New case</button>
     </>
   );
@@ -43,6 +64,11 @@ export default function Dashboard() {
   const recentActivity = dashboard?.recentActivity || [];
   const notifications = dashboard?.notifications || [];
   const displayDate = dashboard?.displayDate || '—';
+
+  const highPriority = activeAlerts.filter(a => a.priority === 'high').length;
+  const dueToday = activeAlerts.filter(a => a.alertType.includes('TODAY') || a.alertType === 'PAYMENT_DUE').length;
+  const overdue = activeAlerts.filter(a => a.alertType.includes('OVERDUE') || a.alertType.includes('MISSED')).length;
+  const totalActive = activeAlerts.length;
 
   return (
     <>
@@ -96,6 +122,22 @@ export default function Dashboard() {
               status="land records"
               type="t"
             />
+          </div>
+
+          <h3 style={{ marginTop: '24px', marginBottom: '12px' }}>Notifications Center</h3>
+          <div className="kpis">
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', priorityFilter: 'high' } })}>
+              <KPICard label="High Priority" value={highPriority} status="requires immediate action" type="t" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'TODAY' } })}>
+              <KPICard label="Due Today" value={dueToday} status="deadlines and hearings" type="b" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'OVERDUE' } })}>
+              <KPICard label="Overdue" value={overdue} status="missed dates and payments" type="r" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active' } })}>
+              <KPICard label="Total Active" value={totalActive} status="all open notifications" />
+            </div>
           </div>
 
           <div className="cause">

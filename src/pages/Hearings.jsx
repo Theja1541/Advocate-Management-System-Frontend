@@ -73,7 +73,7 @@ const toDisplayTime = (value) => {
   return `${hours}:${minutes} ${period}`;
 };
 
-export default function Diary() {
+export default function Hearings() {
   const location = useLocation();
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('diary', 'E');
@@ -87,6 +87,7 @@ export default function Diary() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [courtFilter, setCourtFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -117,14 +118,14 @@ export default function Diary() {
       ]);
       const mappedDiaries = diaryList.map((d) => ({
         ...d,
-        courtId: d.courtIndex !== undefined && d.courtIndex !== null ? String(d.courtIndex) : '',
+        courtId: d.courtId !== undefined && d.courtId !== null ? String(d.courtId) : '',
       }));
       setDiaries(mappedDiaries);
       setCases(caseList);
       setAdvocates(advocateList);
       setCourts(courtList);
     } catch (err) {
-      setError(err.message || 'Failed to load case diary');
+      setError(err.message || 'Failed to load hearings');
     } finally {
       setLoading(false);
     }
@@ -266,7 +267,7 @@ export default function Diary() {
         const updated = await updateDiary(editingEntry.id, payload);
         const mappedUpdated = {
           ...updated,
-          courtId: updated.courtIndex !== undefined && updated.courtIndex !== null ? String(updated.courtIndex) : '',
+          courtId: updated.courtId !== undefined && updated.courtId !== null ? String(updated.courtId) : '',
         };
         setDiaries((prev) =>
           prev.map((item) => (item.id === mappedUpdated.id ? mappedUpdated : item))
@@ -275,13 +276,13 @@ export default function Diary() {
         const created = await createDiary(payload);
         const mappedCreated = {
           ...created,
-          courtId: created.courtIndex !== undefined && created.courtIndex !== null ? String(created.courtIndex) : '',
+          courtId: created.courtId !== undefined && created.courtId !== null ? String(created.courtId) : '',
         };
         setDiaries((prev) => [mappedCreated, ...prev]);
       }
       closeModal();
     } catch (err) {
-      setError(err.message || 'Failed to save diary entry');
+      setError(err.message || 'Failed to save hearing');
     } finally {
       setSaving(false);
     }
@@ -289,7 +290,7 @@ export default function Diary() {
 
   const handleDelete = async (entry) => {
     const confirmed = window.confirm(
-      `Delete diary entry for ${getCaseNo(entry)} on ${formatDisplayDate(entry.hearingDate)}?`
+      `Delete hearing for ${getCaseNo(entry)} on ${formatDisplayDate(entry.hearingDate)}?`
     );
     if (!confirmed) return;
 
@@ -298,7 +299,7 @@ export default function Diary() {
       await deleteDiary(entry.id);
       setDiaries((prev) => prev.filter((item) => item.id !== entry.id));
     } catch (err) {
-      setError(err.message || 'Failed to delete diary entry');
+      setError(err.message || 'Failed to delete hearing');
     }
   };
 
@@ -383,14 +384,14 @@ export default function Diary() {
     <>
       <PageHeader
         title="Case Diary"
-        description="What happened in court, in the advocate’s own words, with the next date carried forward."
+        description="Track hearing status, outcomes, next dates, and adjournments."
         actions={headerActions}
       />
 
       <div className="card" style={{ marginBottom: '14px' }}>
         <div className="fgrid">
           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
-            <label>Search diary</label>
+            <label>Search hearings</label>
             <input
               type="text"
               placeholder="Case no., note, advocate, court…"
@@ -401,6 +402,14 @@ export default function Diary() {
         </div>
       </div>
 
+      <div className="filt" style={{ marginBottom: '8px' }}>
+        <button type="button" className={statusFilter === 'all' ? 'on' : ''} onClick={() => setStatusFilter('all')}>All Statuses</button>
+        <button type="button" className={statusFilter === 'Scheduled' ? 'on' : ''} onClick={() => setStatusFilter('Scheduled')}>Scheduled</button>
+        <button type="button" className={statusFilter === 'In Progress' ? 'on' : ''} onClick={() => setStatusFilter('In Progress')}>In Progress</button>
+        <button type="button" className={statusFilter === 'Completed' ? 'on' : ''} onClick={() => setStatusFilter('Completed')}>Completed</button>
+        <button type="button" className={statusFilter === 'Adjourned' ? 'on' : ''} onClick={() => setStatusFilter('Adjourned')}>Adjourned</button>
+        <button type="button" className={statusFilter === 'Cancelled' ? 'on' : ''} onClick={() => setStatusFilter('Cancelled')}>Cancelled</button>
+      </div>
       <div className="filt">
         {courtFilters.map((btn) => (
           <button
@@ -521,13 +530,13 @@ export default function Diary() {
         <>
           {loading ? (
             <div className="card mut" style={{ textAlign: 'center', padding: '24px' }}>
-              Loading case diary…
+              Loading hearings…
             </div>
           ) : pagedDiaries.length === 0 ? (
             <div className="card mut" style={{ textAlign: 'center', padding: '24px' }}>
               {diaries.length === 0
-                ? 'No diary entries yet.'
-                : 'No diary entries match this search or filter.'}
+                ? 'No hearings yet.'
+                : 'No hearings match this search or filter.'}
             </div>
           ) : (
             pagedDiaries.map((e) => (
@@ -546,7 +555,13 @@ export default function Diary() {
                   }}
                 >
                   <div>
-                    <span className="cno-c">{getCaseNo(e)}</span>
+                    <span className="cno-c">{getCaseNo(e)}</span> 
+                      {e.status === 'Completed' && <span style={{ background: '#d1fae5', color: '#065f46', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>COMPLETED</span>}
+                      {e.status === 'Adjourned' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>ADJOURNED</span>}
+                      {e.status === 'Scheduled' && <span style={{ background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>SCHEDULED</span>}
+                      {e.status === 'In Progress' && <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>IN PROGRESS</span>}
+                      {e.status === 'Cancelled' && <span style={{ background: '#f3f4f6', color: '#374151', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>CANCELLED</span>}
+
                     <div className="card-s" style={{ margin: '4px 0 0' }}>
                       {formatDisplayDate(e.hearingDate).toUpperCase()} ·{' '}
                       {toDisplayTime(e.hearingTime)} ·{' '}
@@ -696,7 +711,7 @@ export default function Diary() {
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={editingEntry ? 'Edit Case Diary Entry' : 'Add Case Diary Entry'}
+        title={editingEntry ? 'Edit Hearing Entry' : 'Add Hearing Entry'}
       >
         <form
           onSubmit={handleSubmit}
@@ -773,7 +788,62 @@ export default function Diary() {
               ))}
             </select>
           </div>
-          <div className="f">
+          
+          <div className="fgrid" style={{ gap: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+            <div className="f">
+              <label>Status</label>
+              <select value={form.status} onChange={setField('status')} required>
+                <option value="Scheduled">Scheduled</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Adjourned">Adjourned</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div className="f">
+              <label>Hearing Type / Purpose</label>
+              <input type="text" placeholder="e.g., Evidence, Arguments" value={form.hearingType} onChange={setField('hearingType')} />
+            </div>
+            <div className="f">
+              <label>Judge Name</label>
+              <input type="text" placeholder="Judge Name" value={form.judge} onChange={setField('judge')} />
+            </div>
+            <div className="f">
+              <label>Conducted By (Advocate)</label>
+              <select value={form.conductedBy} onChange={setField('conductedBy')}>
+                <option value="">Select advocate (optional)</option>
+                {advocates.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="f">
+              <label>Actual Start Time</label>
+              <input type="time" value={form.actualStartTime} onChange={setField('actualStartTime')} />
+            </div>
+            <div className="f">
+              <label>Actual End Time</label>
+              <input type="time" value={form.actualEndTime} onChange={setField('actualEndTime')} />
+            </div>
+          </div>
+          
+          {form.status === 'Adjourned' && (
+            <div className="f" style={{ marginTop: '8px' }}>
+              <label style={{ color: 'var(--tape)' }}>Adjournment Reason *</label>
+              <textarea placeholder="Reason for adjournment..." rows="2" value={form.adjournmentReason} onChange={setField('adjournmentReason')} required={form.status === 'Adjourned'} style={{ border: '1px solid var(--tape)', background: '#fff0f0' }} />
+            </div>
+          )}
+          
+          <div className="f" style={{ marginTop: '8px' }}>
+            <label>Outcome / Order Summary</label>
+            <textarea placeholder="Outcome or order details..." rows="2" value={form.outcome} onChange={setField('outcome')} />
+          </div>
+          <div className="f" style={{ marginTop: '8px' }}>
+            <label>Next Action Required</label>
+            <input type="text" placeholder="e.g., File reply, Bring witness" value={form.nextAction} onChange={setField('nextAction')} />
+          </div>
+
+          <div className="f" style={{ marginTop: '8px' }}>
             <label>Hearing Note / Summary</label>
             <textarea
               placeholder="Record details..."
@@ -861,7 +931,7 @@ export default function Diary() {
         <Modal
           isOpen={!!viewingEntry}
           onClose={() => setViewingEntry(null)}
-          title="Case Diary Details"
+          title="Hearing Details"
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -889,6 +959,47 @@ export default function Diary() {
                 <div style={{ fontSize: '13px', marginTop: '3px' }}>{getCourtName(viewingEntry)}</div>
               </div>
             </div>
+
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</label>
+                <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 'bold' }}>{viewingEntry.status}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Type</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.hearingType || '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Judge</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.judge || '—'}</div>
+              </div>
+            </div>
+            
+            {viewingEntry.status === 'Adjourned' && (
+              <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px', color: 'var(--tape)' }}>
+                <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Adjournment Reason</label>
+                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.adjournmentReason}</div>
+              </div>
+            )}
+            
+            {(viewingEntry.outcome || viewingEntry.nextAction) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+                {viewingEntry.outcome && (
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Outcome</label>
+                    <div style={{ fontSize: '13px', marginTop: '3px', whiteSpace: 'pre-wrap' }}>{viewingEntry.outcome}</div>
+                  </div>
+                )}
+                {viewingEntry.nextAction && (
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Action</label>
+                    <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.nextAction}</div>
+                  </div>
+                )}
+              </div>
+            )}
+
 
             <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
               <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Note / Summary</label>

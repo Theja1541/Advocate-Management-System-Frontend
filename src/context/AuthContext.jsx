@@ -15,6 +15,7 @@ const KEY_ALIASES = {
   casestages: 'roles',
   courts: 'roles',
   masters: 'roles',
+  hearings: 'diary',
 };
 
 const getAccessLevel = (mod) =>

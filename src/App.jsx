@@ -13,7 +13,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Cases from './pages/Cases';
 import CaseApproval from './pages/CaseApproval';
-import Diary from './pages/Diary';
+import Hearings from './pages/Hearings';
 import Tasks from './pages/Tasks';
 import Docs from './pages/Docs';
 import Refs from './pages/Refs';
@@ -70,7 +70,7 @@ const AppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/cases" element={<ProtectedRoute element={<Cases />} moduleKey="cases" />} />
             <Route path="/approve" element={<ProtectedRoute element={<CaseApproval />} moduleKey="approve" />} />
-            <Route path="/diary" element={<ProtectedRoute element={<Diary />} moduleKey="diary" />} />
+            <Route path="/hearings" element={<ProtectedRoute element={<Hearings />} moduleKey="diary" />} />
             <Route path="/tasks" element={<ProtectedRoute element={<Tasks />} moduleKey="cases" />} />
             <Route path="/docs" element={<ProtectedRoute element={<Docs />} moduleKey="docs" />} />
             <Route path="/refs" element={<ProtectedRoute element={<Refs />} moduleKey="refs" />} />
