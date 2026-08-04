@@ -34,16 +34,17 @@ export default function Roles() {
     try {
       const [roleList, moduleList] = await Promise.all([getRoles(), getModules()]);
       const detailed = await Promise.all(roleList.map((r) => getRoleById(r.id)));
+      const filteredRoles = user?.role === 'Super Admin' ? detailed : detailed.filter((r) => r.name !== 'Super Admin');
 
       const nextMatrix = {};
-      detailed.forEach((role) => {
+      filteredRoles.forEach((role) => {
         nextMatrix[role.id] = {};
         (role.modules || []).forEach((mod) => {
           nextMatrix[role.id][mod.id] = getAccessLevel(mod);
         });
       });
 
-      setRoles(detailed);
+      setRoles(filteredRoles);
       setModules(moduleList);
       setMatrix(nextMatrix);
     } catch (err) {
@@ -101,7 +102,7 @@ export default function Roles() {
       />
 
       {error && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)', fontSize: '12.5px' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
           {error}
         </div>
       )}
@@ -128,7 +129,7 @@ export default function Roles() {
                 {modules.map((m) => (
                   <tr key={m.id}>
                     <td>
-                      <span className="nm" style={{ fontSize: '13px' }}>
+                      <span className="nm" style={{ fontSize: 'var(--text-sm)' }}>
                         {m.name}
                       </span>
                     </td>
@@ -144,13 +145,13 @@ export default function Roles() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: v === '—' ? 'var(--muted)' : 'var(--baize)',
+                              color: v === '—' ? 'var(--text-secondary)' : 'var(--success)',
                               fontWeight: 600,
                               fontFamily: "'IBM Plex Mono', monospace",
                               outline: 'none',
                               cursor: canEdit ? 'pointer' : 'default',
                               textAlign: 'center',
-                              fontSize: '11px',
+                              fontSize: 'var(--text-xs)',
                             }}
                           >
                             {ACCESS_LEVELS.map((level) => (
@@ -168,7 +169,7 @@ export default function Roles() {
             </table>
           </div>
 
-          <div className="grid3" style={{ marginTop: '16px' }}>
+          <div className="grid3" style={{ marginTop: 'var(--space-4)' }}>
             {roles.map((r) => {
               const granted = modules.filter((m) => {
                 const level = matrix[r.id]?.[m.id] ?? '—';
@@ -176,14 +177,14 @@ export default function Roles() {
               }).length;
               return (
                 <div className="card" style={{ margin: 0 }} key={r.id}>
-                  <div className="card-t" style={{ fontSize: '14px' }}>
+                  <div className="card-t" style={{ fontSize: 'var(--text-base)' }}>
                     {r.name}
                   </div>
-                  <div className="mut" style={{ fontSize: '11.5px', lineHeight: 1.6, marginTop: '6px' }}>
+                  <div className="mut" style={{ fontSize: 'var(--text-xs)', lineHeight: 1.6, marginTop: 'var(--space-2)' }}>
                     {r.description || 'Role permissions controlled from the matrix above.'}
                   </div>
-                  <div style={{ marginTop: '9px' }}>
-                    <Chip type="c-ink" label={`${granted} of ${modules.length} modules`} />
+                  <div style={{ marginTop: 'var(--space-3)' }}>
+                    <Chip type="primary" label={`${granted} of ${modules.length} modules`} />
                   </div>
                 </div>
               );

@@ -7,12 +7,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const PAGE_SIZE = 10;
 
 const SEV = {
-  high: { chip: 'c-tape', label: 'High', border: 'tape' },
-  medium: { chip: 'c-brass', label: 'Medium', border: 'brass' },
-  low: { chip: 'c-ink', label: 'Low', border: 'ink-3' },
-  tape: { chip: 'c-tape', label: 'Urgent', border: 'tape' },
-  brass: { chip: 'c-brass', label: 'Due', border: 'brass' },
-  ink: { chip: 'c-ink', label: 'Info', border: 'ink-3' },
+  high: { chip: 'danger', label: 'High', border: 'danger' },
+  medium: { chip: 'warning', label: 'Medium', border: 'warning' },
+  low: { chip: 'ghost', label: 'Low', border: 'border' },
+  tape: { chip: 'danger', label: 'Urgent', border: 'danger' },
+  brass: { chip: 'warning', label: 'Due', border: 'warning' },
+  ink: { chip: 'ghost', label: 'Info', border: 'border' },
 };
 
 export default function Alerts() {
@@ -107,8 +107,8 @@ export default function Alerts() {
         description="System-generated notifications for hearing dates, fee positions, and documents."
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="fgrid">
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="fgrid" style={{ gap: 'var(--space-3)' }}>
           <div className="f" style={{ flex: 1, minWidth: '200px' }}>
             <label>Search notifications</label>
             <input
@@ -116,11 +116,12 @@ export default function Alerts() {
               placeholder="Search by message…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
             />
           </div>
           <div className="f" style={{ minWidth: '120px' }}>
             <label>Status</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
               <option value="">All Statuses</option>
               <option value="active">Active</option>
               <option value="resolved">Resolved</option>
@@ -128,7 +129,7 @@ export default function Alerts() {
           </div>
           <div className="f" style={{ minWidth: '120px' }}>
             <label>Priority</label>
-            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
               <option value="">All Priorities</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
@@ -137,7 +138,7 @@ export default function Alerts() {
           </div>
           <div className="f" style={{ minWidth: '120px' }}>
             <label>Module</label>
-            <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
+            <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
               <option value="">All Modules</option>
               <option value="Case">Case</option>
               <option value="Hearing">Hearing</option>
@@ -150,7 +151,7 @@ export default function Alerts() {
       </div>
 
       {error && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)', fontSize: '12.5px' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
           {error}
         </div>
       )}
@@ -171,44 +172,44 @@ export default function Alerts() {
                 borderLeft: `3px solid var(--${sev.border})`,
                 display: 'flex',
                 justifyContent: 'space-between',
-                gap: '12px',
+                gap: 'var(--space-3)',
                 flexWrap: 'wrap',
                 alignItems: 'center',
-                padding: '13px 15px',
+                padding: 'var(--space-3)',
                 opacity: isResolved ? 0.65 : 1,
               }}
             >
               <div>
-                <div style={{ fontSize: '13px', fontWeight: a.isRead ? 400 : 600 }}>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: a.isRead ? 400 : 600 }}>
                   {a.alertType ? a.alertType.replace(/_/g, ' ') : a.type}
                   {isResolved ? (
-                    <span className="mut" style={{ fontWeight: 400, marginLeft: '8px', fontSize: '11px' }}>
+                    <span className="mut" style={{ fontWeight: 400, marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)' }}>
                       · resolved
                     </span>
                   ) : null}
                   {!a.isRead && !isResolved ? (
-                    <span style={{ color: 'var(--brand)', marginLeft: '8px', fontSize: '18px', lineHeight: '10px' }}>
+                    <span style={{ color: 'var(--primary)', marginLeft: 'var(--space-2)', fontSize: 'var(--text-base)', lineHeight: '10px' }}>
                       •
                     </span>
                   ) : null}
                 </div>
-                <div className="mut" style={{ fontSize: '12px', marginTop: '2px', fontWeight: a.isRead ? 400 : 500 }}>
+                <div className="mut" style={{ fontSize: 'var(--text-xs)', marginTop: '2px', fontWeight: a.isRead ? 400 : 500 }}>
                   {a.message || a.description}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <span className="mono mut" style={{ fontSize: '10.5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                <span className="mono mut" style={{ fontSize: 'var(--text-xs)' }}>
                   {a.referenceType} #{a.referenceId}
                 </span>
                 <Chip type={sev.chip} label={sev.label} />
                 
-                <button type="button" className="btn g sm" onClick={() => handleToggleRead(a)}>
+                <button type="button" className="btn secondary sm" onClick={() => handleToggleRead(a)}>
                   {a.isRead ? 'Mark as Unread' : 'Mark as Read'}
                 </button>
-                <button type="button" className="btn g sm" onClick={() => handleResolve(a)}>
+                <button type="button" className="btn secondary sm" onClick={() => handleResolve(a)}>
                   {isResolved ? 'Re-open' : 'Mark as Resolved'}
                 </button>
-                <button type="button" className="btn g sm" onClick={() => handleOpenRecord(a)}>
+                <button type="button" className="btn secondary sm" onClick={() => handleOpenRecord(a)}>
                   View Record
                 </button>
               </div>
@@ -221,34 +222,7 @@ export default function Alerts() {
         </div>
       )}
 
-      {!loading && alerts.length > 0 && (
-        <div className="tbl-foot" style={{ marginTop: '16px', borderRadius: '8px', border: '1px solid var(--rule)' }}>
-          <div>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, alerts.length)} of {alerts.length}
-          </div>
-          <div className="pager">
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </button>
-            <span style={{ margin: '0 10px', fontSize: '12px', color: 'var(--muted)' }}>
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      
     </>
   );
 }

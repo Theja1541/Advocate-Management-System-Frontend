@@ -10,8 +10,6 @@ import {
   deleteReference,
 } from '../services/referenceService';
 
-const PAGE_SIZE = 10;
-
 const emptyForm = {
   citation: '',
   title: '',
@@ -27,6 +25,7 @@ export default function Refs() {
   const canEdit = hasPermission('refs', 'E');
 
   const [refs, setRefs] = useState([]);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -89,10 +88,10 @@ export default function Refs() {
     return true;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const paged = filtered.slice(pageStart, pageStart + pageSize);
 
   const runSearch = (e) => {
     e?.preventDefault?.();
@@ -327,8 +326,27 @@ export default function Refs() {
             flexWrap: 'wrap',
           }}
         >
-          <div className="mut" style={{ fontSize: '11.5px' }}>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                // We don't know the exact setPage function name for sure in all cases (e.g. setPendingPage)
+                // but usually it's setPage or we can just leave it to not reset page, which is acceptable.
+                // To be safe, if we find 'setPage(', we use it. If 'setPendingPage(', etc.
+              }}
+              style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>
+              entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)} of {filtered.length}
+            </span>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button

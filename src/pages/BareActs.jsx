@@ -75,6 +75,17 @@ export default function BareActs() {
   const [formName, setFormName] = useState('');
   const [formAbbrev, setFormAbbrev] = useState('');
   const [formType, setFormType] = useState('Central');
+  const [formState, setFormState] = useState('');
+  
+  const INDIAN_STATES = [
+    "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", 
+    "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", 
+    "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", 
+    "Karnataka", "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", 
+    "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Puducherry", "Punjab", 
+    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", 
+    "Uttarakhand", "West Bengal"
+  ];
   const [formDate, setFormDate] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formSections, setFormSections] = useState(0);
@@ -158,6 +169,9 @@ export default function BareActs() {
       formData.append('name', formName);
       formData.append('abbreviation', formAbbrev);
       formData.append('type', formType);
+      if (formType === 'State' && formState) {
+        formData.append('state', formState);
+      }
       formData.append('effectiveDate', formDate);
       formData.append('description', formDesc);
       formData.append('sectionsCount', formSections);
@@ -191,6 +205,7 @@ export default function BareActs() {
         name: formName,
         abbreviation: formAbbrev,
         type: formType,
+        state: formType === 'State' ? formState : null,
         effectiveDate: formDate,
         description: formDesc,
         sectionsCount: formSections,
@@ -263,7 +278,8 @@ export default function BareActs() {
     setSelectedAct(act);
     setFormName(act.n);
     setFormAbbrev(act.ab);
-    setFormType(act.ty);
+    setFormType(act.ty === 'State' || act.ty.startsWith('State') ? 'State' : 'Central');
+    setFormState(act.state || '');
     setFormDate(act.rawEffectiveDate || '');
     setFormDesc(act.d);
     setFormSections(act.sec);
@@ -280,6 +296,7 @@ export default function BareActs() {
     setFormName('');
     setFormAbbrev('');
     setFormType('Central');
+    setFormState('');
     setFormDate('');
     setFormDesc('');
     setFormSections(0);
@@ -314,22 +331,22 @@ export default function BareActs() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="f" style={{ maxWidth: '150px' }}>
-            <label>Section search</label>
-            <input
-              type="text"
-              className="mono"
-              placeholder="s.63"
-              value={sectionQuery}
-              onChange={(e) => setSectionQuery(e.target.value)}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+          <div className="f" style={{ maxWidth: 'auto', display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <label>Section search</label>
+              <input
+                type="text"
+                className="mono"
+                placeholder="s.63"
+                value={sectionQuery}
+                onChange={(e) => setSectionQuery(e.target.value)}
+                style={{ width: '150px' }}
+              />
+            </div>
             {canEdit && (
               <button
                 type="button"
-                className="btn"
+                className="btn primary"
                 onClick={openCreate}
               >
                 Add Act
@@ -378,7 +395,7 @@ export default function BareActs() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', alignItems: 'flex-start' }}>
                   <div>
                     <h4>{a.ab} {isSoftDeleted && <span style={{ color: 'var(--tape)', fontSize: '10px' }}>(Deleted)</span>}</h4>
-                    <div className="ay">{a.y} · {a.ty}</div>
+                    <div className="ay">{a.y} · {a.ty === 'State' && a.state ? `State — ${a.state}` : a.ty}</div>
                   </div>
                   {!isSoftDeleted && (
                     <button
@@ -515,10 +532,20 @@ export default function BareActs() {
                 <label>Jurisdiction Type *</label>
                 <select value={formType} onChange={(e) => setFormType(e.target.value)}>
                   <option value="Central">Central</option>
-                  <option value="State — A.P.">State — A.P.</option>
-                  <option value="State — Other">State — Other</option>
+                  <option value="State">State</option>
                 </select>
               </div>
+              {formType === 'State' && (
+                <div className="f">
+                  <label>State / Union Territory *</label>
+                  <select value={formState} onChange={(e) => setFormState(e.target.value)} required>
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="f">
                 <label>Effective Date</label>
                 <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
@@ -568,10 +595,20 @@ export default function BareActs() {
                 <label>Jurisdiction Type *</label>
                 <select value={formType} onChange={(e) => setFormType(e.target.value)}>
                   <option value="Central">Central</option>
-                  <option value="State — A.P.">State — A.P.</option>
-                  <option value="State — Other">State — Other</option>
+                  <option value="State">State</option>
                 </select>
               </div>
+              {formType === 'State' && (
+                <div className="f">
+                  <label>State / Union Territory *</label>
+                  <select value={formState} onChange={(e) => setFormState(e.target.value)} required>
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="f">
                 <label>Effective Date</label>
                 <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />

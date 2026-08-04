@@ -131,7 +131,7 @@ export default function Reports() {
   // Filters State
   const [date, setDate] = useState('');
   const [month, setMonth] = useState('');
-  const [year, setYear] = useState(new Date().getFullYear().toString());
+  const [year, setYear] = useState('');
 
   const tables = useMemo(
     () => (activeReport ? extractReportTables(activeReport) : []),
@@ -187,13 +187,13 @@ export default function Reports() {
       />
 
       {error ? (
-        <div className="card" style={{ marginBottom: '12px', color: 'var(--tape)' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-2)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
           {error}
         </div>
       ) : null}
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="card-t" style={{ fontSize: '13.5px', marginBottom: '8px' }}>Report Filters</div>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
+        <div className="card-t" style={{ fontSize: 'var(--text-base)', marginBottom: 'var(--space-2)' }}>Report Filters</div>
         <div className="fgrid">
           <div className="f" style={{ flex: 1 }}>
             <label>Specific Date</label>
@@ -242,11 +242,11 @@ export default function Reports() {
           <div style={{ display: 'flex', alignItems: 'flex-end' }}>
             <button
               type="button"
-              className="btn g"
+              className="btn outline"
               onClick={() => {
                 setDate('');
                 setMonth('');
-                setYear(new Date().getFullYear().toString());
+                setYear('');
               }}
             >
               Reset Filters
@@ -259,15 +259,15 @@ export default function Reports() {
         {REPORTS.map((r) => (
           <div className="card" style={{ margin: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }} key={r.type}>
             <div>
-              <div className="card-t" style={{ fontSize: '14px' }}>{r.title}</div>
-              <div className="mut" style={{ fontSize: '11.5px', lineHeight: 1.5, margin: '5px 0 11px', minHeight: '34px' }}>
+              <div className="card-t" style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{r.title}</div>
+              <div className="mut" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 'var(--space-1) 0 var(--space-3)', minHeight: '34px' }}>
                 {r.description}
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
               <button
                 type="button"
-                className="btn sm"
+                className="btn primary sm"
                 disabled={busyType === r.type}
                 onClick={() => handleGenerate(r)}
                 style={{ flex: '1 1 auto' }}
@@ -276,19 +276,17 @@ export default function Reports() {
               </button>
               <button
                 type="button"
-                className="btn g sm"
+                className="btn secondary sm"
                 disabled={busyType === r.type}
                 onClick={() => handleExport(r, 'xlsx')}
-                style={{ fontSize: '11px', padding: '4px 6px' }}
               >
                 Excel
               </button>
               <button
                 type="button"
-                className="btn g sm"
+                className="btn secondary sm"
                 disabled={busyType === r.type}
                 onClick={() => handleExport(r, 'csv')}
-                style={{ fontSize: '11px', padding: '4px 6px' }}
               >
                 CSV
               </button>
@@ -304,7 +302,7 @@ export default function Reports() {
         className="report-modal"
       >
         {activeReport?.description ? (
-          <div className="mut" style={{ marginBottom: '12px', fontSize: '12px' }}>
+          <div className="mut" style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
             {activeReport.description}
             {activeReport.generatedAt
               ? ` · Generated ${new Date(activeReport.generatedAt).toLocaleString()}`
@@ -322,8 +320,8 @@ export default function Reports() {
             });
 
             return (
-              <div key={table.name} className={`report-table-wrapper report-table-${table.name.toLowerCase().replace(/\s+/g, '-')}`} style={{ marginBottom: '16px' }}>
-                <div className="card-t" style={{ fontSize: '13px', marginBottom: '8px' }}>
+              <div key={table.name} className={`report-table-wrapper report-table-${table.name.toLowerCase().replace(/\s+/g, '-')}`} style={{ marginBottom: 'var(--space-4)' }}>
+                <div className="card-t" style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
                   {table.name}
                 </div>
                 <DataTable
@@ -341,7 +339,7 @@ export default function Reports() {
                       {columns.map((col) => {
                         const isNum = typeof row[col] === 'number' || col.toLowerCase().includes('value') || col.toLowerCase().includes('count') || col.toLowerCase().includes('amount') || col.toLowerCase().includes('fee') || col === 'id' || col.toLowerCase().includes('id');
                         return (
-                          <td key={col} className={`mono ${isNum ? 'num' : ''}`} style={{ fontSize: '11px', textAlign: isNum ? 'right' : 'left' }}>
+                          <td key={col} className={`mono ${isNum ? 'num' : ''}`} style={{ fontSize: 'var(--text-sm)', textAlign: isNum ? 'right' : 'left' }}>
                             {formatCell(row[col])}
                           </td>
                         );
@@ -356,13 +354,13 @@ export default function Reports() {
           <div className="empty">No rows returned for this report.</div>
         )}
 
-        <div className="modal-foot" style={{ margin: '0 -16px -16px', borderRadius: '0 0 8px 8px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button type="button" className="btn g" onClick={closeModal}>
+        <div className="modal-foot" style={{ margin: 'var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4))', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+          <button type="button" className="btn secondary" onClick={closeModal}>
             Close
           </button>
           <button
             type="button"
-            className="btn g"
+            className="btn secondary"
             onClick={() => window.print()}
           >
             Print Report
@@ -371,7 +369,7 @@ export default function Reports() {
             <>
               <button
                 type="button"
-                className="btn"
+                className="btn primary"
                 disabled={!!busyType}
                 onClick={() =>
                   handleExport({
@@ -384,7 +382,7 @@ export default function Reports() {
               </button>
               <button
                 type="button"
-                className="btn"
+                className="btn outline"
                 disabled={!!busyType}
                 onClick={() =>
                   handleExport({

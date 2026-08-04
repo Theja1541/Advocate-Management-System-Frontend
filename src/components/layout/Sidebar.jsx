@@ -176,7 +176,7 @@ const getIcon = (key) => {
   }
 };
 
-export default function Sidebar({ isCollapsed, toggleSidebar }) {
+export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, closeMobileMenu }) {
   const {
     cases,
     alerts,
@@ -206,7 +206,9 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
   };
 
   const handleNavLinkClick = () => {
-    if (window.innerWidth <= 768 && !isCollapsed) {
+    if (window.innerWidth <= 768) {
+      if (closeMobileMenu) closeMobileMenu();
+    } else if (window.innerWidth <= 1024 && !isCollapsed) {
       toggleSidebar();
     }
   };
@@ -220,7 +222,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
   };
 
   return (
-    <nav id="nav" className={isCollapsed ? 'collapsed' : ''}>
+    <nav id="nav" className={`${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-brand" style={{
         display: 'flex',
         alignItems: 'center',
@@ -231,20 +233,13 @@ export default function Sidebar({ isCollapsed, toggleSidebar }) {
         marginBottom: '10px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-          <div className="seal" style={{
+          <img src="/logo.png" alt="Logo" className="seal" style={{
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            background: 'var(--brass)',
-            color: 'var(--ink)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: "'Spectral', serif",
-            fontWeight: 700,
-            fontSize: '13px',
+            objectFit: 'cover',
             flex: 'none'
-          }}>LD</div>
+          }} />
           {!isCollapsed && (
             <div style={{ overflow: 'hidden' }}>
               <h2 style={{

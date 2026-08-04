@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import DataTable from '../components/ui/DataTable';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   getClients,
@@ -198,7 +199,7 @@ export default function Clients() {
   ];
 
   const headerActions = canEdit ? (
-    <button className="btn" onClick={openAddModal}>
+    <button className="btn primary" onClick={openAddModal}>
       Add client
     </button>
   ) : null;
@@ -215,10 +216,10 @@ export default function Clients() {
         <div
           className="card"
           style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
+            marginBottom: 'var(--space-3)',
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            fontSize: 'var(--text-sm)',
           }}
         >
           {error}
@@ -228,13 +229,13 @@ export default function Clients() {
       <DataTable headers={headers}>
         {loading ? (
           <tr>
-            <td colSpan={headers.length} className="mut" style={{ textAlign: 'center', padding: '24px' }}>
+            <td colSpan={headers.length} className="mut" style={{ textAlign: 'center', padding: 'var(--space-6)' }}>
               Loading clients…
             </td>
           </tr>
         ) : clients.length === 0 ? (
           <tr>
-            <td colSpan={headers.length} className="mut" style={{ textAlign: 'center', padding: '24px' }}>
+            <td colSpan={headers.length} className="mut" style={{ textAlign: 'center', padding: 'var(--space-6)' }}>
               No clients yet. Add the first party to the register.
             </td>
           </tr>
@@ -252,16 +253,16 @@ export default function Clients() {
                 <span className="nm">{c.name}</span>
               </td>
               <td className="mut">{c.village || '—'}</td>
-              <td className="mono" style={{ fontSize: '11px' }}>
+              <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {displayMobile(c.mobile)}
               </td>
-              <td className="mut" style={{ fontSize: '11.5px' }}>
+              <td className="mut" style={{ fontSize: 'var(--text-xs)' }}>
                 {c.email || '—'}
               </td>
-              <td className="mono" style={{ fontSize: '11px' }}>
+              <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {displayAadhaar(c.aadhaarMasked)}
               </td>
-              <td className="mono" style={{ fontSize: '11px' }}>
+              <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {displayPan(c.panMasked)}
               </td>
               <td className="c mono">{c.docsCount ?? 0}</td>
@@ -270,21 +271,16 @@ export default function Clients() {
                 <td className="c" style={{ whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
-                    className="btn g sm"
+                    className="btn ghost sm"
                     onClick={() => openEditModal(c)}
-                    style={{ marginRight: '6px' }}
+                    style={{ marginRight: 'var(--space-2)' }}
                   >
                     Edit
                   </button>
                   <button
                     type="button"
-                    className="btn sm"
+                    className="btn danger sm"
                     onClick={() => handleDelete(c)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--tape)',
-                      color: 'var(--tape)',
-                    }}
                   >
                     Delete
                   </button>
@@ -302,57 +298,57 @@ export default function Clients() {
         title="Client Details"
       >
         {selectedViewClient && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px solid var(--rule-2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Client ID</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewClient.clientCode}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Client ID</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedViewClient.clientCode}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Name</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewClient.name}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Mobile Number</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{displayMobile(selectedViewClient.mobile)}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Email Address</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewClient.email || '—'}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Name</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedViewClient.name}</span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Village / Town</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewClient.village || '—'}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Mobile Number</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{displayMobile(selectedViewClient.mobile)}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Active Cases Count</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{getClientCaseCount(selectedViewClient.id)}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px dashed var(--rule)', paddingTop: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Aadhaar Number</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{displayAadhaar(selectedViewClient.aadhaarMasked)}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>PAN Card</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{displayPan(selectedViewClient.panMasked)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Email Address</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewClient.email || '—'}</span>
               </div>
             </div>
 
-            <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn g" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Village / Town</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewClient.village || '—'}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Active Cases Count</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{getClientCaseCount(selectedViewClient.id)}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderTop: '1px dashed var(--border)', paddingTop: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Aadhaar Number</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{displayAadhaar(selectedViewClient.aadhaarMasked)}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>PAN Card</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{displayPan(selectedViewClient.panMasked)}</span>
+              </div>
+            </div>
+
+            <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn ghost" onClick={() => setIsViewModalOpen(false)}>Close</button>
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     openEditModal(selectedViewClient);
@@ -373,91 +369,100 @@ export default function Clients() {
       >
         <form
           onSubmit={handleSubmit}
-          className="fgrid"
-          style={{ flexDirection: 'column', alignItems: 'stretch' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
         >
           {error && isModalOpen && (
             <div
               style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
+                padding: 'var(--space-2) var(--space-3)',
+                marginBottom: 'var(--space-2)',
                 backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--text-sm)',
               }}
             >
               {error}
             </div>
           )}
-          <div className="f">
-            <label>Client Name</label>
-            <input
-              type="text"
-              placeholder="e.g. K. Subbarayudu"
-              value={form.name}
-              onChange={setField('name')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Mobile</label>
-            <input
-              type="text"
-              inputMode="tel"
-              placeholder="+91 98765 43210"
-              value={form.mobile}
-              onChange={setFormattedField('mobile', formatMobile)}
-              maxLength={17}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="e.g. name@mail.in"
-              value={form.email}
-              onChange={setField('email')}
-            />
-          </div>
-          <div className="f">
-            <label>Village / Town</label>
-            <input
-              type="text"
-              placeholder="e.g. Kalikiri"
-              value={form.village}
-              onChange={setField('village')}
-            />
-          </div>
-          <div className="f">
-            <label>Aadhaar</label>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="1234 5678 9012"
-              value={form.aadhaarMasked}
-              onChange={setFormattedField('aadhaarMasked', formatAadhaar)}
-              maxLength={14}
-            />
-          </div>
-          <div className="f">
-            <label>PAN</label>
-            <input
-              type="text"
-              placeholder="ABCDE1234F"
-              value={form.panMasked}
-              onChange={setFormattedField('panMasked', formatPan)}
-              maxLength={10}
-              style={{ textTransform: 'uppercase' }}
-            />
-          </div>
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+
+          <FormSection title="Personal Information">
+            <FormGrid columns={2}>
+              <FormField label="Client Name" required={true}>
+                <input
+                  type="text"
+                  placeholder="e.g. K. Subbarayudu"
+                  value={form.name}
+                  onChange={setField('name')}
+                  required
+                />
+              </FormField>
+              <FormField label="Mobile" required={true}>
+                <input
+                  type="text"
+                  inputMode="tel"
+                  placeholder="+91 98765 43210"
+                  value={form.mobile}
+                  onChange={setFormattedField('mobile', formatMobile)}
+                  maxLength={17}
+                  required
+                />
+              </FormField>
+              <FormField label="Email">
+                <input
+                  type="email"
+                  placeholder="e.g. name@mail.in"
+                  value={form.email}
+                  onChange={setField('email')}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection title="Address Details">
+            <FormGrid columns={1}>
+              <FormField label="Village / Town">
+                <input
+                  type="text"
+                  placeholder="e.g. Kalikiri"
+                  value={form.village}
+                  onChange={setField('village')}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection title="Identity Documents">
+            <FormGrid columns={2}>
+              <FormField label="Aadhaar">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="1234 5678 9012"
+                  value={form.aadhaarMasked}
+                  onChange={setFormattedField('aadhaarMasked', formatAadhaar)}
+                  maxLength={14}
+                />
+              </FormField>
+              <FormField label="PAN">
+                <input
+                  type="text"
+                  placeholder="ABCDE1234F"
+                  value={form.panMasked}
+                  onChange={setFormattedField('panMasked', formatPan)}
+                  maxLength={10}
+                  style={{ textTransform: 'uppercase' }}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn ghost" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving
                 ? 'Saving…'
                 : editingClient

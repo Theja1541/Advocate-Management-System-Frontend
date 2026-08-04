@@ -53,8 +53,8 @@ export default function Dashboard() {
 
   const headerActions = (
     <>
-      <button className="btn g" onClick={() => navigate('/hearings')}>Open hearings</button>
-      <button className="btn" onClick={() => navigate('/cases')}>New case</button>
+      <button className="btn secondary" onClick={() => navigate('/hearings')}>Open hearings</button>
+      <button className="btn primary" onClick={() => navigate('/cases')}>New case</button>
     </>
   );
 
@@ -79,9 +79,9 @@ export default function Dashboard() {
       />
 
       {error ? (
-        <div className="card" style={{ marginBottom: '12px', color: 'var(--tape)' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-2)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
           {error}
-          <button type="button" className="btn g sm" style={{ marginLeft: '10px' }} onClick={loadDashboard}>
+          <button type="button" className="btn outline sm" style={{ marginLeft: 'var(--space-2)' }} onClick={loadDashboard}>
             Retry
           </button>
         </div>
@@ -95,45 +95,45 @@ export default function Dashboard() {
         <>
           <div className="kpis">
             <KPICard label="Total cases" value={kpis.totalCases || 0} status="on the register" />
-            <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="b" />
+            <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="success" />
             <KPICard label="Closed" value={kpis.closedCases || 0} status="disposed" />
             <KPICard
               label="Today's hearings"
               value={kpis.todayHearings || causeList.length || 0}
               status={`${kpis.pendingHearings ?? causeMeta.pendingCount ?? 0} still to be called`}
-              type="t"
+              type="danger"
             />
             <KPICard
               label="Pending payments"
               value={inr(kpis.duePaymentAmount || 0)}
               status={`across ${kpis.pendingPaymentsCount || 0} matters`}
-              type="r"
-              valueStyle={{ fontSize: '21px' }}
+              type="warning"
+              valueStyle={{ fontSize: 'var(--text-xl)' }}
             />
             <KPICard
               label="Pending tasks"
               value={kpis.pendingTasks || 0}
               status="approvals & filings"
-              type="r"
+              type="warning"
             />
             <KPICard
               label="Disputed title"
               value={kpis.disputedTitle || 0}
               status="land records"
-              type="t"
+              type="danger"
             />
           </div>
 
-          <h3 style={{ marginTop: '24px', marginBottom: '12px' }}>Notifications Center</h3>
+          <h3 style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-heading)' }}>Notifications Center</h3>
           <div className="kpis">
             <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', priorityFilter: 'high' } })}>
-              <KPICard label="High Priority" value={highPriority} status="requires immediate action" type="t" />
+              <KPICard label="High Priority" value={highPriority} status="requires immediate action" type="danger" />
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'TODAY' } })}>
-              <KPICard label="Due Today" value={dueToday} status="deadlines and hearings" type="b" />
+              <KPICard label="Due Today" value={dueToday} status="deadlines and hearings" type="success" />
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'OVERDUE' } })}>
-              <KPICard label="Overdue" value={overdue} status="missed dates and payments" type="r" />
+              <KPICard label="Overdue" value={overdue} status="missed dates and payments" type="warning" />
             </div>
             <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active' } })}>
               <KPICard label="Total Active" value={totalActive} status="all open notifications" />
@@ -170,7 +170,7 @@ export default function Dashboard() {
                 </div>
               ))
             ) : (
-              <div className="empty" style={{ padding: '16px' }}>No hearings listed for this date.</div>
+              <div className="empty" style={{ padding: 'var(--space-3)' }}>No hearings listed for this date.</div>
             )}
           </div>
 
@@ -197,28 +197,32 @@ export default function Dashboard() {
               <div className="card-t">Notifications</div>
               <div className="card-s">REQUIRING ATTENTION</div>
               {notifications.length ? (
-                notifications.map((a) => (
-                  <div key={a.id} className="act-item">
-                    <span
-                      className="dot"
-                      style={{
-                        backgroundColor: `var(--${a.severity === 'ink' ? 'ink-3' : a.severity})`,
-                      }}
-                    ></span>
-                    <div>
-                      <div className="x">
-                        <b>{a.type}</b> — {a.description}
+                notifications.map((a) => {
+                  const sevMap = { tape: 'danger', baize: 'success', brass: 'warning', ink: 'text-secondary' };
+                  const sevColor = sevMap[a.severity] || 'text-secondary';
+                  return (
+                    <div key={a.id} className="act-item">
+                      <span
+                        className="dot"
+                        style={{
+                          backgroundColor: `var(--${sevColor})`,
+                        }}
+                      ></span>
+                      <div>
+                        <div className="x">
+                          <b>{a.type}</b> — {a.description}
+                        </div>
+                        <div className="w">{a.dueInfo}</div>
                       </div>
-                      <div className="w">{a.dueInfo}</div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="empty">No open alerts.</div>
               )}
               <button
-                className="btn g sm"
-                style={{ marginTop: '10px' }}
+                className="btn ghost sm"
+                style={{ marginTop: 'var(--space-2)' }}
                 onClick={() => navigate('/alerts')}
               >
                 See all alerts

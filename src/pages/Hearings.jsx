@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import PageHeader from '../components/ui/PageHeader';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -13,6 +14,7 @@ import { getCases } from '../services/caseService';
 import { getAdvocates } from '../services/advocateService';
 import { getCourts } from '../services/caseMastersService';
 import { downloadDocument } from '../services/documentService';
+import Chip from '../components/ui/Chip';
 
 const PAGE_SIZE = 10;
 
@@ -345,24 +347,24 @@ export default function Hearings() {
   };
 
   const headerActions = (
-    <div style={{ display: 'flex', gap: '8px' }}>
+    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
       <button
         type="button"
-        className={`btn ${viewMode === 'list' ? '' : 'g'}`}
+        className={`btn ${viewMode === 'list' ? 'outline' : 'ghost'}`}
         onClick={() => setViewMode('list')}
       >
         List View
       </button>
       <button
         type="button"
-        className={`btn ${viewMode === 'calendar' ? '' : 'g'}`}
+        className={`btn ${viewMode === 'calendar' ? 'outline' : 'ghost'}`}
         onClick={() => setViewMode('calendar')}
       >
         Calendar View
       </button>
       {canEdit && (
         <button
-          className="btn"
+          className="btn primary"
           onClick={openAddModal}
           disabled={!cases.length || !advocates.length}
         >
@@ -388,7 +390,7 @@ export default function Hearings() {
         actions={headerActions}
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="fgrid">
           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
             <label>Search hearings</label>
@@ -402,20 +404,20 @@ export default function Hearings() {
         </div>
       </div>
 
-      <div className="filt" style={{ marginBottom: '8px' }}>
-        <button type="button" className={statusFilter === 'all' ? 'on' : ''} onClick={() => setStatusFilter('all')}>All Statuses</button>
-        <button type="button" className={statusFilter === 'Scheduled' ? 'on' : ''} onClick={() => setStatusFilter('Scheduled')}>Scheduled</button>
-        <button type="button" className={statusFilter === 'In Progress' ? 'on' : ''} onClick={() => setStatusFilter('In Progress')}>In Progress</button>
-        <button type="button" className={statusFilter === 'Completed' ? 'on' : ''} onClick={() => setStatusFilter('Completed')}>Completed</button>
-        <button type="button" className={statusFilter === 'Adjourned' ? 'on' : ''} onClick={() => setStatusFilter('Adjourned')}>Adjourned</button>
-        <button type="button" className={statusFilter === 'Cancelled' ? 'on' : ''} onClick={() => setStatusFilter('Cancelled')}>Cancelled</button>
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
+        <button type="button" className={`btn sm ${statusFilter === 'all' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('all')}>All Statuses</button>
+        <button type="button" className={`btn sm ${statusFilter === 'Scheduled' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Scheduled')}>Scheduled</button>
+        <button type="button" className={`btn sm ${statusFilter === 'In Progress' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('In Progress')}>In Progress</button>
+        <button type="button" className={`btn sm ${statusFilter === 'Completed' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Completed')}>Completed</button>
+        <button type="button" className={`btn sm ${statusFilter === 'Adjourned' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Adjourned')}>Adjourned</button>
+        <button type="button" className={`btn sm ${statusFilter === 'Cancelled' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Cancelled')}>Cancelled</button>
       </div>
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
         {courtFilters.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={courtFilter === btn.key ? 'on' : ''}
+            className={`btn sm ${courtFilter === btn.key ? 'primary' : 'outline'}`}
             onClick={() => setCourtFilter(btn.key)}
           >
             {btn.label}
@@ -424,15 +426,7 @@ export default function Hearings() {
       </div>
 
       {error && !isModalOpen && (
-        <div
-          className="card"
-          style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
-          }}
-        >
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
           {error}
         </div>
       )}
@@ -542,7 +536,7 @@ export default function Hearings() {
             pagedDiaries.map((e) => (
               <div
                 className="card"
-                style={{ borderLeft: '3px solid var(--brass)', cursor: 'pointer' }}
+                style={{ borderLeft: '3px solid var(--primary)', cursor: 'pointer', marginBottom: 'var(--space-3)' }}
                 key={e.id}
                 onClick={() => setViewingEntry(e)}
               >
@@ -550,26 +544,26 @@ export default function Hearings() {
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    gap: '12px',
+                    gap: 'var(--space-3)',
                     flexWrap: 'wrap',
                   }}
                 >
                   <div>
-                    <span className="cno-c">{getCaseNo(e)}</span> 
-                      {e.status === 'Completed' && <span style={{ background: '#d1fae5', color: '#065f46', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>COMPLETED</span>}
-                      {e.status === 'Adjourned' && <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>ADJOURNED</span>}
-                      {e.status === 'Scheduled' && <span style={{ background: '#e0e7ff', color: '#3730a3', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>SCHEDULED</span>}
-                      {e.status === 'In Progress' && <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>IN PROGRESS</span>}
-                      {e.status === 'Cancelled' && <span style={{ background: '#f3f4f6', color: '#374151', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>CANCELLED</span>}
+                    <span className="cno-c" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{getCaseNo(e)}</span> 
+                      {e.status === 'Completed' && <Chip type="success" label="COMPLETED" />}
+                      {e.status === 'Adjourned' && <Chip type="danger" label="ADJOURNED" />}
+                      {e.status === 'Scheduled' && <Chip type="primary" label="SCHEDULED" />}
+                      {e.status === 'In Progress' && <Chip type="warning" label="IN PROGRESS" />}
+                      {e.status === 'Cancelled' && <Chip type="ghost" label="CANCELLED" />}
 
-                    <div className="card-s" style={{ margin: '4px 0 0' }}>
+                    <div className="card-s" style={{ margin: 'var(--space-1) 0 0', fontSize: 'var(--text-xs)' }}>
                       {formatDisplayDate(e.hearingDate).toUpperCase()} ·{' '}
                       {toDisplayTime(e.hearingTime)} ·{' '}
                       {getCourtName(e).toUpperCase()}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="mut" style={{ fontSize: '11.5px' }}>
+                    <div className="mut" style={{ fontSize: 'var(--text-sm)' }}>
                       {getAdvocateName(e)}
                     </div>
                     {e.attachmentsCount ? (
@@ -585,18 +579,18 @@ export default function Hearings() {
                 </div>
                 <p
                   className="ser"
-                  style={{ fontSize: '14px', lineHeight: 1.6, margin: '11px 0' }}
+                  style={{ fontSize: 'var(--text-sm)', lineHeight: 1.6, margin: 'var(--space-2) 0', color: 'var(--text-primary)' }}
                 >
                   {e.note}
                 </p>
                 {e.attachments && e.attachments.length > 0 && (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '11px', marginTop: '-4px' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-2)' }}>
                     {e.attachments.map((att) => (
                       <button
                         key={att.id}
                         type="button"
-                        className="btn g sm"
-                        style={{ fontSize: '10px', padding: '3px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        className="btn outline sm"
+                        style={{ fontSize: 'var(--text-xs)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
                         onClick={async (ev) => {
                           ev.stopPropagation();
                           try {
@@ -613,25 +607,25 @@ export default function Hearings() {
                 )}
                 <div
                   style={{
-                    borderTop: '1px dashed var(--rule)',
-                    paddingTop: '9px',
-                    fontSize: '12px',
+                    borderTop: '1px dashed var(--border)',
+                    paddingTop: 'var(--space-2)',
+                    fontSize: 'var(--text-xs)',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    gap: '12px',
+                    gap: 'var(--space-3)',
                     flexWrap: 'wrap',
                     alignItems: 'center',
                   }}
                 >
                   <div>
-                    <span className="mut">Next date:</span>{' '}
-                    <b className="mono">{formatDisplayDate(e.nextHearingDate)}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Next date:</span>{' '}
+                    <b className="mono" style={{ color: 'var(--text-primary)' }}>{formatDisplayDate(e.nextHearingDate)}</b>
                   </div>
                   {canEdit && (
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-1)' }}>
                       <button
                         type="button"
-                        className="btn g sm"
+                        className="btn secondary sm"
                         onClick={(ev) => {
                           ev.stopPropagation();
                           openEditModal(e);
@@ -641,15 +635,10 @@ export default function Hearings() {
                       </button>
                       <button
                         type="button"
-                        className="btn sm"
+                        className="btn danger sm"
                         onClick={(ev) => {
                           ev.stopPropagation();
                           handleDelete(e);
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--tape)',
-                          color: 'var(--tape)',
                         }}
                       >
                         Delete
@@ -661,50 +650,7 @@ export default function Hearings() {
             ))
           )}
 
-          {!loading && filteredDiaries.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                marginTop: '12px',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div className="mut" style={{ fontSize: '11.5px' }}>
-                Showing {pageStart + 1}–
-                {Math.min(pageStart + PAGE_SIZE, filteredDiaries.length)} of{' '}
-                {filteredDiaries.length}
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  type="button"
-                  className="btn g sm"
-                  disabled={currentPage <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className="btn g sm"
-                  disabled
-                  style={{ cursor: 'default' }}
-                >
-                  {currentPage} / {totalPages}
-                </button>
-                <button
-                  type="button"
-                  className="btn g sm"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          )}
+          
         </>
       )}
 
@@ -715,212 +661,204 @@ export default function Hearings() {
       >
         <form
           onSubmit={handleSubmit}
-          className="fgrid"
-          style={{ flexDirection: 'column', alignItems: 'stretch' }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 'var(--space-3)' }}
         >
           {error && isModalOpen && (
             <div
               style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
+                padding: 'var(--space-3)',
+                marginBottom: 'var(--space-2)',
                 backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 'var(--text-sm)',
               }}
             >
               {error}
             </div>
           )}
-          <div className="f">
-            <label>Case Number</label>
-            <select value={form.caseId} onChange={setField('caseId')} required>
-              <option value="">Select case</option>
-              {cases.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.caseNo}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>Date</label>
-            <input
-              type="date"
-              value={form.hearingDate}
-              onChange={setField('hearingDate')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Time</label>
-            <input
-              type="time"
-              value={form.hearingTime}
-              onChange={setField('hearingTime')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Court</label>
-            <select value={form.courtId} onChange={setField('courtId')} required>
-              <option value="">Select court</option>
-              {courts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>Representing Advocate</label>
-            <select
-              value={form.advocateId}
-              onChange={setField('advocateId')}
-              required
-            >
-              <option value="">Select advocate</option>
-              {advocates.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="fgrid" style={{ gap: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
-            <div className="f">
-              <label>Status</label>
-              <select value={form.status} onChange={setField('status')} required>
-                <option value="Scheduled">Scheduled</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Adjourned">Adjourned</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </div>
-            <div className="f">
-              <label>Hearing Type / Purpose</label>
-              <input type="text" placeholder="e.g., Evidence, Arguments" value={form.hearingType} onChange={setField('hearingType')} />
-            </div>
-            <div className="f">
-              <label>Judge Name</label>
-              <input type="text" placeholder="Judge Name" value={form.judge} onChange={setField('judge')} />
-            </div>
-            <div className="f">
-              <label>Conducted By (Advocate)</label>
-              <select value={form.conductedBy} onChange={setField('conductedBy')}>
-                <option value="">Select advocate (optional)</option>
-                {advocates.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="f">
-              <label>Actual Start Time</label>
-              <input type="time" value={form.actualStartTime} onChange={setField('actualStartTime')} />
-            </div>
-            <div className="f">
-              <label>Actual End Time</label>
-              <input type="time" value={form.actualEndTime} onChange={setField('actualEndTime')} />
-            </div>
-          </div>
-          
-          {form.status === 'Adjourned' && (
-            <div className="f" style={{ marginTop: '8px' }}>
-              <label style={{ color: 'var(--tape)' }}>Adjournment Reason *</label>
-              <textarea placeholder="Reason for adjournment..." rows="2" value={form.adjournmentReason} onChange={setField('adjournmentReason')} required={form.status === 'Adjourned'} style={{ border: '1px solid var(--tape)', background: '#fff0f0' }} />
-            </div>
-          )}
-          
-          <div className="f" style={{ marginTop: '8px' }}>
-            <label>Outcome / Order Summary</label>
-            <textarea placeholder="Outcome or order details..." rows="2" value={form.outcome} onChange={setField('outcome')} />
-          </div>
-          <div className="f" style={{ marginTop: '8px' }}>
-            <label>Next Action Required</label>
-            <input type="text" placeholder="e.g., File reply, Bring witness" value={form.nextAction} onChange={setField('nextAction')} />
-          </div>
 
-          <div className="f" style={{ marginTop: '8px' }}>
-            <label>Hearing Note / Summary</label>
-            <textarea
-              placeholder="Record details..."
-              rows="4"
-              value={form.note}
-              onChange={setField('note')}
-              required
-              style={{
-                fontSize: '12.5px',
-                padding: '8px 10px',
-                border: '1px solid var(--rule)',
-                background: 'var(--card)',
-                color: 'var(--ink)',
-                borderRadius: '5px',
-                outline: 'none',
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
-          <div className="f">
-            <label>Next Hearing Date</label>
-            <input
-              type="date"
-              value={form.nextHearingDate}
-              onChange={setField('nextHearingDate')}
-            />
-          </div>
+          <FormSection title="Case Details">
+            <FormGrid columns={1}>
+              <FormField label="Case Number" required>
+                <select value={form.caseId} onChange={setField('caseId')} required>
+                  <option value="">Select case</option>
+                  {cases.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.caseNo}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="f" style={{ marginTop: '10px' }}>
-            <label>Attachments</label>
-            <input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              style={{ fontSize: '12px' }}
-            />
-            {formFiles.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
-                {formFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontSize: '11px',
-                      background: 'var(--panel)',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                    }}
-                  >
-                    <span>📎 {file.name} ({file.size})</span>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => removeFormFile(file.id)}
-                      style={{
-                        padding: '1px 4px',
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--tape)',
-                      }}
-                    >
-                      Remove
-                    </button>
+          <FormSection title="Hearing Schedule">
+            <FormGrid columns={2}>
+              <FormField label="Date" required>
+                <input
+                  type="date"
+                  value={form.hearingDate}
+                  onChange={setField('hearingDate')}
+                  required
+                />
+              </FormField>
+              <FormField label="Time" required>
+                <input
+                  type="time"
+                  value={form.hearingTime}
+                  onChange={setField('hearingTime')}
+                  required
+                />
+              </FormField>
+              <FormField label="Court" required>
+                <select value={form.courtId} onChange={setField('courtId')} required>
+                  <option value="">Select court</option>
+                  {courts.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Representing Advocate" required>
+                <select
+                  value={form.advocateId}
+                  onChange={setField('advocateId')}
+                  required
+                >
+                  <option value="">Select advocate</option>
+                  {advocates.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Status" required>
+                <select value={form.status} onChange={setField('status')} required>
+                  <option value="Scheduled">Scheduled</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Adjourned">Adjourned</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </FormField>
+              <FormField label="Hearing Type / Purpose">
+                <input type="text" placeholder="e.g., Evidence, Arguments" value={form.hearingType} onChange={setField('hearingType')} />
+              </FormField>
+              <FormField label="Judge Name">
+                <input type="text" placeholder="Judge Name" value={form.judge} onChange={setField('judge')} />
+              </FormField>
+              <FormField label="Conducted By (Advocate)">
+                <select value={form.conductedBy} onChange={setField('conductedBy')}>
+                  <option value="">Select advocate (optional)</option>
+                  {advocates.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Actual Start Time">
+                <input type="time" value={form.actualStartTime} onChange={setField('actualStartTime')} />
+              </FormField>
+              <FormField label="Actual End Time">
+                <input type="time" value={form.actualEndTime} onChange={setField('actualEndTime')} />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection title="Hearing Notes">
+            <FormGrid columns={1}>
+              {form.status === 'Adjourned' && (
+                <FormField label="Adjournment Reason" required>
+                  <textarea placeholder="Reason for adjournment..." rows="2" value={form.adjournmentReason} onChange={setField('adjournmentReason')} required={form.status === 'Adjourned'} style={{ border: '1px solid var(--tape)', background: '#fff0f0' }} />
+                </FormField>
+              )}
+              <FormField label="Outcome / Order Summary">
+                <textarea placeholder="Outcome or order details..." rows="2" value={form.outcome} onChange={setField('outcome')} />
+              </FormField>
+              <FormField label="Next Action Required">
+                <input type="text" placeholder="e.g., File reply, Bring witness" value={form.nextAction} onChange={setField('nextAction')} />
+              </FormField>
+              <FormField label="Hearing Note / Summary" required>
+                <textarea
+                  placeholder="Record details..."
+                  rows="4"
+                  value={form.note}
+                  onChange={setField('note')}
+                  required
+                  style={{
+                    fontSize: 'var(--text-sm)',
+                    padding: 'var(--space-2) var(--space-3)',
+                    border: '1px solid var(--border)',
+                    background: 'var(--card)',
+                    color: 'var(--text-primary)',
+                    borderRadius: 'var(--radius-md)',
+                    outline: 'none',
+                    width: '100%',
+                    fontFamily: 'inherit',
+                  }}
+                />
+              </FormField>
+            </FormGrid>
+            <FormGrid columns={2}>
+              <FormField label="Next Hearing Date">
+                <input
+                  type="date"
+                  value={form.nextHearingDate}
+                  onChange={setField('nextHearingDate')}
+                />
+              </FormField>
+              <FormField label="Attachments">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  style={{ fontSize: '12px' }}
+                />
+                {formFiles.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                    {formFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: '11px',
+                          background: 'var(--panel)',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        <span>📎 {file.name} ({file.size})</span>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => removeFormFile(file.id)}
+                          style={{
+                            padding: '1px 4px',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--tape)',
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                )}
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <div className="modal-foot" style={{ margin: 'var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4))', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn secondary" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
@@ -933,98 +871,96 @@ export default function Hearings() {
           onClose={() => setViewingEntry(null)}
           title="Hearing Details"
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Case Number</label>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', marginTop: '3px' }}>{getCaseNo(viewingEntry)}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Case Number</label>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'bold', marginTop: 'var(--space-1)' }}>{getCaseNo(viewingEntry)}</div>
               </div>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Representing Advocate</label>
-                <div style={{ fontSize: '14px', fontWeight: 'bold', marginTop: '3px' }}>{getAdvocateName(viewingEntry)}</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Date</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{formatDisplayDate(viewingEntry.hearingDate)}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Time</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{toDisplayTime(viewingEntry.hearingTime)}</div>
-              </div>
-              <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Court</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{getCourtName(viewingEntry)}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Representing Advocate</label>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'bold', marginTop: 'var(--space-1)' }}>{getAdvocateName(viewingEntry)}</div>
               </div>
             </div>
 
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</label>
-                <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 'bold' }}>{viewingEntry.status}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Date</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{formatDisplayDate(viewingEntry.hearingDate)}</div>
               </div>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Type</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.hearingType || '—'}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Time</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{toDisplayTime(viewingEntry.hearingTime)}</div>
               </div>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Judge</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.judge || '—'}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Court</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{getCourtName(viewingEntry)}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-3)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
+              <div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontWeight: 'bold' }}>{viewingEntry.status}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Type</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{viewingEntry.hearingType || '—'}</div>
+              </div>
+              <div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Judge</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{viewingEntry.judge || '—'}</div>
               </div>
             </div>
             
             {viewingEntry.status === 'Adjourned' && (
-              <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px', color: 'var(--tape)' }}>
-                <label style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Adjournment Reason</label>
-                <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.adjournmentReason}</div>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)', color: 'var(--danger)' }}>
+                <label style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 'bold' }}>Adjournment Reason</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{viewingEntry.adjournmentReason}</div>
               </div>
             )}
             
             {(viewingEntry.outcome || viewingEntry.nextAction) && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
                 {viewingEntry.outcome && (
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Outcome</label>
-                    <div style={{ fontSize: '13px', marginTop: '3px', whiteSpace: 'pre-wrap' }}>{viewingEntry.outcome}</div>
+                    <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Outcome</label>
+                    <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', whiteSpace: 'pre-wrap' }}>{viewingEntry.outcome}</div>
                   </div>
                 )}
                 {viewingEntry.nextAction && (
                   <div>
-                    <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Action</label>
-                    <div style={{ fontSize: '13px', marginTop: '3px' }}>{viewingEntry.nextAction}</div>
+                    <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Action</label>
+                    <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)' }}>{viewingEntry.nextAction}</div>
                   </div>
                 )}
               </div>
             )}
 
-
-            <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
-              <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Note / Summary</label>
-              <div style={{ fontSize: '13.5px', lineHeight: 1.6, marginTop: '5px', whiteSpace: 'pre-wrap', color: 'var(--ink)' }}>
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
+              <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hearing Note / Summary</label>
+              <div style={{ fontSize: 'var(--text-base)', lineHeight: 1.6, marginTop: 'var(--space-1)', whiteSpace: 'pre-wrap', color: 'var(--text-primary)' }}>
                 {viewingEntry.note}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
               <div>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Hearing Date</label>
-                <div style={{ fontSize: '13px', marginTop: '3px', fontWeight: 'bold' }}>{formatDisplayDate(viewingEntry.nextHearingDate)}</div>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Next Hearing Date</label>
+                <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-1)', fontWeight: 'bold' }}>{formatDisplayDate(viewingEntry.nextHearingDate)}</div>
               </div>
             </div>
 
             {viewingEntry.attachments && viewingEntry.attachments.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '12px' }}>
-                <label style={{ fontSize: '11px', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'block' }}>Attachments</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
+                <label style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-2)', display: 'block' }}>Attachments</label>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   {viewingEntry.attachments.map((att) => (
                     <button
                       key={att.id}
                       type="button"
-                      className="btn g sm"
-                      style={{ fontSize: '10.5px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      className="btn outline sm"
+                      style={{ fontSize: 'var(--text-xs)', padding: 'var(--space-1) var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
                       onClick={async () => {
                         try {
                           await downloadDocument(att.id, att.name);
@@ -1040,10 +976,10 @@ export default function Hearings() {
               </div>
             )}
 
-            <div className="modal-foot" style={{ margin: '16px -16px -16px', borderRadius: '0 0 8px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <div className="modal-foot" style={{ margin: 'var(--space-4) calc(-1 * var(--space-4)) calc(-1 * var(--space-4))', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)' }}>
               <button
                 type="button"
-                className="btn g"
+                className="btn secondary"
                 onClick={() => setViewingEntry(null)}
               >
                 Close
@@ -1051,7 +987,7 @@ export default function Hearings() {
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   onClick={() => {
                     const entryToEdit = viewingEntry;
                     setViewingEntry(null);

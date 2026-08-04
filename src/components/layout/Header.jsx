@@ -100,16 +100,11 @@ export default function Header({ toggleSidebar }) {
 
             {showDropdown && (
               <div
+                className="dropdown"
                 style={{
-                  position: 'absolute',
                   top: '40px',
                   right: 0,
                   width: '320px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--rule)',
-                  borderRadius: '8px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                  zIndex: 100,
                   display: 'flex',
                   flexDirection: 'column',
                   overflow: 'hidden'
@@ -174,22 +169,19 @@ export default function Header({ toggleSidebar }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div className="av">{avatar}</div>
               <div className="w">
-                <div style={{ fontSize: '10px', color: '#9AA3B5', letterSpacing: '0.04em' }}>Signed in</div>
-                <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#F1F2EE', lineHeight: 1.25 }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Signed in</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.25 }}>
                   {user?.n}
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#C3CADB' }}>{user?.role}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{user?.role}</div>
               </div>
             </div>
             <button
-              className="btn sm"
+              className="btn signout-btn"
               onClick={() => {
                 void logout();
               }}
-              style={{
-                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.16)',
-                color: '#C3CADB', padding: '4px 8px', borderRadius: '5px'
-              }}
+              style={{ padding: '6px 12px', fontSize: '12px' }}
             >
               Sign Out
             </button>

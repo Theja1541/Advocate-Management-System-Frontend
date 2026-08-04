@@ -20,12 +20,11 @@ export const CAUSE = [];
 export const LADDER = [
   ['Staff Verification', 'Staff / Bearer'],
   ['Advocate Verification', 'Assigned advocate'],
-  ['Admin Approval', 'Office admin'],
-  ['Super Admin Final Approval', 'Super admin']
+  ['Admin Approval', 'Office admin']
 ];
 export const INITIAL_DIARY = [];
 export const INITIAL_DAYBOOK = [];
-export const DB_CATS = ['Party Meeting', 'Court Visit', 'Office Visit', 'Field Visit', 'Client Payment', 'Advocate Payment', 'Office Expense', 'Misc'];
+export const DB_CATS = ['Party Meeting', 'Court Visit', 'Office Visit', 'Field Visit', 'Client Payment', 'Advocate Payment', 'Office Expense', 'Misc.'];
 
 export const PAYS = [];
 export const MEMB = [];

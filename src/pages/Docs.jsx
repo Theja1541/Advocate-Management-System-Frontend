@@ -3,6 +3,7 @@ import PageHeader from '../components/ui/PageHeader';
 import DataTable from '../components/ui/DataTable';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   getDocuments,
@@ -57,10 +58,10 @@ const highlightText = (text, keyword) => {
       <mark
         key={`hl-${idx}`}
         style={{
-          background: 'rgba(212, 175, 55, 0.24)',
+          background: 'var(--warning)',
           color: 'inherit',
-          padding: '0 1px',
-          borderRadius: '2px',
+          padding: '0 var(--space-1)',
+          borderRadius: 'var(--radius-sm)',
         }}
       >
         {part}
@@ -539,10 +540,10 @@ export default function Docs() {
           key={`mark-${match.index}-${matchIndex}`}
           id={`doc-view-match-${matchIndex}`}
           style={{
-            background: isActive ? 'rgba(235, 94, 85, 0.28)' : 'rgba(212, 175, 55, 0.24)',
+            background: isActive ? 'var(--danger)' : 'var(--warning)',
             color: 'inherit',
-            padding: '0 1px',
-            borderRadius: '2px',
+            padding: '0 var(--space-1)',
+            borderRadius: 'var(--radius-sm)',
           }}
         >
           {match[0]}
@@ -601,7 +602,7 @@ export default function Docs() {
   ];
 
   const headerActions = canEdit ? (
-    <button className="btn" onClick={openModal} disabled={!cases.length}>
+    <button className="btn primary" onClick={openModal} disabled={!cases.length}>
       Upload document
     </button>
   ) : null;
@@ -614,9 +615,9 @@ export default function Docs() {
         actions={headerActions}
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
         <div className="fgrid">
-          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+          <div className="f" style={{ flex: 2, minWidth: '220px' }}>
             <label>Search notes and documents</label>
             <input
               type="text"
@@ -625,75 +626,89 @@ export default function Docs() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
+          <div className="f" style={{ flex: 1, minWidth: '200px' }}>
+            <label>Category Filter</label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              {categories.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {showGlobalSearch && (
-        <div className="card" style={{ marginBottom: '14px' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '8px',
+              marginBottom: 'var(--space-2)',
               flexWrap: 'wrap',
-              gap: '8px',
+              gap: 'var(--space-2)',
             }}
           >
             <div className="card-s" style={{ margin: 0 }}>
               Matching Notes & Documents
             </div>
             {!searchState.loading && !searchState.error && (
-              <div className="mut mono" style={{ fontSize: '11px' }}>
+              <div className="mut mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {searchState.total} result{searchState.total === 1 ? '' : 's'}
               </div>
             )}
           </div>
 
           {searchState.loading ? (
-            <div className="mut" style={{ fontSize: '12.5px' }}>Searching…</div>
+            <div className="mut" style={{ fontSize: 'var(--text-sm)' }}>Searching…</div>
           ) : searchState.error ? (
-            <div style={{ color: 'var(--tape)', fontSize: '12.5px' }}>{searchState.error}</div>
+            <div style={{ color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>{searchState.error}</div>
           ) : searchState.results.length === 0 ? (
-            <div className="mut" style={{ fontSize: '12.5px' }}>No matching records found</div>
+            <div className="mut" style={{ fontSize: 'var(--text-sm)' }}>No matching records found</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {groupedSearch.documents.map((result) => (
                 <div
                   key={`doc-search-${result.documentId}`}
                   style={{
-                    border: '1px solid var(--rule)',
-                    borderRadius: '6px',
-                    padding: '10px',
-                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-3)',
+                    background: 'var(--card)',
                   }}
                 >
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      gap: '10px',
+                      gap: 'var(--space-3)',
                       alignItems: 'flex-start',
                       flexWrap: 'wrap',
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
                         {highlightText(result.name, query)}
                       </div>
-                      <div className="mono mut" style={{ fontSize: '10.5px', marginTop: '2px' }}>
+                      <div className="mono mut" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>
                         DOCUMENT
                       </div>
                     </div>
                     <button
                       type="button"
-                      className="btn g sm"
+                      className="btn ghost sm"
                       onClick={() => openDocumentViewer(result.documentId, result.name, result.type)}
                     >
                       View
                     </button>
                   </div>
-                  <div style={{ marginTop: '7px', fontSize: '12px', lineHeight: 1.5 }}>
+                  <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', lineHeight: 1.5 }}>
                     {highlightText(result.snippet, query)}
                   </div>
                 </div>
@@ -703,38 +718,38 @@ export default function Docs() {
                 <div
                   key={`note-search-${result.documentId}`}
                   style={{
-                    border: '1px solid var(--rule)',
-                    borderRadius: '6px',
-                    padding: '10px',
-                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-3)',
+                    background: 'var(--card)',
                   }}
                 >
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      gap: '10px',
+                      gap: 'var(--space-3)',
                       alignItems: 'flex-start',
                       flexWrap: 'wrap',
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
                         {highlightText(result.name, query)}
                       </div>
-                      <div className="mono mut" style={{ fontSize: '10.5px', marginTop: '2px' }}>
+                      <div className="mono mut" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>
                         NOTE
                       </div>
                     </div>
                     <button
                       type="button"
-                      className="btn g sm"
+                      className="btn ghost sm"
                       onClick={() => openNoteViewer(result.documentId, result.name)}
                     >
                       Open
                     </button>
                   </div>
-                  <div style={{ marginTop: '7px', fontSize: '12px', lineHeight: 1.5 }}>
+                  <div style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', lineHeight: 1.5 }}>
                     {highlightText(result.snippet, query)}
                   </div>
                 </div>
@@ -744,34 +759,16 @@ export default function Docs() {
         </div>
       )}
 
-      <div className="filt">
-        <button
-          type="button"
-          className={filter === 'all' ? 'on' : ''}
-          onClick={() => setFilter('all')}
-        >
-          All
-        </button>
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={String(filter) === String(c.id) ? 'on' : ''}
-            onClick={() => setFilter(String(c.id))}
-          >
-            {c.name}
-          </button>
-        ))}
-      </div>
+
 
       {error && !isModalOpen && (
         <div
           className="card"
           style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
+            marginBottom: 'var(--space-3)',
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            fontSize: 'var(--text-sm)',
           }}
         >
           {error}
@@ -779,7 +776,7 @@ export default function Docs() {
       )}
 
       {canEdit && !cases.length && !loading && (
-        <div className="card mut" style={{ marginBottom: '12px', fontSize: '12.5px' }}>
+        <div className="card mut" style={{ marginBottom: 'var(--space-3)', fontSize: 'var(--text-sm)' }}>
           Add at least one case before uploading documents.
         </div>
       )}
@@ -801,30 +798,30 @@ export default function Docs() {
                 <span className="nm">{d.name}</span>
               </td>
               <td>
-                <Chip type="c-ink" label={getCategoryName(d)} />
+                <Chip type="ghost" label={getCategoryName(d)} />
               </td>
               <td>
                 <span className="cno-c">{getCaseNo(d)}</span>
               </td>
-              <td className="mono" style={{ fontSize: '11px' }}>
+              <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {d.fileType}
               </td>
-              <td className="r mono" style={{ fontSize: '11px' }}>
+              <td className="r mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {d.fileSize}
               </td>
               <td className="mut">{getUploaderName(d)}</td>
-              <td className="mono" style={{ fontSize: '11px' }}>
+              <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                 {formatUploadDate(d.uploadDate)}
               </td>
               <td className="c" style={{ whiteSpace: 'nowrap' }}>
                 <button
                   type="button"
-                  className="btn g sm"
+                  className="btn ghost sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDownload(d);
                   }}
-                  style={{ marginRight: canEdit ? '6px' : 0 }}
+                  style={{ marginRight: canEdit ? 'var(--space-2)' : 0 }}
                 >
                   Download
                 </button>
@@ -832,26 +829,21 @@ export default function Docs() {
                   <>
                     <button
                       type="button"
-                      className="btn g sm"
+                      className="btn ghost sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(d);
                       }}
-                      style={{ marginRight: '6px' }}
+                      style={{ marginRight: 'var(--space-2)' }}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
-                      className="btn sm"
+                      className="btn danger sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(d);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--tape)',
-                        color: 'var(--tape)',
                       }}
                     >
                       Delete
@@ -879,113 +871,114 @@ export default function Docs() {
       <Modal isOpen={isModalOpen} onClose={closeModal} title={editingDoc ? 'Edit Document' : 'Upload Document'}>
         <form
           onSubmit={handleSubmit}
-          className="fgrid"
-          style={{ flexDirection: 'column', alignItems: 'stretch' }}
         >
           {error && isModalOpen && (
             <div
               style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
+                padding: 'var(--space-2) var(--space-3)',
+                marginBottom: 'var(--space-2)',
                 backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--text-sm)',
               }}
             >
               {error}
             </div>
           )}
-          <div className="f">
-            <label>Document Name</label>
-            <input
-              type="text"
-              placeholder="e.g. Plaint copy"
-              value={form.name}
-              onChange={setField('name')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Category</label>
-            <select value={form.documentCategoryId} onChange={setField('documentCategoryId')} required>
-              <option value="">Select category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>Case Number</label>
-            <select value={form.caseId} onChange={setField('caseId')} required>
-              <option value="">Select case</option>
-              {cases.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.caseNo}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>{editingDoc ? 'Replace File (Optional)' : 'File'}</label>
-            {editingDoc && (
-              <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '6px' }}>
-                Current file: <strong>{editingDoc.fileType}</strong> ({editingDoc.fileSize})
-              </div>
-            )}
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.txt"
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  file: e.target.files?.[0] || null,
-                  name:
-                    prev.name ||
-                    (e.target.files?.[0]
-                      ? e.target.files[0].name.replace(/\.[^.]+$/, '')
-                      : ''),
-                }))
-              }
-              required={false}
-            />
-          </div>
-          <div style={{ textAlign: 'center', margin: '4px 0', fontSize: '11px', color: 'var(--muted)', fontWeight: 'bold', letterSpacing: '0.1em' }}>— OR —</div>
-          <div className="f">
-            <label>{editingDoc ? 'Replace File with Text (Optional)' : 'Text Content'}</label>
-            <textarea
-              placeholder="Type or paste document content here to upload as a text file..."
-              rows={5}
-              value={form.textContent}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  textContent: e.target.value,
-                  name: prev.name || 'Text Document',
-                }))
-              }
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid var(--rule)',
-                borderRadius: '6px',
-                fontSize: '13px',
-                resize: 'vertical',
-                minHeight: '100px',
-                fontFamily: 'inherit',
-                outline: 'none',
-              }}
-              required={false}
-            />
-          </div>
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <FormSection title="Upload Details">
+            <FormGrid columns={2}>
+              <FormField label="Document Name" required={true}>
+                <input
+                  type="text"
+                  placeholder="e.g. Plaint copy"
+                  value={form.name}
+                  onChange={setField('name')}
+                  required
+                />
+              </FormField>
+              <FormField label="Category" required={true}>
+                <select value={form.documentCategoryId} onChange={setField('documentCategoryId')} required>
+                  <option value="">Select category</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Case Number" required={true}>
+                <select value={form.caseId} onChange={setField('caseId')} required>
+                  <option value="">Select case</option>
+                  {cases.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.caseNo}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection title="File Selection">
+            <FormField label={editingDoc ? 'Replace File (Optional)' : 'File'} required={false}>
+              {editingDoc && (
+                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 'var(--space-2)' }}>
+                  Current file: <strong>{editingDoc.fileType}</strong> ({editingDoc.fileSize})
+                </div>
+              )}
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    file: e.target.files?.[0] || null,
+                    name:
+                      prev.name ||
+                      (e.target.files?.[0]
+                        ? e.target.files[0].name.replace(/\.[^.]+$/, '')
+                        : ''),
+                  }))
+                }
+                required={false}
+              />
+            </FormField>
+            <div style={{ textAlign: 'center', margin: 'var(--space-1) 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.1em' }}>— OR —</div>
+            <FormField label={editingDoc ? 'Replace File with Text (Optional)' : 'Text Content'} required={false}>
+              <textarea
+                placeholder="Type or paste document content here to upload as a text file..."
+                rows={5}
+                value={form.textContent}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    textContent: e.target.value,
+                    name: prev.name || 'Text Document',
+                  }))
+                }
+                style={{
+                  width: '100%',
+                  padding: 'var(--space-2) var(--space-3)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: 'var(--text-sm)',
+                  resize: 'vertical',
+                  minHeight: '100px',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                }}
+                required={false}
+              />
+            </FormField>
+          </FormSection>
+
+          <div className="modal-foot" style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0' }}>
+            <button type="button" className="btn ghost" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? (editingDoc ? 'Saving…' : 'Uploading…') : (editingDoc ? 'Save Changes' : 'Upload Document')}
             </button>
           </div>
@@ -1026,16 +1019,16 @@ export default function Docs() {
                     : ''}
               </span>
             </div>
-            <div className="doc-viewer-actions">
-              <button type="button" className="btn g sm" onClick={goToPrevViewerMatch} disabled={!viewerMatches.length}>
+            <div className="doc-viewer-actions" style={{ gap: 'var(--space-2)', display: 'flex' }}>
+              <button type="button" className="btn ghost sm" onClick={goToPrevViewerMatch} disabled={!viewerMatches.length}>
                 Previous
               </button>
-              <button type="button" className="btn g sm" onClick={goToNextViewerMatch} disabled={!viewerMatches.length}>
+              <button type="button" className="btn ghost sm" onClick={goToNextViewerMatch} disabled={!viewerMatches.length}>
                 Next
               </button>
               <button
                 type="button"
-                className="btn g sm"
+                className="btn ghost sm"
                 onClick={() => {
                   setViewerSearch('');
                   setViewerActiveMatch(0);
@@ -1046,7 +1039,7 @@ export default function Docs() {
               </button>
               <button
                 type="button"
-                className="btn sm"
+                className="btn secondary sm"
                 onClick={() => setViewerFullscreen((prev) => !prev)}
               >
                 {viewerFullscreen ? 'Exit full screen' : 'Full screen'}
@@ -1078,11 +1071,11 @@ export default function Docs() {
             )}
           </div>
 
-          <div className="doc-viewer-foot">
-            <span className="mut mono" style={{ fontSize: '11px' }}>
+          <div className="doc-viewer-foot" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+            <span className="mut mono" style={{ fontSize: 'var(--text-xs)' }}>
               {viewerState.type || 'DOCUMENT'}
             </span>
-            <button type="button" className="btn g" onClick={closeViewer}>
+            <button type="button" className="btn ghost" onClick={closeViewer}>
               Close
             </button>
           </div>

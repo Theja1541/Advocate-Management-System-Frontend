@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Modal from '../components/ui/Modal';
+import Chip from '../components/ui/Chip';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { getCaseStages, createCaseStage, updateCaseStage, deactivateCaseStage, activateCaseStage } from '../services/caseMastersService';
 
 export default function CaseStagesSettings() {
@@ -114,11 +116,11 @@ export default function CaseStagesSettings() {
         title="Case Stages Masters" 
         description="Configure lookup values and sequencing flow for litigation stages."
         actions={
-          <button className="btn" onClick={handleOpenAdd}>Add Case Stage</button>
+          <button className="btn primary" onClick={handleOpenAdd}>Add Case Stage</button>
         }
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <input 
           type="text" 
           placeholder="Search by code or name..." 
@@ -157,24 +159,29 @@ export default function CaseStagesSettings() {
                   <td><b>{s.name}</b></td>
                   <td>{s.displayOrder}</td>
                   <td>
-                    <span className={`chip ${s.color || 'c-grey'}`}>{s.color || 'c-grey'}</span>
+                    <Chip 
+                      type={
+                        s.color === 'c-baize' ? 'success' :
+                        s.color === 'c-brass' ? 'warning' :
+                        s.color === 'c-tape' ? 'danger' : 'ghost'
+                      } 
+                      label={s.color || 'c-grey'} 
+                    />
                   </td>
                   <td>{s.isClosed ? 'Yes ✅' : 'No'}</td>
                   <td>
-                    <span className={`chip ${s.isActive ? 'c-baize' : 'c-grey'}`}>
-                      {s.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    <Chip type={s.isActive ? 'success' : 'ghost'} label={s.isActive ? 'Active' : 'Inactive'} />
                   </td>
                   <td className="c" style={{ whiteSpace: 'nowrap' }}>
                     <button 
-                      className="btn g sm" 
+                      className="btn secondary sm" 
                       onClick={() => handleOpenEdit(s)}
-                      style={{ marginRight: '6px' }}
+                      style={{ marginRight: 'var(--space-2)' }}
                     >
                       Edit
                     </button>
                     <button 
-                      className={`btn sm ${s.isActive ? 't' : ''}`}
+                      className={`btn sm ${s.isActive ? 'danger' : 'outline'}`}
                       onClick={() => handleToggleActive(s)}
                     >
                       {s.isActive ? 'Deactivate' : 'Activate'}
@@ -192,69 +199,68 @@ export default function CaseStagesSettings() {
         onClose={() => setIsModalOpen(false)}
         title={editingStage ? 'Edit Case Stage' : 'Add Case Stage'}
       >
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
               {error}
             </div>
           )}
 
-          <div className="f">
-            <label>Code (Unique identifier)</label>
-            <input 
-              type="text" 
-              placeholder="e.g. FIL" 
-              value={form.code} 
-              onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-              disabled={!!editingStage}
-              required
-            />
-          </div>
+          <FormSection title="Stage Details">
+            <FormGrid columns={1}>
+              <FormField label="Code (Unique identifier)" required={true}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. FIL" 
+                  value={form.code} 
+                  onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
+                  disabled={!!editingStage}
+                  required
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Name</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Filing" 
-              value={form.name} 
-              onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
-              required
-            />
-          </div>
+              <FormField label="Name" required={true}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Filing" 
+                  value={form.name} 
+                  onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+                  required
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Display Order</label>
-            <input 
-              type="number" 
-              value={form.displayOrder} 
-              onChange={(e) => setForm(p => ({ ...p, displayOrder: e.target.value }))}
-              required
-            />
-          </div>
+              <FormField label="Display Order" required={true}>
+                <input 
+                  type="number" 
+                  value={form.displayOrder} 
+                  onChange={(e) => setForm(p => ({ ...p, displayOrder: e.target.value }))}
+                  required
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Theme Badge Color Class</label>
-            <select value={form.color} onChange={(e) => setForm(p => ({ ...p, color: e.target.value }))}>
-              <option value="c-baize">Green (c-baize)</option>
-              <option value="c-brass">Yellow (c-brass)</option>
-              <option value="c-grey">Grey (c-grey)</option>
-              <option value="c-tape">Red (c-tape)</option>
-            </select>
-          </div>
+              <FormField label="Theme Badge Color Class" required={false}>
+                <select value={form.color} onChange={(e) => setForm(p => ({ ...p, color: e.target.value }))}>
+                  <option value="c-baize">Green (c-baize)</option>
+                  <option value="c-brass">Yellow (c-brass)</option>
+                  <option value="c-grey">Grey (c-grey)</option>
+                  <option value="c-tape">Red (c-tape)</option>
+                </select>
+              </FormField>
 
-          <div className="f" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-            <input 
-              type="checkbox" 
-              id="isClosed" 
-              checked={form.isClosed} 
-              onChange={(e) => setForm(p => ({ ...p, isClosed: e.target.checked }))}
-            />
-            <label htmlFor="isClosed" style={{ margin: 0, cursor: 'pointer' }}>Is Closed Stage (E.g. Disposed / Settled)</label>
-          </div>
+              <FormField label="Is Closed Stage (E.g. Disposed / Settled)" required={false}>
+                <input 
+                  type="checkbox" 
+                  id="isClosed" 
+                  checked={form.isClosed} 
+                  onChange={(e) => setForm(p => ({ ...p, isClosed: e.target.checked }))}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+            <button type="button" className="btn ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>

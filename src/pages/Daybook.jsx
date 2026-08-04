@@ -17,8 +17,6 @@ import { getPayments } from '../services/paymentService';
 import { getCases } from '../services/caseService';
 import { getClients } from '../services/clientService';
 
-const PAGE_SIZE = 10;
-
 const emptyForm = {
   transactionDate: new Date().toISOString().slice(0, 10),
   category: DB_CATS[0],
@@ -50,6 +48,7 @@ export default function Daybook() {
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [form, setForm] = useState(emptyForm);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -133,10 +132,10 @@ export default function Daybook() {
     .filter((r) => r.type === 'out')
     .reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
-  const totalPages = Math.max(1, Math.ceil(shownRows.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(shownRows.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pagedRows = shownRows.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedRows = shownRows.slice(pageStart, pageStart + pageSize);
 
   const paymentHistory = [...payments]
     .filter((p) => Number(p.amountReceived || 0) > 0)
@@ -360,9 +359,11 @@ export default function Daybook() {
                 onChange={setField(setForm)('amount')}
               />
             </div>
-            <button className="btn" onClick={handleSubmit} disabled={saving}>
-              {saving ? 'Saving…' : 'Add entry'}
-            </button>
+            <div className="f" style={{ display: 'flex', justifyContent: 'flex-end', flexDirection: 'column' }}>
+              <button className="btn" onClick={handleSubmit} disabled={saving}>
+                {saving ? 'Saving…' : 'Add entry'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -518,9 +519,24 @@ export default function Daybook() {
             flexWrap: 'wrap',
           }}
         >
-          <div className="mut" style={{ fontSize: '11.5px' }}>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, shownRows.length)} of{' '}
-            {shownRows.length}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>
+              entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, shownRows.length)} of {shownRows.length}
+            </span>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button

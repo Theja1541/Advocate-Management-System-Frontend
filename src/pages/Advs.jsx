@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { useAuth } from '../context/AuthContext';
 import {
   getAdvocates,
@@ -48,9 +49,9 @@ const normalizeRelation = (relation = '') => {
 
 const relationChipType = (relation) => {
   const label = normalizeRelation(relation);
-  if (label === 'Senior') return 'c-tape';
-  if (label === 'Referral') return 'c-brass';
-  return 'c-ink';
+  if (label === 'Senior') return 'primary';
+  if (label === 'Referral') return 'warning';
+  return 'ghost';
 };
 
 const displayAdvocateId = (id) => `ADV-${String(id).padStart(2, '0')}`;
@@ -63,7 +64,7 @@ const experienceYears = (experience) => {
 };
 
 export default function Advs() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const canEdit = hasPermission('advs', 'E');
 
   const [advocates, setAdvocates] = useState([]);
@@ -273,7 +274,7 @@ export default function Advs() {
   };
 
   const headerActions = canEdit ? (
-    <button className="btn" onClick={openAddModal}>
+    <button className="btn primary" onClick={openAddModal}>
       Add advocate
     </button>
   ) : null;
@@ -286,26 +287,27 @@ export default function Advs() {
         actions={headerActions}
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="fgrid">
-          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
-            <label>Search advocates</label>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
+          <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Search advocates</label>
             <input
               type="text"
               placeholder="Name, enrolment, specialization, mobile…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
             />
           </div>
         </div>
       </div>
 
-      <div className="filt">
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         {STATUS_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={statusFilter === btn.key ? 'on' : ''}
+            className={`btn sm ${statusFilter === btn.key ? 'primary' : 'ghost'}`}
             onClick={() => setStatusFilter(btn.key)}
           >
             {btn.label}
@@ -313,12 +315,12 @@ export default function Advs() {
         ))}
       </div>
 
-      <div className="filt">
+      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         {RELATION_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={relationFilter === btn.key ? 'on' : ''}
+            className={`btn sm ${relationFilter === btn.key ? 'primary' : 'ghost'}`}
             onClick={() => setRelationFilter(btn.key)}
           >
             {btn.label}
@@ -330,10 +332,13 @@ export default function Advs() {
         <div
           className="card"
           style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
+            marginBottom: 'var(--space-3)',
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            fontSize: 'var(--text-sm)',
+            padding: 'var(--space-2)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--danger)',
           }}
         >
           {error}
@@ -341,123 +346,117 @@ export default function Advs() {
       )}
 
       {loading ? (
-        <div className="card mut" style={{ textAlign: 'center', padding: '24px' }}>
+        <div className="card mut" style={{ textAlign: 'center', padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>
           Loading advocates…
         </div>
       ) : filteredAdvocates.length === 0 ? (
-        <div className="card mut" style={{ textAlign: 'center', padding: '24px' }}>
+        <div className="card mut" style={{ textAlign: 'center', padding: 'var(--space-4)', color: 'var(--text-secondary)' }}>
           {advocates.length === 0
             ? 'No advocates yet. Add the first advocate to the register.'
             : 'No advocates match this search or filter.'}
         </div>
       ) : (
-        <div className="grid3">
+        <div className="grid3" style={{ display: 'grid', gap: 'var(--space-3)', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
           {filteredAdvocates.map((a) => {
             const relation = normalizeRelation(a.relation);
             return (
               <div 
                 className="card" 
-                style={{ margin: 0, cursor: 'pointer' }} 
+                style={{ margin: 0, cursor: 'pointer', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--card)' }} 
                 key={a.id}
                 onClick={() => openViewModal(a)}
               >
-                <div style={{ display: 'flex', gap: '11px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start' }}>
                   <div
                     style={{
                       width: '42px',
                       height: '42px',
                       borderRadius: '50%',
-                      background: 'var(--ink)',
-                      color: 'var(--brass)',
+                      background: 'var(--primary)',
+                      color: 'var(--card)',
                       flex: 'none',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontFamily: "'Spectral', serif",
                       fontWeight: 700,
-                      fontSize: '15px',
+                      fontSize: 'var(--text-base)',
                     }}
                   >
                     {getInitials(a.name)}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div className="card-t" style={{ fontSize: '14.5px' }}>
+                    <div className="card-t" style={{ fontSize: 'var(--text-base)', color: 'var(--text-primary)', fontWeight: 600 }}>
                       {a.name}
                     </div>
-                    <div className="mut" style={{ fontSize: '11.5px' }}>
+                    <div className="mut" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
                       {a.specialization || '—'}
                     </div>
-                    <div style={{ marginTop: '6px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
                       <Chip type={relationChipType(relation)} label={relation} />
-                      {a.hasLogin && <Chip type="c-baize" label="Login enabled" />}
+                      {a.hasLogin && <Chip type="success" label="Login enabled" />}
                       {a.status === 'inactive' && (
-                        <Chip type="c-grey" label="Inactive" />
+                        <Chip type="ghost" label="Inactive" />
                       )}
                     </div>
                   </div>
                 </div>
                 <div
                   style={{
-                    marginTop: '11px',
-                    fontSize: '11.5px',
+                    marginTop: 'var(--space-2)',
+                    fontSize: 'var(--text-xs)',
                     lineHeight: 1.9,
-                    borderTop: '1px dashed var(--rule)',
-                    paddingTop: '9px',
+                    borderTop: '1px solid var(--border)',
+                    paddingTop: 'var(--space-2)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="mut">Advocate ID</span>
-                    <b className="mono">{displayAdvocateId(a.id)}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Advocate ID</span>
+                    <b className="mono" style={{ color: 'var(--text-primary)' }}>{displayAdvocateId(a.id)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="mut">Enrolment</span>
-                    <b className="mono">{a.enrolment || '—'}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Enrolment</span>
+                    <b className="mono" style={{ color: 'var(--text-primary)' }}>{a.enrolment || '—'}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="mut">Experience</span>
-                    <b>{experienceYears(a.experience)}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Experience</span>
+                    <b style={{ color: 'var(--text-primary)' }}>{experienceYears(a.experience)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="mut">Mobile</span>
-                    <b className="mono">{a.mobile || '—'}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Mobile</span>
+                    <b className="mono" style={{ color: 'var(--text-primary)' }}>{a.mobile || '—'}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="mut">Active cases</span>
-                    <b>{getCaseload(a.id)}</b>
+                    <span className="mut" style={{ color: 'var(--text-secondary)' }}>Active cases</span>
+                    <b style={{ color: 'var(--text-primary)' }}>{getCaseload(a.id)}</b>
                   </div>
                 </div>
                 {a.email && (
-                  <div className="mut" style={{ fontSize: '10.5px', marginTop: '8px' }}>
+                  <div className="mut" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)', color: 'var(--text-secondary)' }}>
                     {a.email}
                   </div>
                 )}
                 {canEdit && (
                   <div
                     style={{
-                      marginTop: '12px',
+                      marginTop: 'var(--space-3)',
                       display: 'flex',
-                      gap: '6px',
-                      borderTop: '1px dashed var(--rule)',
-                      paddingTop: '10px',
+                      gap: 'var(--space-2)',
+                      borderTop: '1px solid var(--border)',
+                      paddingTop: 'var(--space-2)',
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
-                      className="btn g sm"
+                      className="btn secondary sm"
                       onClick={() => openEditModal(a)}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
-                      className="btn sm"
+                      className="btn danger sm"
                       onClick={() => handleDelete(a)}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid var(--tape)',
-                        color: 'var(--tape)',
-                      }}
                     >
                       Delete
                     </button>
@@ -476,68 +475,68 @@ export default function Advs() {
         title="Advocate Details"
       >
         {selectedViewAdvocate && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px solid var(--rule-2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Advocate ID</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{displayAdvocateId(selectedViewAdvocate.id)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Advocate ID</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{displayAdvocateId(selectedViewAdvocate.id)}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Name</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewAdvocate.name}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Name</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedViewAdvocate.name}</span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Specialization</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewAdvocate.specialization || '—'}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Specialization</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewAdvocate.specialization || '—'}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Role / Relation</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Role / Relation</span>
                 <Chip type={relationChipType(normalizeRelation(selectedViewAdvocate.relation))} label={normalizeRelation(selectedViewAdvocate.relation)} />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Mobile</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewAdvocate.mobile || '—'}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Mobile</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewAdvocate.mobile || '—'}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Email Address</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewAdvocate.email || '—'}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px dashed var(--rule)', paddingTop: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Enrolment Number</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewAdvocate.enrolment || '—'}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Experience</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{experienceYears(selectedViewAdvocate.experience)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Email Address</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewAdvocate.email || '—'}</span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Login Access</span>
-                <Chip type={selectedViewAdvocate.hasLogin ? 'c-baize' : 'c-grey'} label={selectedViewAdvocate.hasLogin ? 'Enabled' : 'Disabled'} />
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Enrolment Number</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewAdvocate.enrolment || '—'}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Active Case Caseload</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{getCaseload(selectedViewAdvocate.id)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Experience</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{experienceYears(selectedViewAdvocate.experience)}</span>
               </div>
             </div>
 
-            <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn g" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Login Access</span>
+                <Chip type={selectedViewAdvocate.hasLogin ? 'success' : 'ghost'} label={selectedViewAdvocate.hasLogin ? 'Enabled' : 'Disabled'} />
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Active Case Caseload</span>
+                <span className="mono" style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{getCaseload(selectedViewAdvocate.id)}</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end', borderTop: '1px solid var(--border)' }}>
+              <button type="button" className="btn secondary" onClick={() => setIsViewModalOpen(false)}>Close</button>
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     openEditModal(selectedViewAdvocate);
@@ -558,173 +557,192 @@ export default function Advs() {
       >
         <form
           onSubmit={handleSubmit}
-          className="fgrid"
-          style={{ flexDirection: 'column', alignItems: 'stretch' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
         >
           {error && isModalOpen && (
             <div
               style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
+                padding: 'var(--space-2)',
                 backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--text-sm)',
               }}
             >
               {error}
             </div>
           )}
-          <div className="f">
-            <label>Advocate Name</label>
-            <input
-              type="text"
-              placeholder="e.g. M. Sailaja"
-              value={form.name}
-              onChange={setField('name')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Specialization</label>
-            <input
-              type="text"
-              placeholder="e.g. Civil Suit, Property Disputes"
-              value={form.specialization}
-              onChange={setField('specialization')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Relation / Role</label>
-            <select value={form.relation} onChange={setField('relation')}>
-              <option value="Junior">Junior</option>
-              <option value="Senior">Senior</option>
-              <option value="Referral">Referral</option>
-            </select>
-          </div>
-          <div className="f">
-            <label>Experience (Years)</label>
-            <input
-              type="number"
-              placeholder="e.g. 5"
-              value={form.experience}
-              onChange={setField('experience')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Enrolment Number</label>
-            <input
-              type="text"
-              placeholder="e.g. AP/1234/2020"
-              value={form.enrolment}
-              onChange={setField('enrolment')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Mobile</label>
-            <input
-              type="text"
-              placeholder="+91 98765 43210"
-              value={form.mobile}
-              onChange={setField('mobile')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Email</label>
-            <input
-              type="email"
-              placeholder="e.g. name@mail.in"
-              value={form.email}
-              onChange={setField('email')}
-            />
-          </div>
+          
+          <FormSection title="Basic Details">
+            <FormGrid columns={2}>
+              <FormField label="Advocate Name" required>
+                <input
+                  type="text"
+                  placeholder="e.g. M. Sailaja"
+                  value={form.name}
+                  onChange={setField('name')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Enrolment Number" required>
+                <input
+                  type="text"
+                  placeholder="e.g. AP/1234/2020"
+                  value={form.enrolment}
+                  onChange={setField('enrolment')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Experience (Years)" required>
+                <input
+                  type="number"
+                  placeholder="e.g. 5"
+                  value={form.experience}
+                  onChange={setField('experience')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Relation / Role">
+                <select 
+                  value={form.relation} 
+                  onChange={setField('relation')}
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                >
+                  <option value="Junior">Junior</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Referral">Referral</option>
+                </select>
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="f">
-            <label>Status</label>
-            <select value={form.status} onChange={setField('status')}>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
+          <FormSection title="Contact Information">
+            <FormGrid columns={2}>
+              <FormField label="Mobile" required>
+                <input
+                  type="text"
+                  placeholder="+91 98765 43210"
+                  value={form.mobile}
+                  onChange={setField('mobile')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Email">
+                <input
+                  type="email"
+                  placeholder="e.g. name@mail.in"
+                  value={form.email}
+                  onChange={setField('email')}
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Specialization" required>
+                <input
+                  type="text"
+                  placeholder="e.g. Civil Suit, Property Disputes"
+                  value={form.specialization}
+                  onChange={setField('specialization')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+              <FormField label="Status">
+                <select 
+                  value={form.status} 
+                  onChange={setField('status')}
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
           {((!editingAdvocate && form.email) || (editingAdvocate && !editingAdvocate.hasLogin)) && (
-            <div style={{ marginTop: '12px', border: '1px solid var(--rule)', padding: '12px', borderRadius: '5px', background: 'var(--panel)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <FormSection title="Login Details">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                 <input
                   type="checkbox"
                   id="createLogin"
                   checked={form.createLogin}
                   onChange={(e) => setForm(p => ({ ...p, createLogin: e.target.checked }))}
                 />
-                <label htmlFor="createLogin" style={{ textTransform: 'none', fontSize: '12.5px', color: 'var(--ink)' }}>Enable Advocate Portal Login</label>
+                <label htmlFor="createLogin" style={{ textTransform: 'none', fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Enable Advocate Portal Login</label>
               </div>
               {form.createLogin && (
-                <>
-                  <div className="f">
-                    <label>Initial Password</label>
+                <FormGrid columns={2}>
+                  <FormField label="Initial Password" required>
                     <input
                       type="password"
                       placeholder="At least 6 characters"
                       value={form.password}
                       onChange={setField('password')}
                       required
+                      style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
                     />
-                  </div>
-                  <div className="f" style={{ marginTop: '12px' }}>
-                    <label>System Access Role</label>
+                  </FormField>
+                  <FormField label="System Access Role" required>
                     <select
                       value={form.roleId}
                       onChange={setField('roleId')}
                       required
+                      style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
                     >
                       <option value="">Select Role</option>
-                      {roles.map(r => (
-                        <option key={r.id} value={r.id}>{r.name}</option>
+                      {roles
+                        .filter(r => user?.role === 'Super Admin' || r.name !== 'Super Admin')
+                        .map(r => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
                     </select>
-                  </div>
-                </>
+                  </FormField>
+                </FormGrid>
               )}
-            </div>
+            </FormSection>
           )}
 
           {editingAdvocate && editingAdvocate.hasLogin && (
-            <div style={{ marginTop: '12px', border: '1px solid var(--rule)', padding: '12px', borderRadius: '5px', background: 'var(--panel)' }}>
-              <div className="f">
-                <label>System Access Role</label>
-                <select
-                  value={form.roleId}
-                  onChange={setField('roleId')}
-                  required
-                >
-                  <option value="">Select Role</option>
-                  {roles.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="f" style={{ marginTop: '12px' }}>
-                <label>Reset Password (leave blank to keep current)</label>
-                <input
-                  type="password"
-                  placeholder="New password (min 6 chars)"
-                  value={form.password}
-                  onChange={setField('password')}
-                />
-              </div>
-            </div>
+            <FormSection title="Login Details">
+              <FormGrid columns={2}>
+                <FormField label="System Access Role" required>
+                  <select
+                    value={form.roleId}
+                    onChange={setField('roleId')}
+                    required
+                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                  >
+                    <option value="">Select Role</option>
+                    {roles
+                      .filter(r => user?.role === 'Super Admin' || r.name !== 'Super Admin')
+                      .map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Reset Password (leave blank to keep current)">
+                  <input
+                    type="password"
+                    placeholder="New password (min 6 chars)"
+                    value={form.password}
+                    onChange={setField('password')}
+                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                  />
+                </FormField>
+              </FormGrid>
+            </FormSection>
           )}
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end', borderTop: '1px solid var(--border)' }}>
+            <button type="button" className="btn secondary" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

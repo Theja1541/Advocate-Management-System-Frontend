@@ -4,6 +4,7 @@ import KPICard from '../components/ui/KPICard';
 import DataTable from '../components/ui/DataTable';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { getTasks, createTask, updateTask, deleteTask } from '../services/taskService';
@@ -12,14 +13,14 @@ import { getAdvocates } from '../services/advocateService';
 const PAGE_SIZE = 10;
 
 const PRIORITIES = {
-  high: ['High', 'c-tape'],
-  medium: ['Medium', 'c-brass'],
-  low: ['Low', 'c-baize'],
+  high: ['High', 'danger'],
+  medium: ['Medium', 'warning'],
+  low: ['Low', 'ghost'],
 };
 
 const STATUSES = {
-  pending: ['Pending', 'c-brass'],
-  completed: ['Completed', 'c-baize'],
+  pending: ['Pending', 'warning'],
+  completed: ['Completed', 'success'],
 };
 
 const emptyForm = {
@@ -253,7 +254,7 @@ export default function Tasks() {
         description="Collaborative task board to track filings, office operations, and research."
         actions={
           canEdit && (
-            <button className="btn" onClick={openAddModal}>
+            <button className="btn primary" onClick={openAddModal}>
               New task
             </button>
           )
@@ -261,14 +262,14 @@ export default function Tasks() {
       />
 
       <div className="kpis">
-        <KPICard label="Pending tasks" value={totalPending} status="active" type="brass" />
-        <KPICard label="Completed" value={totalCompleted} status="all time" type="baize" />
-        <KPICard label="High priority" value={highPriority} status="pending tasks" type="tape" />
-        <KPICard label="Overdue" value={overdueCount} status="past deadline" type="tape" />
+        <KPICard label="Pending tasks" value={totalPending} status="active" type="warning" />
+        <KPICard label="Completed" value={totalCompleted} status="all time" type="success" />
+        <KPICard label="High priority" value={highPriority} status="pending tasks" type="danger" />
+        <KPICard label="Overdue" value={overdueCount} status="past deadline" type="danger" />
       </div>
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="fgrid">
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="fgrid" style={{ gap: 'var(--space-3)' }}>
           <div className="f" style={{ flex: 2, minWidth: '220px' }}>
             <label>Search tasks</label>
             <input
@@ -276,11 +277,12 @@ export default function Tasks() {
               placeholder="Search title, details, assigned..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
             />
           </div>
           <div className="f" style={{ flex: 1 }}>
             <label>Priority</label>
-            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
               <option value="all">All Priorities</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
@@ -290,24 +292,24 @@ export default function Tasks() {
         </div>
       </div>
 
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <button
           type="button"
-          className={statusFilter === 'all' ? 'on' : ''}
+          className={statusFilter === 'all' ? 'btn primary' : 'btn ghost'}
           onClick={() => setStatusFilter('all')}
         >
           All Tasks
         </button>
         <button
           type="button"
-          className={statusFilter === 'pending' ? 'on' : ''}
+          className={statusFilter === 'pending' ? 'btn primary' : 'btn ghost'}
           onClick={() => setStatusFilter('pending')}
         >
           Pending
         </button>
         <button
           type="button"
-          className={statusFilter === 'completed' ? 'on' : ''}
+          className={statusFilter === 'completed' ? 'btn primary' : 'btn ghost'}
           onClick={() => setStatusFilter('completed')}
         >
           Completed
@@ -315,7 +317,7 @@ export default function Tasks() {
       </div>
 
       {error && !isModalOpen && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
           {error}
         </div>
       )}
@@ -335,8 +337,8 @@ export default function Tasks() {
           </tr>
         ) : (
           pagedTasks.map((t) => {
-            const priorityChip = PRIORITIES[t.priority] || ['Medium', 'c-brass'];
-            const statusChip = STATUSES[t.status] || ['Pending', 'c-brass'];
+            const priorityChip = PRIORITIES[t.priority] || ['Medium', 'warning'];
+            const statusChip = STATUSES[t.status] || ['Pending', 'warning'];
             const isOverdue = t.status === 'pending' && t.dueDate && t.dueDate < todayStr;
 
             return (
@@ -351,17 +353,17 @@ export default function Tasks() {
                 </td>
                 <td>
                   <div style={{ textDecoration: t.status === 'completed' ? 'line-through' : 'none' }}>
-                    <span className="nm" style={{ fontWeight: '600' }}>{t.title}</span>
+                    <span className="nm" style={{ fontWeight: '600', fontSize: 'var(--text-base)', color: 'var(--text-primary)' }}>{t.title}</span>
                     {t.description && (
-                      <p className="mut" style={{ fontSize: '11.5px', margin: '2px 0 0' }}>{t.description}</p>
+                      <p className="mut" style={{ fontSize: 'var(--text-xs)', margin: 'var(--space-1) 0 0', color: 'var(--text-secondary)' }}>{t.description}</p>
                     )}
                   </div>
                 </td>
-                <td className="mut">{getAssignedName(t)}</td>
+                <td className="mut" style={{ color: 'var(--text-secondary)' }}>{getAssignedName(t)}</td>
                 <td>
                   <Chip type={priorityChip[1]} label={priorityChip[0]} />
                 </td>
-                <td className="mono" style={{ fontSize: '11px', color: isOverdue ? 'var(--tape)' : 'inherit' }}>
+                <td className="mono" style={{ fontSize: 'var(--text-xs)', color: isOverdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
                   {formatDate(t.dueDate)} {isOverdue && '⚠️'}
                 </td>
                 <td className="mut">{getCreatorName(t)}</td>
@@ -370,21 +372,16 @@ export default function Tasks() {
                     <>
                       <button
                         type="button"
-                        className="btn g sm"
+                        className="btn secondary sm"
                         onClick={() => openEditModal(t)}
-                        style={{ marginRight: '6px' }}
+                        style={{ marginRight: 'var(--space-2)' }}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
-                        className="btn sm"
+                        className="btn danger outline sm"
                         onClick={() => handleDelete(t)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--tape)',
-                          color: 'var(--tape)',
-                        }}
                       >
                         Delete
                       </button>
@@ -397,72 +394,71 @@ export default function Tasks() {
         )}
       </DataTable>
 
+      {!loading && filteredTasks.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filteredTasks.length)} of {filteredTasks.length}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button type="button" className="btn ghost sm" disabled={currentPage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</button>
+            <button type="button" className="btn ghost sm" disabled style={{ cursor: 'default' }}>{currentPage} / {totalPages}</button>
+            <button type="button" className="btn ghost sm" disabled={currentPage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+          </div>
+        </div>
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         title={editingTask ? 'Edit Task' : 'New Task'}
       >
-        <form onSubmit={handleSubmit} className="fgrid" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+        <form onSubmit={handleSubmit} className="fgrid" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 'var(--space-3)' }}>
           {error && isModalOpen && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px', marginBottom: '8px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
               {error}
             </div>
           )}
 
-          <div className="f">
-            <label>Task Title</label>
-            <input
-              type="text"
-              placeholder="e.g. File vakalatnama in OS 214"
-              value={form.title}
-              onChange={setField('title')}
-              required
-            />
-          </div>
-
-          <div className="f">
-            <label>Details / Notes</label>
-            <textarea
-              placeholder="Enter brief description..."
-              rows="3"
-              value={form.description}
-              onChange={setField('description')}
-              style={{
-                fontSize: '12.5px',
-                padding: '8px 10px',
-                border: '1px solid var(--rule)',
-                background: 'var(--card)',
-                color: 'var(--ink)',
-                borderRadius: '5px',
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
-
-          <div className="fgrid" style={{ marginTop: '10px' }}>
-            <div className="f">
-              <label>Priority</label>
-              <select value={form.priority} onChange={setField('priority')}>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div className="f">
-              <label>Due Date</label>
+          <FormSection title="Task Details">
+            <FormField label="Task Title" required={true}>
               <input
-                type="date"
-                value={form.dueDate}
-                onChange={setField('dueDate')}
+                type="text"
+                placeholder="e.g. File vakalatnama in OS 214"
+                value={form.title}
+                onChange={setField('title')}
+                style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                required
               />
-            </div>
-          </div>
+            </FormField>
 
-          <div className="fgrid" style={{ marginTop: '10px' }}>
-            <div className="f">
-              <label>Assignee</label>
-              <select value={form.assignedTo} onChange={setField('assignedTo')}>
+            <FormField label="Details / Notes" required={false}>
+              <textarea
+                placeholder="Enter brief description..."
+                rows="3"
+                value={form.description}
+                onChange={setField('description')}
+                style={{
+                  fontSize: 'var(--text-sm)',
+                  padding: 'var(--space-3)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--card)',
+                  color: 'var(--text-primary)',
+                  borderRadius: 'var(--radius-md)',
+                  width: '100%',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </FormField>
+
+            <FormField label="Assignee" required={false}>
+              <select value={form.assignedTo} onChange={setField('assignedTo')} style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
                 <option value="">Unassigned</option>
                 {advocates.map((a) => (
                   <option key={a.id} value={a.userId}>
@@ -470,23 +466,42 @@ export default function Tasks() {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormField>
+          </FormSection>
+
+          <FormSection title="Schedule & Status">
+            <FormGrid columns={2}>
+              <FormField label="Priority" required={false}>
+                <select value={form.priority} onChange={setField('priority')} style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </FormField>
+              <FormField label="Due Date" required={false}>
+                <input
+                  type="date"
+                  value={form.dueDate}
+                  onChange={setField('dueDate')}
+                  style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+                />
+              </FormField>
+            </FormGrid>
             {editingTask && (
-              <div className="f">
-                <label>Status</label>
-                <select value={form.status} onChange={setField('status')}>
+              <FormField label="Status" required={false}>
+                <select value={form.status} onChange={setField('status')} style={{ padding: 'var(--space-3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
                   <option value="pending">Pending</option>
                   <option value="completed">Completed</option>
                 </select>
-              </div>
+              </FormField>
             )}
-          </div>
+          </FormSection>
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <div className="modal-foot" style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)', marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0' }}>
+            <button type="button" className="btn ghost" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
