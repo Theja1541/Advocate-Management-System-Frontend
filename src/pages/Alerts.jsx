@@ -1,236 +1,169 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Chip from '../components/ui/Chip';
-import Modal from '../components/ui/Modal';
-import { useAuth } from '../context/AuthContext';
-import { useLegalData } from '../context/DataContext';
-import {
-  getAlerts,
-  createAlert,
-  updateAlert,
-  deleteAlert,
-} from '../services/alertService';
+import { getAlerts, resolveAlertStatus, markAlertAsRead, markAlertAsUnread } from '../services/alertService';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const PAGE_SIZE = 10;
 
 const SEV = {
-  tape: { chip: 'c-tape', label: 'Urgent', border: 'tape' },
-  brass: { chip: 'c-brass', label: 'Due', border: 'brass' },
-  ink: { chip: 'c-ink', label: 'Open', border: 'ink-3' },
-};
-
-const emptyForm = {
-  type: '',
-  description: '',
-  severity: 'brass',
-  dueInfo: '',
-  isResolved: false,
+  high: { chip: 'danger', label: 'High', border: 'danger' },
+  medium: { chip: 'warning', label: 'Medium', border: 'warning' },
+  low: { chip: 'ghost', label: 'Low', border: 'border' },
+  tape: { chip: 'danger', label: 'Urgent', border: 'danger' },
+  brass: { chip: 'warning', label: 'Due', border: 'warning' },
+  ink: { chip: 'ghost', label: 'Info', border: 'border' },
 };
 
 export default function Alerts() {
-  const { hasPermission } = useAuth();
-  const canEdit = hasPermission('cases', 'E');
-
-  const { alerts, setAlerts } = useLegalData();
+  const location = useLocation();
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('open');
+  const [query, setQuery] = useState(location.state?.query || '');
+  const [statusFilter, setStatusFilter] = useState(location.state?.statusFilter || ''); 
+  const [priorityFilter, setPriorityFilter] = useState(location.state?.priorityFilter || ''); 
+  const [moduleFilter, setModuleFilter] = useState(location.state?.moduleFilter || ''); 
   const [page, setPage] = useState(1);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingAlert, setEditingAlert] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const navigate = useNavigate();
 
   const loadAlerts = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const list = await getAlerts();
+      const filters = {};
+      if (statusFilter) filters.status = statusFilter;
+      if (priorityFilter) filters.priority = priorityFilter;
+      if (moduleFilter) filters.referenceType = moduleFilter;
+      if (query.trim()) filters.message = query.trim();
+
+      const list = await getAlerts(filters);
       setAlerts(list);
     } catch (err) {
-      setError(err.message || 'Failed to load alerts');
+      setError(err.message || 'Failed to load notifications');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter, priorityFilter, moduleFilter, query]);
 
   useEffect(() => {
+    // Only load if page is 1 or query/filters change
     loadAlerts();
   }, [loadAlerts]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, filter]);
+  }, [query, statusFilter, priorityFilter, moduleFilter]);
 
-  const q = query.trim().toLowerCase();
-  const filtered = alerts.filter((a) => {
-    if (filter === 'open' && a.isResolved) return false;
-    if (filter === 'resolved' && !a.isResolved) return false;
-    if (filter === 'tape' || filter === 'brass' || filter === 'ink') {
-      if (a.severity !== filter) return false;
-    }
-    if (!q) return true;
-    const haystack = [a.type, a.description, a.dueInfo, a.severity]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(q);
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(alerts.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
-
-  const openAddModal = () => {
-    setEditingAlert(null);
-    setForm(emptyForm);
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (a) => {
-    setEditingAlert(a);
-    setForm({
-      type: a.type || '',
-      description: a.description || '',
-      severity: a.severity || 'brass',
-      dueInfo: a.dueInfo || '',
-      isResolved: !!a.isResolved,
-    });
-    setError('');
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingAlert(null);
-    setForm(emptyForm);
-  };
-
-  const setField = (key) => (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.type || !form.description) {
-      setError('Please fill out all required fields.');
-      return;
-    }
-
-    setSaving(true);
-    setError('');
-    const payload = {
-      type: form.type.trim(),
-      description: form.description.trim(),
-      severity: form.severity,
-      dueInfo: form.dueInfo.trim() || undefined,
-      isResolved: !!form.isResolved,
-    };
-
-    try {
-      if (editingAlert) {
-        const updated = await updateAlert(editingAlert.id, payload);
-        setAlerts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
-      } else {
-        const created = await createAlert(payload);
-        setAlerts((prev) => [...prev, created]);
-      }
-      closeModal();
-    } catch (err) {
-      setError(err.message || 'Failed to save alert');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const paged = alerts.slice(pageStart, pageStart + PAGE_SIZE);
 
   const handleResolve = async (a) => {
     setError('');
     try {
-      const updated = await updateAlert(a.id, { isResolved: !a.isResolved });
+      const newStatus = a.status === 'resolved' ? 'active' : 'resolved';
+      const updated = await resolveAlertStatus(a.id, newStatus);
       setAlerts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
-      setError(err.message || 'Failed to update alert');
+      setError(err.message || 'Failed to update notification');
     }
   };
 
-  const handleDelete = async (a) => {
-    if (!window.confirm(`Delete alert “${a.type}”?`)) return;
+  const handleToggleRead = async (a) => {
     setError('');
     try {
-      await deleteAlert(a.id);
-      setAlerts((prev) => prev.filter((item) => item.id !== a.id));
+      let updated;
+      if (a.isRead) {
+        updated = await markAlertAsUnread(a.id);
+      } else {
+        updated = await markAlertAsRead(a.id);
+      }
+      setAlerts((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err) {
-      setError(err.message || 'Failed to delete alert');
+      setError(err.message || 'Failed to update notification');
     }
   };
 
-  const filterButtons = [
-    { key: 'open', label: 'Open' },
-    { key: 'resolved', label: 'Resolved' },
-    { key: 'all', label: 'All' },
-    { key: 'tape', label: 'Urgent' },
-    { key: 'brass', label: 'Due' },
-    { key: 'ink', label: 'Info' },
-  ];
+  const handleOpenRecord = (a) => {
+    if (a.referenceType === 'Case') {
+      navigate(`/cases`);
+    } else if (a.referenceType === 'Payment') {
+      navigate(`/pay`);
+    } else if (a.referenceType === 'Task') {
+      navigate(`/tasks`);
+    } else if (a.referenceType === 'Document') {
+      navigate(`/docs`);
+    } else {
+      alert(`Navigation for ${a.referenceType} is not implemented yet.`);
+    }
+  };
 
   return (
     <>
       <PageHeader
-        title="Alerts"
-        description="Raised automatically from hearing dates, fee position, documents and membership expiry."
-        actions={
-          canEdit ? (
-            <button className="btn" onClick={openAddModal}>
-              Add alert
-            </button>
-          ) : null
-        }
+        title="Notifications Center"
+        description="System-generated notifications for hearing dates, fee positions, and documents."
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="fgrid">
-          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
-            <label>Search alerts</label>
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+        <div className="fgrid" style={{ gap: 'var(--space-3)' }}>
+          <div className="f" style={{ flex: 1, minWidth: '200px' }}>
+            <label>Search notifications</label>
             <input
               type="text"
-              placeholder="Type, description, due…"
+              placeholder="Search by message…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
             />
+          </div>
+          <div className="f" style={{ minWidth: '120px' }}>
+            <label>Status</label>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <div className="f" style={{ minWidth: '120px' }}>
+            <label>Priority</label>
+            <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+              <option value="">All Priorities</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div className="f" style={{ minWidth: '120px' }}>
+            <label>Module</label>
+            <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)} style={{ padding: 'var(--space-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+              <option value="">All Modules</option>
+              <option value="Case">Case</option>
+              <option value="Hearing">Hearing</option>
+              <option value="Payment">Payment</option>
+              <option value="Document">Document</option>
+              <option value="Task">Task</option>
+            </select>
           </div>
         </div>
       </div>
 
-      <div className="filt">
-        {filterButtons.map((btn) => (
-          <button
-            key={btn.key}
-            type="button"
-            className={filter === btn.key ? 'on' : ''}
-            onClick={() => setFilter(btn.key)}
-          >
-            {btn.label}
-          </button>
-        ))}
-      </div>
-
-      {error && !isModalOpen && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)', fontSize: '12.5px' }}>
+      {error && (
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
           {error}
         </div>
       )}
 
       {loading ? (
         <div className="card">
-          <div className="empty">Loading alerts…</div>
+          <div className="empty">Loading notifications…</div>
         </div>
       ) : paged.length ? (
         paged.map((a) => {
-          const sev = SEV[a.severity] || SEV.ink;
+          const sev = SEV[a.priority] || SEV[a.severity] || SEV.ink;
+          const isResolved = a.status === 'resolved';
           return (
             <div
               key={a.id}
@@ -239,186 +172,57 @@ export default function Alerts() {
                 borderLeft: `3px solid var(--${sev.border})`,
                 display: 'flex',
                 justifyContent: 'space-between',
-                gap: '12px',
+                gap: 'var(--space-3)',
                 flexWrap: 'wrap',
                 alignItems: 'center',
-                padding: '13px 15px',
-                opacity: a.isResolved ? 0.65 : 1,
+                padding: 'var(--space-3)',
+                opacity: isResolved ? 0.65 : 1,
               }}
             >
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 600 }}>
-                  {a.type}
-                  {a.isResolved ? (
-                    <span className="mut" style={{ fontWeight: 400, marginLeft: '8px', fontSize: '11px' }}>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: a.isRead ? 400 : 600 }}>
+                  {a.alertType ? a.alertType.replace(/_/g, ' ') : a.type}
+                  {isResolved ? (
+                    <span className="mut" style={{ fontWeight: 400, marginLeft: 'var(--space-2)', fontSize: 'var(--text-xs)' }}>
                       · resolved
                     </span>
                   ) : null}
+                  {!a.isRead && !isResolved ? (
+                    <span style={{ color: 'var(--primary)', marginLeft: 'var(--space-2)', fontSize: 'var(--text-base)', lineHeight: '10px' }}>
+                      •
+                    </span>
+                  ) : null}
                 </div>
-                <div className="mut" style={{ fontSize: '12px', marginTop: '2px' }}>
-                  {a.description}
+                <div className="mut" style={{ fontSize: 'var(--text-xs)', marginTop: '2px', fontWeight: a.isRead ? 400 : 500 }}>
+                  {a.message || a.description}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <span className="mono mut" style={{ fontSize: '10.5px' }}>
-                  {a.dueInfo || '—'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                <span className="mono mut" style={{ fontSize: 'var(--text-xs)' }}>
+                  {a.referenceType} #{a.referenceId}
                 </span>
                 <Chip type={sev.chip} label={sev.label} />
-                {canEdit && (
-                  <>
-                    <button type="button" className="btn g sm" onClick={() => handleResolve(a)}>
-                      {a.isResolved ? 'Reopen' : 'Resolve'}
-                    </button>
-                    <button type="button" className="btn g sm" onClick={() => openEditModal(a)}>
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn sm"
-                      onClick={() => handleDelete(a)}
-                      style={{ background: 'transparent', border: '1px solid var(--tape)', color: 'var(--tape)' }}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
+                
+                <button type="button" className="btn secondary sm" onClick={() => handleToggleRead(a)}>
+                  {a.isRead ? 'Mark as Unread' : 'Mark as Read'}
+                </button>
+                <button type="button" className="btn secondary sm" onClick={() => handleResolve(a)}>
+                  {isResolved ? 'Re-open' : 'Mark as Resolved'}
+                </button>
+                <button type="button" className="btn secondary sm" onClick={() => handleOpenRecord(a)}>
+                  View Record
+                </button>
               </div>
             </div>
           );
         })
       ) : (
         <div className="card">
-          <div className="empty">No alerts match the current filters.</div>
+          <div className="empty">No notifications match the current filters.</div>
         </div>
       )}
 
-      {!loading && filtered.length > 0 && (
-        <div className="tbl-foot" style={{ marginTop: '16px', borderRadius: '8px', border: '1px solid var(--rule)' }}>
-          <div>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length}
-          </div>
-          <div className="pager">
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </button>
-            <span style={{ margin: '0 10px', fontSize: '12px', color: 'var(--muted)' }}>
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="card">
-        <div className="card-t">Delivery channels</div>
-        <div className="card-s">HOW ALERTS REACH THE OFFICE</div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '4px' }}>
-          <Chip type="c-baize" label="SMS — live" />
-          <Chip type="c-baize" label="Email — live" />
-          <Chip type="c-grey" label="WhatsApp — planned" />
-        </div>
-      </div>
-
-      <Modal isOpen={isModalOpen} onClose={closeModal} title={editingAlert ? 'Edit Alert' : 'Add Alert'}>
-        <form onSubmit={handleSubmit} className="fgrid" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-          {error && isModalOpen && (
-            <div
-              style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
-                backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
-              }}
-            >
-              {error}
-            </div>
-          )}
-          <div className="f">
-            <label>Alert type</label>
-            <input
-              type="text"
-              placeholder="e.g. Hearing tomorrow"
-              value={form.type}
-              onChange={setField('type')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Description</label>
-            <textarea
-              placeholder="What needs attention…"
-              rows="3"
-              value={form.description}
-              onChange={setField('description')}
-              required
-              style={{
-                fontSize: '12.5px',
-                padding: '8px 10px',
-                border: '1px solid var(--rule)',
-                background: 'var(--card)',
-                color: 'var(--ink)',
-                borderRadius: '5px',
-                outline: 'none',
-                width: '100%',
-                fontFamily: 'inherit',
-              }}
-            />
-          </div>
-          <div className="f">
-            <label>Severity</label>
-            <select value={form.severity} onChange={setField('severity')}>
-              <option value="tape">Urgent</option>
-              <option value="brass">Due</option>
-              <option value="ink">Open / info</option>
-            </select>
-          </div>
-          <div className="f">
-            <label>Due / window</label>
-            <input
-              type="text"
-              placeholder="e.g. Tomorrow 10:30"
-              value={form.dueInfo}
-              onChange={setField('dueInfo')}
-            />
-          </div>
-          {editingAlert && (
-            <div className="f" style={{ flexDirection: 'row', alignItems: 'center', gap: '8px' }}>
-              <input
-                id="alert-resolved"
-                type="checkbox"
-                checked={form.isResolved}
-                onChange={setField('isResolved')}
-              />
-              <label htmlFor="alert-resolved" style={{ margin: 0 }}>
-                Marked resolved
-              </label>
-            </div>
-          )}
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
-              Cancel
-            </button>
-            <button type="submit" className="btn" disabled={saving}>
-              {saving ? 'Saving…' : editingAlert ? 'Save changes' : 'Add Alert'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      
     </>
   );
 }

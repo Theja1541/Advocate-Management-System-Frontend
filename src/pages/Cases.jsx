@@ -5,19 +5,22 @@ import PageHeader from '../components/ui/PageHeader';
 import Chip from '../components/ui/Chip';
 import KPICard from '../components/ui/KPICard';
 import SearchableSelect from '../components/ui/SearchableSelect';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { inr } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import { getCases, createCase, updateCase, deleteCase } from '../services/caseService';
 import { getClients } from '../services/clientService';
 import { getAdvocates } from '../services/advocateService';
-import { getCaseTypes, getCaseStages, getCourts } from '../services/caseMastersService';
+import { getCaseTypes, getCaseStages, getCourts, getStateFeeConfigs } from '../services/caseMastersService';
+import { calculateCourtFeeClient } from '../services/courtFeeCalculator.service';
 
 const PAGE_SIZE = 10;
+const TITLE_VS_SEP = ' — vs ';
 
 const CST = {
-  Active: ['Active', 'c-baize'],
-  'Pending Approval': ['Pending Approval', 'c-brass'],
-  Closed: ['Closed', 'c-grey'],
+  Active: ['Active', 'success'],
+  'Pending Approval': ['Pending Approval', 'warning'],
+  Closed: ['Closed', 'ghost'],
 };
 
 const STATUS_FILTERS = [
@@ -27,43 +30,7 @@ const STATUS_FILTERS = [
   { key: 'Closed', label: 'Closed' },
 ];
 
-const TITLE_META_SEP = ' :: ';
-const TITLE_VS_SEP = ' — vs ';
 
-const emptyForm = {
-  caseNo: '',
-  caseTypeId: '',
-  clientId: '',
-  opponent: '',
-  courtId: '',
-  advocateId: '',
-  caseStageId: '',
-  nextHearing: '',
-  val: '',
-  fee: '10',
-  status: 'Pending Approval',
-};
-
-const buildTitle = ({ caseTypeName, opponent, stageName, val, fee }) =>
-  `${caseTypeName.trim()}${TITLE_VS_SEP}${opponent.trim()}${TITLE_META_SEP}${stageName || 'Filing'}${TITLE_META_SEP}${val || 0}${TITLE_META_SEP}${fee || 10}`;
-
-const parseTitle = (title = '') => {
-  const [head = '', stage = 'Filing', val = '0', fee = '10'] = String(title).split(TITLE_META_SEP);
-  let caseType = head;
-  let opponent = '';
-  const vsIdx = head.indexOf(TITLE_VS_SEP);
-  if (vsIdx >= 0) {
-    caseType = head.slice(0, vsIdx);
-    opponent = head.slice(vsIdx + TITLE_VS_SEP.length);
-  }
-  return {
-    caseType: caseType || title || '—',
-    opponent: opponent || '—',
-    stage: stage || 'Filing',
-    val: Number(val) || 0,
-    fee: Number(fee) || 0,
-  };
-};
 
 const formatHearing = (value) => {
   if (!value) return '—';
@@ -76,6 +43,28 @@ const formatHearing = (value) => {
   });
 };
 
+const emptyForm = {
+  caseNo: '',
+  title: '',
+  description: '',
+  clientId: '',
+  caseTypeId: '',
+  caseStageId: '',
+  courtId: '',
+  opponent: '',
+  advocateId: '',
+  filingDate: '',
+  nextHearing: '',
+  status: 'Pending Approval',
+  priority: 'Medium',
+  tags: '',
+  suitValue: '',
+  feePercentage: '',
+  processFee: '',
+  filingFee: '',
+  miscCharges: '',
+};
+
 export default function Cases() {
   const { hasPermission } = useAuth();
   const canEdit = hasPermission('cases', 'E');
@@ -86,6 +75,8 @@ export default function Cases() {
   const [caseTypes, setCaseTypes] = useState([]);
   const [caseStages, setCaseStages] = useState([]);
   const [courts, setCourts] = useState([]);
+  const [stateFeeConfigs, setStateFeeConfigs] = useState([]);
+  const [livePreview, setLivePreview] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,13 +100,14 @@ export default function Cases() {
     setLoading(true);
     setError('');
     try {
-      const [caseList, clientList, advocateList, typeList, stageList, courtList] = await Promise.all([
+      const [caseList, clientList, advocateList, typeList, stageList, courtList, feeConfigs] = await Promise.all([
         getCases(),
         getClients(),
         getAdvocates(),
         getCaseTypes(true),
         getCaseStages(true),
         getCourts(true),
+        getStateFeeConfigs(),
       ]);
       setCases(caseList);
       setClients(clientList);
@@ -123,6 +115,7 @@ export default function Cases() {
       setCaseTypes(typeList);
       setCaseStages(stageList);
       setCourts(courtList);
+      setStateFeeConfigs(feeConfigs);
     } catch (err) {
       setError(err.message || 'Failed to load cases');
     } finally {
@@ -138,6 +131,93 @@ export default function Cases() {
     setPage(1);
   }, [query, filter]);
 
+  useEffect(() => {
+    if (!isModalOpen) {
+      setLivePreview(null);
+      return;
+    }
+
+    const sv = Number(form.val) || 0;
+    const fp = Number(form.fee) || 0;
+    const pf = Number(form.processFee) || 0;
+    const ff = Number(form.filingFee) || 0;
+    const mc = Number(form.miscCharges) || 0;
+    const advFee = (sv * fp) / 100;
+
+    let courtStateCode = null;
+    const selectedCourt = courts.find(c => String(c.id) === String(form.courtId));
+    if (selectedCourt) {
+      courtStateCode = selectedCourt.stateCode;
+    }
+
+    if (!courtStateCode) {
+      setLivePreview({
+        advocateFee: advFee,
+        courtFee: 0,
+        processFee: pf,
+        filingFee: ff,
+        miscCharges: mc,
+        totalPayable: advFee + pf + ff + mc,
+        status: 'PARTIAL',
+        warning: 'This Court has no State assigned. Court Fee cannot be calculated.',
+      });
+      return;
+    }
+
+    // Find active rule for state
+    const today = new Date();
+    const activeRule = stateFeeConfigs.find(r => 
+      r.stateCode === courtStateCode && 
+      r.isActive && 
+      new Date(r.effectiveFrom) <= today && 
+      (!r.effectiveTo || new Date(r.effectiveTo) >= today)
+    );
+
+    if (activeRule) {
+      try {
+        const clonedRule = {
+          ...activeRule,
+          processFee: pf !== null && pf !== 0 ? pf : activeRule.processFee,
+          filingFee: ff !== null && ff !== 0 ? ff : activeRule.filingFee,
+          miscCharges: mc !== null && mc !== 0 ? mc : activeRule.miscCharges,
+        };
+        const calc = calculateCourtFeeClient(clonedRule, sv, fp);
+        setLivePreview({
+          advocateFee: calc.advocateFee,
+          courtFee: calc.courtFee,
+          processFee: calc.processFee,
+          filingFee: calc.filingFee,
+          miscCharges: calc.miscCharges,
+          totalPayable: calc.totalAmount,
+          status: 'COMPLETE',
+          warning: null,
+        });
+      } catch (err) {
+        setLivePreview({
+          advocateFee: advFee,
+          courtFee: 0,
+          processFee: pf,
+          filingFee: ff,
+          miscCharges: mc,
+          totalPayable: advFee + pf + ff + mc,
+          status: 'ERROR',
+          warning: 'Error calculating fee. Using fallback totals.',
+        });
+      }
+    } else {
+      setLivePreview({
+        advocateFee: advFee,
+        courtFee: 0,
+        processFee: pf,
+        filingFee: ff,
+        miscCharges: mc,
+        totalPayable: advFee + pf + ff + mc,
+        status: 'PARTIAL',
+        warning: 'No active fee configuration found for this state.',
+      });
+    }
+  }, [form.val, form.fee, form.processFee, form.filingFee, form.miscCharges, form.courtId, isModalOpen, courts, stateFeeConfigs]);
+
   const getClientName = (id) => {
     const client = clients.find((c) => String(c.id) === String(id));
     return client ? client.name : id ? String(id) : '—';
@@ -150,15 +230,20 @@ export default function Cases() {
 
   const enrichedCases = useMemo(
     () => cases.map((c) => {
-      const legacyParsed = parseTitle(c.title);
+      let opponent = '—';
+      const vsIdx = String(c.title || '').indexOf(' — vs ');
+      if (vsIdx >= 0) {
+        opponent = String(c.title).slice(vsIdx + ' — vs '.length);
+      }
+
       return {
         ...c,
-        opponent: legacyParsed.opponent,
-        val: legacyParsed.val,
-        fee: legacyParsed.fee,
-        caseTypeDisplay: c.caseType?.name || legacyParsed.caseType,
-        caseStageDisplay: c.currentStage?.name || legacyParsed.stage,
-        caseStageColor: c.currentStage?.color || 'c-baize',
+        opponent,
+        val: Number(c.suitValue) || 0,
+        fee: Number(c.feePercentage) || 0,
+        caseTypeDisplay: c.caseType?.name || '—',
+        caseStageDisplay: c.currentStage?.name || 'Filing',
+        caseStageColor: c.currentStage?.color ? c.currentStage.color.replace('c-baize', 'success').replace('c-brass', 'warning').replace('c-grey', 'ghost') : 'success',
         courtDisplay: c.assignedCourt?.name || c.court || '—',
       };
     }),
@@ -207,7 +292,7 @@ export default function Cases() {
     { label: 'Stage' },
     { label: 'Next date' },
     { label: 'Suit value', className: 'r' },
-    { label: 'Fee @%', className: 'r' },
+    { label: 'Total Payable', className: 'r' },
     { label: 'Status' },
     ...(canEdit ? [{ label: 'Actions', className: 'c' }] : []),
   ];
@@ -237,8 +322,11 @@ export default function Cases() {
       advocateId: c.advocateId != null ? String(c.advocateId) : '',
       caseStageId: c.caseStageId != null ? String(c.caseStageId) : '',
       nextHearing: c.nextHearing || '',
-      val: c.val ? String(c.val) : '',
-      fee: c.fee ? String(c.fee) : '10',
+      val: c.suitValue != null ? String(c.suitValue) : (c.val ? String(c.val) : ''),
+      fee: c.feePercentage != null ? String(c.feePercentage) : (c.fee ? String(c.fee) : '10'),
+      processFee: c.processFee != null ? String(c.processFee) : '0',
+      filingFee: c.filingFee != null ? String(c.filingFee) : '0',
+      miscCharges: c.miscCharges != null ? String(c.miscCharges) : '0',
       status: c.status || 'Pending Approval',
     });
     setError('');
@@ -284,18 +372,17 @@ export default function Cases() {
       caseStageId: form.caseStageId ? Number(form.caseStageId) : undefined,
       courtId: form.courtId ? Number(form.courtId) : undefined,
       court: selectedCourt ? selectedCourt.name : undefined,
-      title: buildTitle({
-        caseTypeName: selectedType ? selectedType.name : 'Unknown',
-        opponent: form.opponent,
-        stageName: selectedStage ? selectedStage.name : 'Filing',
-        val: form.val,
-        fee: form.fee,
-      }),
+      title: `${selectedType ? selectedType.name.trim() : 'Unknown'}${TITLE_VS_SEP}${form.opponent.trim()}`,
       status: form.status || 'Pending Approval',
       nextHearing: form.nextHearing || undefined,
       clientId: Number(form.clientId),
       advocateId: Number(form.advocateId),
       approvalLevel: form.status === 'Pending Approval' ? 1 : form.status === 'Closed' ? 4 : 4,
+      suitValue: Number(form.val) || 0,
+      feePercentage: Number(form.fee) || 0,
+      processFee: Number(form.processFee) || 0,
+      filingFee: Number(form.filingFee) || 0,
+      miscCharges: Number(form.miscCharges) || 0,
     };
 
     try {
@@ -351,7 +438,7 @@ export default function Cases() {
   const headerActions = canEdit ? (
     <button
       type="button"
-      className="btn"
+      className="btn primary"
       onClick={openAddModal}
       disabled={!clients.length || !advocates.length}
     >
@@ -367,13 +454,13 @@ export default function Cases() {
         actions={headerActions}
       />
 
-      <div className="kpis">
+      <div className="kpis" style={{ marginBottom: 'var(--space-4)' }}>
         <KPICard label="Total Matters" value={statusCounts.all} />
-        <KPICard label="Active Cases" value={statusCounts.Active} status="issued" />
-        <KPICard label="Pending Approval" value={statusCounts['Pending Approval']} status="warning" />
+        <KPICard label="Active Cases" value={statusCounts.Active} status="issued" type="success" />
+        <KPICard label="Pending Approval" value={statusCounts['Pending Approval']} status="warning" type="warning" />
       </div>
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="fgrid">
           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
             <label>Search cases</label>
@@ -387,12 +474,12 @@ export default function Cases() {
         </div>
       </div>
 
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
         {STATUS_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={filter === btn.key ? 'on' : ''}
+            className={`btn sm ${filter === btn.key ? 'primary' : 'outline'}`}
             onClick={() => setFilter(btn.key)}
           >
             {btn.label}
@@ -401,13 +488,13 @@ export default function Cases() {
       </div>
 
       {error && !isModalOpen && (
-        <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', marginBottom: '14px' }}>
+        <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', marginBottom: 'var(--space-3)' }}>
           {error}
         </div>
       )}
 
       {canEdit && (!clients.length || !advocates.length) && !loading && (
-        <div className="card" style={{ borderColor: 'var(--brass)', color: 'var(--brass)', marginBottom: '14px' }}>
+        <div className="card" style={{ borderColor: 'var(--warning)', color: 'var(--warning)', marginBottom: 'var(--space-3)' }}>
           Add at least one client and one advocate before creating a case.
         </div>
       )}
@@ -440,30 +527,37 @@ export default function Cases() {
                     style={{ cursor: 'pointer' }}
                   >
                     <td>
-                      <span className="cno-c">{c.caseNo}</span>
+                      <span className="cno-c" style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{c.caseNo}</span>
                     </td>
-                    <td className="mut">{c.caseTypeDisplay}</td>
+                    <td className="mut" style={{ fontSize: 'var(--text-sm)' }}>{c.caseTypeDisplay}</td>
                     <td>
-                      <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{getClientName(c.clientId)}</span>
-                      <div className="mut" style={{ fontSize: '11.5px', marginTop: 2 }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>{getClientName(c.clientId)}</span>
+                      <div className="mut" style={{ fontSize: 'var(--text-xs)', marginTop: '2px' }}>
                         vs {c.opponent}
                       </div>
                     </td>
-                    <td className="mut" style={{ fontSize: '12px', maxWidth: 160 }}>
+                    <td className="mut" style={{ fontSize: 'var(--text-sm)', maxWidth: '160px' }}>
                       {c.courtDisplay}
                     </td>
-                    <td className="mut">{getAdvocateName(c.advocateId)}</td>
+                    <td className="mut" style={{ fontSize: 'var(--text-sm)' }}>{getAdvocateName(c.advocateId)}</td>
                     <td>
                       <Chip type={c.caseStageColor} label={c.caseStageDisplay} />
                     </td>
-                    <td className="mono" style={{ fontSize: '11.5px' }}>
+                    <td className="mono" style={{ fontSize: 'var(--text-sm)' }}>
                       {formatHearing(c.nextHearing)}
                     </td>
-                    <td className="r mono">{inr(c.val)}</td>
-                    <td className="r mono">
-                      {inr((c.val * c.fee) / 100)}
-                      <div className="mut" style={{ fontSize: '10px' }}>
-                        {c.fee}%
+                    <td className="r mono" style={{ fontSize: 'var(--text-sm)' }}>{inr(c.val)}</td>
+                    <td className="r mono" style={{ fontSize: 'var(--text-sm)' }}>
+                      {inr(c.totalPayable)}
+                      <div style={{ marginTop: '4px' }}>
+                        <Chip 
+                          type={
+                            c.feeCalculationStatus === 'COMPLETE' ? 'success' :
+                            c.feeCalculationStatus === 'PARTIAL' ? 'warning' :
+                            c.feeCalculationStatus === 'ERROR' ? 'danger' : 'primary'
+                          } 
+                          label={c.feeCalculationStatus}
+                        />
                       </div>
                     </td>
                     <td>
@@ -473,15 +567,15 @@ export default function Cases() {
                       <td className="c" style={{ whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          className="btn g sm"
+                          className="btn secondary sm"
                           onClick={() => openEditModal(c)}
-                          style={{ marginRight: 6 }}
+                          style={{ marginRight: '6px' }}
                         >
                           Edit
                         </button>
                         <button
                           type="button"
-                          className="btn t sm"
+                          className="btn danger sm"
                           onClick={() => handleDelete(c)}
                         >
                           Delete
@@ -504,34 +598,7 @@ export default function Cases() {
         </table>
       </div>
 
-      {!loading && filteredCases.length > 0 && (
-        <div className="tbl-foot">
-          <div>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredCases.length)} of {filteredCases.length}
-          </div>
-          <div className="pager">
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </button>
-            <span style={{ margin: '0 10px', fontSize: '12px', color: 'var(--muted)' }}>
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              type="button"
-              className="btn g sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      
 
       {/* Case Details View Modal */}
       <Modal
@@ -540,78 +607,128 @@ export default function Cases() {
         title="Case Details"
       >
         {selectedViewCase && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px solid var(--rule-2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Case Number</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewCase.caseNo}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Case Number</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedViewCase.caseNo}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Status</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Status</span>
                 <Chip
-                  type={(CST[selectedViewCase.status] || ['Unknown', 'c-grey'])[1]}
-                  label={(CST[selectedViewCase.status] || ['Unknown', 'c-grey'])[0]}
+                  type={(CST[selectedViewCase.status] || ['Unknown', 'ghost'])[1]}
+                  label={(CST[selectedViewCase.status] || ['Unknown', 'ghost'])[0]}
                 />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Case Type</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewCase.caseTypeDisplay}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Case Type</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewCase.caseTypeDisplay}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Current Stage</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Current Stage</span>
                 <Chip type={selectedViewCase.caseStageColor} label={selectedViewCase.caseStageDisplay} />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Client</span>
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{getClientName(selectedViewCase.clientId)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Client</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{getClientName(selectedViewCase.clientId)}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Opponent Party</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewCase.opponent}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Assigned Court</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewCase.courtDisplay}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Assigned Advocate</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{getAdvocateName(selectedViewCase.advocateId)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Opponent Party</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewCase.opponent}</span>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Suit Value</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{inr(selectedViewCase.val)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Assigned Court</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewCase.courtDisplay}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Estimated Fee</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>
-                  {inr((selectedViewCase.val * selectedViewCase.fee) / 100)} <span style={{ fontSize: '10.5px', fontWeight: 400, color: 'var(--muted)' }}>({selectedViewCase.fee}%)</span>
-                </span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Assigned Advocate</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{getAdvocateName(selectedViewCase.advocateId)}</span>
               </div>
             </div>
 
-            <div>
-              <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Next Hearing Date</span>
-              <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatHearing(selectedViewCase.nextHearing)}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Suit Value</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{inr(selectedViewCase.val)}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Next Hearing Date</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{formatHearing(selectedViewCase.nextHearing)}</span>
+              </div>
             </div>
 
-            <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn g" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            <div style={{ background: 'var(--bg-subtle)', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)' }}>
+              <h4 style={{ margin: '0 0 var(--space-3) 0', fontSize: '14px' }}>Financial Summary</h4>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                  <span className="mut" style={{ fontSize: '12px', fontWeight: 'bold' }}>CALCULATION STATUS</span>
+                  <Chip 
+                    type={
+                      selectedViewCase.feeCalculationStatus === 'COMPLETE' ? 'success' :
+                      selectedViewCase.feeCalculationStatus === 'PARTIAL' ? 'warning' :
+                      selectedViewCase.feeCalculationStatus === 'ERROR' ? 'danger' : 'primary'
+                    } 
+                    label={selectedViewCase.feeCalculationStatus}
+                  />
+                </div>
+                
+                {selectedViewCase.feeCalculationStatus === 'PARTIAL' && (
+                  <div style={{ fontSize: '12px', color: 'var(--warning)', marginBottom: 'var(--space-3)' }}>
+                    ⚠️ Court Fee could not be calculated because this Court has no assigned State.
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Advocate Fee ({selectedViewCase.fee}%):</span>
+                  <span className="mono">{inr(selectedViewCase.advocateFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Court Fee:</span>
+                  <span className="mono">{inr(selectedViewCase.courtFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Process Fee:</span>
+                  <span className="mono">{inr(selectedViewCase.processFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Filing Fee:</span>
+                  <span className="mono">{inr(selectedViewCase.filingFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Misc Charges:</span>
+                  <span className="mono">{inr(selectedViewCase.miscCharges)}</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  fontSize: '16px', 
+                  fontWeight: 'bold',
+                  marginTop: '8px',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--border)' 
+                }}>
+                  <span>Total Payable:</span>
+                  <span className="mono" style={{ color: 'var(--accent)' }}>{inr(selectedViewCase.totalPayable)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-foot" style={{ margin: 'var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4))', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn secondary" onClick={() => setIsViewModalOpen(false)}>Close</button>
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     openEditModal(selectedViewCase);
@@ -630,140 +747,209 @@ export default function Cases() {
         onClose={closeModal}
         title={editingCase ? 'Edit Civil Case' : 'Create Civil Case'}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && isModalOpen && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px', marginBottom: '14px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
               {error}
             </div>
           )}
 
-          <div className="fgrid">
-            <div className="f">
-              <label>Case Number</label>
-              <input
-                type="text"
-                placeholder="e.g. O.S. 214/2026"
-                value={form.caseNo}
-                onChange={setField('caseNo')}
-                required
-              />
-            </div>
-            <div className="f">
-              <label>Case Type</label>
-              <SearchableSelect
-                options={caseTypes}
-                value={form.caseTypeId}
-                onChange={(e) => setForm(p => ({ ...p, caseTypeId: e.target.value }))}
-                placeholder="Select Case Type"
-                name="caseTypeId"
-              />
-            </div>
-          </div>
+          <FormSection title="General Details">
+            <FormGrid columns={2}>
+              <FormField label="Case Number" required>
+                <input
+                  type="text"
+                  placeholder="e.g. O.S. 214/2026"
+                  value={form.caseNo}
+                  onChange={setField('caseNo')}
+                  required
+                />
+              </FormField>
+              <FormField label="Case Type">
+                <SearchableSelect
+                  options={caseTypes}
+                  value={form.caseTypeId}
+                  onChange={(e) => setForm(p => ({ ...p, caseTypeId: e.target.value }))}
+                  placeholder="Select Case Type"
+                  name="caseTypeId"
+                />
+              </FormField>
+              <FormField label="Court">
+                <SearchableSelect
+                  options={courts}
+                  value={form.courtId}
+                  onChange={(e) => setForm(p => ({ ...p, courtId: e.target.value }))}
+                  placeholder="Select court"
+                  name="courtId"
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="f" style={{ marginTop: '12px' }}>
-            <label>Client</label>
-            <SearchableSelect
-              options={clients}
-              value={form.clientId}
-              onChange={(e) => setForm(p => ({ ...p, clientId: e.target.value }))}
-              placeholder="Select client"
-              name="clientId"
-            />
-          </div>
+          <FormSection title="Parties Involved">
+            <FormGrid columns={2}>
+              <FormField label="Client">
+                <SearchableSelect
+                  options={clients}
+                  value={form.clientId}
+                  onChange={(e) => setForm(p => ({ ...p, clientId: e.target.value }))}
+                  placeholder="Select client"
+                  name="clientId"
+                />
+              </FormField>
+              <FormField label="Assigned Advocate">
+                <SearchableSelect
+                  options={advocates}
+                  value={form.advocateId}
+                  onChange={(e) => setForm(p => ({ ...p, advocateId: e.target.value }))}
+                  placeholder="Select advocate"
+                  name="advocateId"
+                />
+              </FormField>
+            </FormGrid>
+            <FormGrid columns={1}>
+              <FormField label="Opponent name & details" required>
+                <input
+                  type="text"
+                  placeholder="e.g. K. Venkataramana & others"
+                  value={form.opponent}
+                  onChange={setField('opponent')}
+                  required
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="f" style={{ marginTop: '12px' }}>
-            <label>Opponent name & details</label>
-            <input
-              type="text"
-              placeholder="e.g. K. Venkataramana & others"
-              value={form.opponent}
-              onChange={setField('opponent')}
-              required
-            />
-          </div>
+          <FormSection title="Status & Financials">
+            <FormGrid columns={2}>
+              <FormField label="Current Stage">
+                <SearchableSelect
+                  options={caseStages}
+                  value={form.caseStageId}
+                  onChange={(e) => setForm(p => ({ ...p, caseStageId: e.target.value }))}
+                  placeholder="Select stage"
+                  name="caseStageId"
+                />
+              </FormField>
+              <FormField label="Next Hearing Date">
+                <input
+                  type="date"
+                  value={form.nextHearing}
+                  onChange={setField('nextHearing')}
+                />
+              </FormField>
+              <FormField label="Suit value (₹)" required>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.val}
+                  onChange={setField('val')}
+                  required
+                />
+              </FormField>
+              <FormField label="Fee %">
+                <input
+                  type="number"
+                  placeholder="10"
+                  value={form.fee}
+                  onChange={setField('fee')}
+                />
+              </FormField>
+              <FormField label="Process Fee (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.processFee}
+                  onChange={setField('processFee')}
+                />
+              </FormField>
+              <FormField label="Filing Fee (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.filingFee}
+                  onChange={setField('filingFee')}
+                />
+              </FormField>
+              <FormField label="Misc Charges (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.miscCharges}
+                  onChange={setField('miscCharges')}
+                />
+              </FormField>
+              {editingCase && (
+                <FormField label="Status">
+                  <select value={form.status} onChange={setField('status')}>
+                    <option value="Active">Active</option>
+                    <option value="Pending Approval">Pending approval</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </FormField>
+              )}
+            </FormGrid>
+          </FormSection>
 
-          <div className="fgrid" style={{ marginTop: '12px' }}>
-            <div className="f">
-              <label>Court</label>
-              <SearchableSelect
-                options={courts}
-                value={form.courtId}
-                onChange={(e) => setForm(p => ({ ...p, courtId: e.target.value }))}
-                placeholder="Select court"
-                name="courtId"
-              />
-            </div>
-            <div className="f">
-              <label>Assigned Advocate</label>
-              <SearchableSelect
-                options={advocates}
-                value={form.advocateId}
-                onChange={(e) => setForm(p => ({ ...p, advocateId: e.target.value }))}
-                placeholder="Select advocate"
-                name="advocateId"
-              />
-            </div>
-          </div>
+          {/* Live Preview Fee Summary */}
+          {livePreview && (
+            <div className="card" style={{ padding: 'var(--space-3)', background: 'var(--bg-subtle)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                <h4 style={{ margin: 0 }}>Fee Summary (Live Preview)</h4>
+                <Chip 
+                  type={livePreview.status === 'COMPLETE' ? 'success' : livePreview.status === 'PARTIAL' ? 'warning' : 'danger'} 
+                  label={livePreview.status} 
+                />
+              </div>
+              
+              {livePreview.warning && (
+                <div style={{ fontSize: '12px', color: 'var(--warning)', marginBottom: 'var(--space-3)' }}>
+                  ⚠️ {livePreview.warning}
+                </div>
+              )}
 
-          <div className="fgrid" style={{ marginTop: '12px' }}>
-            <div className="f">
-              <label>Current Stage</label>
-              <SearchableSelect
-                options={caseStages}
-                value={form.caseStageId}
-                onChange={(e) => setForm(p => ({ ...p, caseStageId: e.target.value }))}
-                placeholder="Select stage"
-                name="caseStageId"
-              />
-            </div>
-            <div className="f">
-              <label>Next Hearing Date</label>
-              <input
-                type="date"
-                value={form.nextHearing}
-                onChange={setField('nextHearing')}
-              />
-            </div>
-          </div>
-
-          <div className="fgrid" style={{ marginTop: '12px' }}>
-            <div className="f">
-              <label>Suit value (₹)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={form.val}
-                onChange={setField('val')}
-                required
-              />
-            </div>
-            <div className="f">
-              <label>Fee %</label>
-              <input
-                type="number"
-                placeholder="10"
-                value={form.fee}
-                onChange={setField('fee')}
-              />
-            </div>
-          </div>
-
-          {editingCase && (
-            <div className="f" style={{ marginTop: '12px' }}>
-              <label>Status</label>
-              <select value={form.status} onChange={setField('status')}>
-                <option value="Active">Active</option>
-                <option value="Pending Approval">Pending approval</option>
-                <option value="Closed">Closed</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Advocate Fee ({form.fee}%):</span>
+                  <span className="mono">{inr(livePreview.advocateFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Court Fee:</span>
+                  <span className="mono">{inr(livePreview.courtFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Process Fee:</span>
+                  <span className="mono">{inr(livePreview.processFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Filing Fee:</span>
+                  <span className="mono">{inr(livePreview.filingFee)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                  <span className="mut">Misc Charges:</span>
+                  <span className="mono">{inr(livePreview.miscCharges)}</span>
+                </div>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  fontSize: '16px', 
+                  fontWeight: 'bold',
+                  marginTop: '8px',
+                  paddingTop: '8px',
+                  borderTop: '1px solid var(--border)' 
+                }}>
+                  <span>Total Payable:</span>
+                  <span className="mono" style={{ color: 'var(--accent)' }}>{inr(livePreview.totalPayable)}</span>
+                </div>
+              </div>
             </div>
           )}
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <div className="modal-foot" style={{ margin: 'var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4))', borderRadius: '0 0 var(--radius-lg) var(--radius-lg)', display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn secondary" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving
                 ? 'Saving…'
                 : editingCase

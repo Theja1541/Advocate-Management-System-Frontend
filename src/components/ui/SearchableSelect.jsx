@@ -101,16 +101,17 @@ export default function SearchableSelect({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '8px 10px',
-          border: error ? '1px solid var(--tape)' : '1px solid var(--rule)',
-          borderRadius: '5px',
-          background: disabled ? 'var(--panel)' : 'var(--card)',
+          padding: '10px 12px',
+          border: error ? '1px solid var(--danger)' : '1px solid #cbd5e1',
+          borderRadius: 'var(--radius-md)',
+          background: disabled ? 'var(--background)' : 'var(--card)',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          minHeight: '35px',
+          minHeight: '38px',
           outline: 'none',
+          transition: 'all var(--transition-fast)'
         }}
       >
-        <span className={!selectedOption ? 'placeholder' : ''} style={{ color: !selectedOption ? 'var(--muted)' : 'var(--ink)', fontSize: '12.5px' }}>
+        <span className={!selectedOption ? 'placeholder' : ''} style={{ color: !selectedOption ? 'var(--text-secondary)' : '#0f172a', fontSize: '14px' }}>
           {loading ? 'Loading...' : (selectedOption ? selectedOption.name : placeholder)}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -151,17 +152,17 @@ export default function SearchableSelect({
             right: 0,
             zIndex: 1000,
             marginTop: '4px',
-            border: '1px solid var(--rule)',
-            borderRadius: '5px',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
             background: 'var(--card)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            maxHeight: '200px',
+            boxShadow: 'var(--shadow-lg)',
+            maxHeight: '220px',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          <div style={{ padding: '8px', borderBottom: '1px solid var(--rule-2)', background: 'var(--panel)' }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid var(--border)', background: 'var(--background)' }}>
             <input
               ref={searchInputRef}
               type="text"
@@ -171,13 +172,13 @@ export default function SearchableSelect({
               onKeyDown={handleKeyDown}
               style={{
                 width: '100%',
-                padding: '6px 10px',
-                border: '1px solid var(--rule)',
-                borderRadius: '5px',
-                fontSize: '12.5px',
+                padding: '8px 12px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: 'var(--text-sm)',
                 outline: 'none',
                 background: 'var(--card)',
-                color: 'var(--ink)',
+                color: 'var(--text-primary)',
               }}
             />
           </div>
@@ -196,14 +197,14 @@ export default function SearchableSelect({
                   style={{
                     padding: '8px 12px',
                     cursor: 'pointer',
-                    fontSize: '12.5px',
-                    color: 'var(--ink)',
+                    fontSize: 'var(--text-sm)',
+                    color: 'var(--text-primary)',
                     background: String(opt.id) === String(value)
-                      ? 'var(--brass-l)'
+                      ? 'rgba(37, 99, 235, 0.1)'
                       : index === highlightedIndex
-                        ? 'var(--panel)'
+                        ? 'var(--background)'
                         : 'transparent',
-                    fontWeight: String(opt.id) === String(value) ? 600 : 400,
+                    fontWeight: String(opt.id) === String(value) ? 500 : 400,
                   }}
                 >
                   {opt.name}

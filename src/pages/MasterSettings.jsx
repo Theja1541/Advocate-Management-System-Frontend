@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Modal from '../components/ui/Modal';
+import Chip from '../components/ui/Chip';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { 
   getCaseTypes, createCaseType, updateCaseType, deactivateCaseType, activateCaseType,
   getCaseStages, createCaseStage, updateCaseStage, deactivateCaseStage, activateCaseStage,
@@ -435,7 +437,7 @@ export default function MasterSettings() {
         title="Master Configuration" 
         description="Configure lookup attributes, case lifecycles, state fee rules, and institutional courts registers."
         actions={
-          <button className="btn" onClick={handleOpenAdd}>
+          <button className="btn primary" onClick={handleOpenAdd}>
             {activeTab === 'types' 
               ? 'Add Case Type' 
               : activeTab === 'stages' 
@@ -450,40 +452,40 @@ export default function MasterSettings() {
       />
 
       {/* Tabs Row */}
-      <div className="filt" style={{ marginBottom: '14px', borderBottom: '1px solid var(--rule)', paddingBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+      <div className="filt" style={{ marginBottom: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-2)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
         <button 
-          className={activeTab === 'types' ? 'on' : ''} 
+          className={`btn ${activeTab === 'types' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('types')}
         >
           Case Types
         </button>
         <button 
-          className={activeTab === 'stages' ? 'on' : ''} 
+          className={`btn ${activeTab === 'stages' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('stages')}
         >
           Case Stages
         </button>
         <button 
-          className={activeTab === 'courts' ? 'on' : ''} 
+          className={`btn ${activeTab === 'courts' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('courts')}
         >
           Courts Master
         </button>
         <button 
-          className={activeTab === 'categories' ? 'on' : ''} 
+          className={`btn ${activeTab === 'categories' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('categories')}
         >
           Document Categories
         </button>
         <button 
-          className={activeTab === 'stateFees' ? 'on' : ''} 
+          className={`btn ${activeTab === 'stateFees' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('stateFees')}
         >
           🏛️ State Fee Rules
         </button>
       </div>
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="fgrid">
           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
             <label>Search masters</label>
@@ -498,7 +500,7 @@ export default function MasterSettings() {
       </div>
 
       {error && !isModalOpen && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)', fontSize: '12.5px' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
           {error}
         </div>
       )}
@@ -531,11 +533,11 @@ export default function MasterSettings() {
                       <td className="mut">{t.description || '—'}</td>
                       <td>{t.displayOrder}</td>
                       <td>
-                        <span className={`chip ${t.isActive ? 'c-baize' : 'c-grey'}`}>{t.isActive ? 'Active' : 'Inactive'}</span>
+                        <Chip type={t.isActive ? 'success' : 'ghost'} label={t.isActive ? 'Active' : 'Inactive'} />
                       </td>
                       <td className="c" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn g sm" onClick={() => handleOpenEdit(t)} style={{ marginRight: '6px' }}>Edit</button>
-                        <button className={`btn sm ${t.isActive ? 't' : ''}`} onClick={() => handleToggleActive(t)}>{t.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn secondary sm" onClick={() => handleOpenEdit(t)} style={{ marginRight: 'var(--space-2)' }}>Edit</button>
+                        <button className={`btn sm ${t.isActive ? 'danger' : 'primary'}`} onClick={() => handleToggleActive(t)}>{t.isActive ? 'Deactivate' : 'Activate'}</button>
                       </td>
                     </tr>
                   ))
@@ -568,14 +570,14 @@ export default function MasterSettings() {
                       <td><span className="mono font-semibold">{s.code}</span></td>
                       <td><b>{s.name}</b></td>
                       <td>{s.displayOrder}</td>
-                      <td><span className={`chip ${s.color || 'c-grey'}`}>{s.color || 'c-grey'}</span></td>
+                      <td><Chip type={s.color === 'c-baize' ? 'success' : s.color === 'c-tape' ? 'danger' : s.color === 'c-brass' ? 'warning' : 'ghost'} label={s.color || 'c-grey'} /></td>
                       <td>{s.isClosed ? 'Yes ✅' : 'No'}</td>
                       <td>
-                        <span className={`chip ${s.isActive ? 'c-baize' : 'c-grey'}`}>{s.isActive ? 'Active' : 'Inactive'}</span>
+                        <Chip type={s.isActive ? 'success' : 'ghost'} label={s.isActive ? 'Active' : 'Inactive'} />
                       </td>
                       <td className="c" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn g sm" onClick={() => handleOpenEdit(s)} style={{ marginRight: '6px' }}>Edit</button>
-                        <button className={`btn sm ${s.isActive ? 't' : ''}`} onClick={() => handleToggleActive(s)}>{s.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn secondary sm" onClick={() => handleOpenEdit(s)} style={{ marginRight: 'var(--space-2)' }}>Edit</button>
+                        <button className={`btn sm ${s.isActive ? 'danger' : 'primary'}`} onClick={() => handleToggleActive(s)}>{s.isActive ? 'Deactivate' : 'Activate'}</button>
                       </td>
                     </tr>
                   ))
@@ -607,11 +609,11 @@ export default function MasterSettings() {
                       <td><b>{c.name}</b></td>
                       <td className="mut">{c.location || '—'}</td>
                       <td>
-                        <span className={`chip ${c.isActive ? 'c-baize' : 'c-grey'}`}>{c.isActive ? 'Active' : 'Inactive'}</span>
+                        <Chip type={c.isActive ? 'success' : 'ghost'} label={c.isActive ? 'Active' : 'Inactive'} />
                       </td>
                       <td className="c" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn g sm" onClick={() => handleOpenEdit(c)} style={{ marginRight: '6px' }}>Edit</button>
-                        <button className={`btn sm ${c.isActive ? 't' : ''}`} onClick={() => handleToggleActive(c)}>{c.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn secondary sm" onClick={() => handleOpenEdit(c)} style={{ marginRight: 'var(--space-2)' }}>Edit</button>
+                        <button className={`btn sm ${c.isActive ? 'danger' : 'primary'}`} onClick={() => handleToggleActive(c)}>{c.isActive ? 'Deactivate' : 'Activate'}</button>
                       </td>
                     </tr>
                   ))
@@ -645,11 +647,11 @@ export default function MasterSettings() {
                       <td className="mut">{c.description || '—'}</td>
                       <td>{c.displayOrder}</td>
                       <td>
-                        <span className={`chip ${c.isActive ? 'c-baize' : 'c-grey'}`}>{c.isActive ? 'Active' : 'Inactive'}</span>
+                        <Chip type={c.isActive ? 'success' : 'ghost'} label={c.isActive ? 'Active' : 'Inactive'} />
                       </td>
                       <td className="c" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn g sm" onClick={() => handleOpenEdit(c)} style={{ marginRight: '6px' }}>Edit</button>
-                        <button className={`btn sm ${c.isActive ? 't' : ''}`} onClick={() => handleToggleActive(c)}>{c.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn secondary sm" onClick={() => handleOpenEdit(c)} style={{ marginRight: 'var(--space-2)' }}>Edit</button>
+                        <button className={`btn sm ${c.isActive ? 'danger' : 'primary'}`} onClick={() => handleToggleActive(c)}>{c.isActive ? 'Deactivate' : 'Activate'}</button>
                       </td>
                     </tr>
                   ))
@@ -682,12 +684,10 @@ export default function MasterSettings() {
                     <tr key={f.id}>
                       <td>
                         <span className="mono font-bold" style={{ display: 'inline-block', minWidth: '32px' }}>{f.stateCode}</span>
-                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{f.stateName}</div>
+                        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>{f.stateName}</div>
                       </td>
                       <td>
-                        <span className={`chip ${f.ruleType === 'SLAB' ? 'c-brass' : f.ruleType === 'PERCENTAGE' ? 'c-baize' : 'c-grey'}`}>
-                          {f.ruleType}
-                        </span>
+                        <Chip type={f.ruleType === 'SLAB' ? 'warning' : f.ruleType === 'PERCENTAGE' ? 'success' : 'ghost'} label={f.ruleType} />
                       </td>
                       <td>
                         {f.ruleType === 'FIXED' && <span className="mono">Fixed ₹{Number(f.fixedAmount).toLocaleString('en-IN')}</span>}
@@ -700,25 +700,25 @@ export default function MasterSettings() {
                           </span>
                         )}
                       </td>
-                      <td className="mono" style={{ fontSize: '11px' }}>
+                      <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                         <div>From: <b>{f.effectiveFrom}</b></div>
                         <div>To: {f.effectiveTo ? <b>{f.effectiveTo}</b> : <span className="mut">Present</span>}</div>
                       </td>
-                      <td style={{ fontSize: '11.5px', maxWidth: '240px' }}>
+                      <td style={{ fontSize: 'var(--text-xs)', maxWidth: '240px' }}>
                         <div style={{ fontWeight: 600 }}>{f.actName || 'State Court Fees Act'}</div>
                         <div className="mut">Ver: {f.actVersion || '—'} | Notif: {f.notificationNo || '—'}</div>
                       </td>
-                      <td className="mono" style={{ fontSize: '11px' }}>
+                      <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                         <div>Process: ₹{Number(f.processFee).toLocaleString('en-IN')}</div>
                         <div>Filing: ₹{Number(f.filingFee).toLocaleString('en-IN')}</div>
                         <div>Misc: ₹{Number(f.miscCharges).toLocaleString('en-IN')}</div>
                       </td>
                       <td>
-                        <span className={`chip ${f.isActive ? 'c-baize' : 'c-grey'}`}>{f.isActive ? 'Active' : 'Inactive'}</span>
+                        <Chip type={f.isActive ? 'success' : 'ghost'} label={f.isActive ? 'Active' : 'Inactive'} />
                       </td>
                       <td className="c" style={{ whiteSpace: 'nowrap' }}>
-                        <button className="btn g sm" onClick={() => handleOpenEdit(f)} style={{ marginRight: '6px' }}>Edit</button>
-                        <button className={`btn sm ${f.isActive ? 't' : ''}`} onClick={() => handleToggleActive(f)}>{f.isActive ? 'Deactivate' : 'Activate'}</button>
+                        <button className="btn secondary sm" onClick={() => handleOpenEdit(f)} style={{ marginRight: 'var(--space-2)' }}>Edit</button>
+                        <button className={`btn sm ${f.isActive ? 'danger' : 'primary'}`} onClick={() => handleToggleActive(f)}>{f.isActive ? 'Deactivate' : 'Activate'}</button>
                       </td>
                     </tr>
                   ))
@@ -745,317 +745,309 @@ export default function MasterSettings() {
                   : (editingItem ? 'Edit State Fee Rule' : 'Add State Fee Rule')
         }
       >
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
               {error}
             </div>
           )}
 
           {activeTab === 'types' && (
-            <>
-              <div className="f">
-                <label>Code (Unique identifier)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. PTN" 
-                  value={typeForm.code} 
-                  onChange={(e) => setTypeForm(p => ({ ...p, code: e.target.value }))}
-                  disabled={!!editingItem}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Partition Suit" 
-                  value={typeForm.name} 
-                  onChange={(e) => setTypeForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Description</label>
-                <textarea 
-                  placeholder="Add details..." 
-                  value={typeForm.description} 
-                  onChange={(e) => setTypeForm(p => ({ ...p, description: e.target.value }))}
-                  rows="3"
-                />
-              </div>
-              <div className="f">
-                <label>Display Order</label>
-                <input 
-                  type="number" 
-                  value={typeForm.displayOrder} 
-                  onChange={(e) => setTypeForm(p => ({ ...p, displayOrder: e.target.value }))}
-                  required
-                />
-              </div>
-            </>
+            <FormSection title="General Settings">
+              <FormGrid columns={1}>
+                <FormField label="Code (Unique identifier)" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. PTN" 
+                    value={typeForm.code} 
+                    onChange={(e) => setTypeForm(p => ({ ...p, code: e.target.value }))}
+                    disabled={!!editingItem}
+                    required
+                  />
+                </FormField>
+                <FormField label="Name" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Partition Suit" 
+                    value={typeForm.name} 
+                    onChange={(e) => setTypeForm(p => ({ ...p, name: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="Description">
+                  <textarea 
+                    placeholder="Add details..." 
+                    value={typeForm.description} 
+                    onChange={(e) => setTypeForm(p => ({ ...p, description: e.target.value }))}
+                    rows="3"
+                  />
+                </FormField>
+                <FormField label="Display Order" required={true}>
+                  <input 
+                    type="number" 
+                    value={typeForm.displayOrder} 
+                    onChange={(e) => setTypeForm(p => ({ ...p, displayOrder: e.target.value }))}
+                    required
+                  />
+                </FormField>
+              </FormGrid>
+            </FormSection>
           )}
 
           {activeTab === 'stages' && (
-            <>
-              <div className="f">
-                <label>Code (Unique identifier)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. FIL" 
-                  value={stageForm.code} 
-                  onChange={(e) => setStageForm(p => ({ ...p, code: e.target.value }))}
-                  disabled={!!editingItem}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Filing" 
-                  value={stageForm.name} 
-                  onChange={(e) => setStageForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Display Order</label>
-                <input 
-                  type="number" 
-                  value={stageForm.displayOrder} 
-                  onChange={(e) => setStageForm(p => ({ ...p, displayOrder: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Theme Badge Color Class</label>
-                <select value={stageForm.color} onChange={(e) => setStageForm(p => ({ ...p, color: e.target.value }))}>
-                  <option value="c-baize">Green (c-baize)</option>
-                  <option value="c-brass">Yellow (c-brass)</option>
-                  <option value="c-grey">Grey (c-grey)</option>
-                  <option value="c-tape">Red (c-tape)</option>
-                </select>
-              </div>
-              <div className="f" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  id="isClosed" 
-                  checked={stageForm.isClosed} 
-                  onChange={(e) => setStageForm(p => ({ ...p, isClosed: e.target.checked }))}
-                />
-                <label htmlFor="isClosed" style={{ textTransform: 'none', margin: 0, fontSize: '13px' }}>Is litigation closed at this stage?</label>
-              </div>
-            </>
+            <FormSection title="General Settings">
+              <FormGrid columns={1}>
+                <FormField label="Code (Unique identifier)" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. FIL" 
+                    value={stageForm.code} 
+                    onChange={(e) => setStageForm(p => ({ ...p, code: e.target.value }))}
+                    disabled={!!editingItem}
+                    required
+                  />
+                </FormField>
+                <FormField label="Name" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Filing" 
+                    value={stageForm.name} 
+                    onChange={(e) => setStageForm(p => ({ ...p, name: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="Display Order" required={true}>
+                  <input 
+                    type="number" 
+                    value={stageForm.displayOrder} 
+                    onChange={(e) => setStageForm(p => ({ ...p, displayOrder: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="Theme Badge Color Class">
+                  <select value={stageForm.color} onChange={(e) => setStageForm(p => ({ ...p, color: e.target.value }))}>
+                    <option value="c-baize">Green (c-baize)</option>
+                    <option value="c-brass">Yellow (c-brass)</option>
+                    <option value="c-grey">Grey (c-grey)</option>
+                    <option value="c-tape">Red (c-tape)</option>
+                  </select>
+                </FormField>
+                <FormField label="Is litigation closed at this stage?">
+                  <input 
+                    type="checkbox" 
+                    id="isClosed" 
+                    checked={stageForm.isClosed} 
+                    onChange={(e) => setStageForm(p => ({ ...p, isClosed: e.target.checked }))}
+                  />
+                </FormField>
+              </FormGrid>
+            </FormSection>
           )}
 
           {activeTab === 'courts' && (
-            <>
-              <div className="f">
-                <label>Code (Unique identifier)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. SCJ_MDP" 
-                  value={courtForm.code} 
-                  onChange={(e) => setCourtForm(p => ({ ...p, code: e.target.value }))}
-                  disabled={!!editingItem}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Sr. Civil Judge Court, Madanapalle" 
-                  value={courtForm.name} 
-                  onChange={(e) => setCourtForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-            </>
+            <FormSection title="General Settings">
+              <FormGrid columns={1}>
+                <FormField label="Code (Unique identifier)" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. SCJ_MDP" 
+                    value={courtForm.code} 
+                    onChange={(e) => setCourtForm(p => ({ ...p, code: e.target.value }))}
+                    disabled={!!editingItem}
+                    required
+                  />
+                </FormField>
+                <FormField label="Name" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Sr. Civil Judge Court, Madanapalle" 
+                    value={courtForm.name} 
+                    onChange={(e) => setCourtForm(p => ({ ...p, name: e.target.value }))}
+                    required
+                  />
+                </FormField>
+              </FormGrid>
+            </FormSection>
           )}
 
           {activeTab === 'categories' && (
-            <>
-              <div className="f">
-                <label>Code (Unique identifier)</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. PETN" 
-                  value={categoryForm.code} 
-                  onChange={(e) => setCategoryForm(p => ({ ...p, code: e.target.value }))}
-                  disabled={!!editingItem}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Name</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Petitions" 
-                  value={categoryForm.name} 
-                  onChange={(e) => setCategoryForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="f">
-                <label>Description</label>
-                <textarea 
-                  placeholder="Add details..." 
-                  value={categoryForm.description} 
-                  onChange={(e) => setCategoryForm(p => ({ ...p, description: e.target.value }))}
-                  rows="3"
-                />
-              </div>
-              <div className="f">
-                <label>Display Order</label>
-                <input 
-                  type="number" 
-                  value={categoryForm.displayOrder} 
-                  onChange={(e) => setCategoryForm(p => ({ ...p, displayOrder: e.target.value }))}
-                  required
-                />
-              </div>
-            </>
+            <FormSection title="General Settings">
+              <FormGrid columns={1}>
+                <FormField label="Code (Unique identifier)" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. PETN" 
+                    value={categoryForm.code} 
+                    onChange={(e) => setCategoryForm(p => ({ ...p, code: e.target.value }))}
+                    disabled={!!editingItem}
+                    required
+                  />
+                </FormField>
+                <FormField label="Name" required={true}>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Petitions" 
+                    value={categoryForm.name} 
+                    onChange={(e) => setCategoryForm(p => ({ ...p, name: e.target.value }))}
+                    required
+                  />
+                </FormField>
+                <FormField label="Description">
+                  <textarea 
+                    placeholder="Add details..." 
+                    value={categoryForm.description} 
+                    onChange={(e) => setCategoryForm(p => ({ ...p, description: e.target.value }))}
+                    rows="3"
+                  />
+                </FormField>
+                <FormField label="Display Order" required={true}>
+                  <input 
+                    type="number" 
+                    value={categoryForm.displayOrder} 
+                    onChange={(e) => setCategoryForm(p => ({ ...p, displayOrder: e.target.value }))}
+                    required
+                  />
+                </FormField>
+              </FormGrid>
+            </FormSection>
           )}
 
           {activeTab === 'stateFees' && (
             <>
-              <div className="fgrid">
-                <div className="f" style={{ flex: 1 }}>
-                  <label>Select State</label>
-                  <select 
-                    value={stateFeeForm.stateCode} 
-                    onChange={(e) => handleStateSelectChange(e.target.value)}
-                  >
-                    {INDIAN_STATES.map(s => (
-                      <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="f" style={{ flex: 1 }}>
-                  <label>Rule Calculation Mode</label>
-                  <select 
-                    value={stateFeeForm.ruleType} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, ruleType: e.target.value }))}
-                  >
-                    <option value="PERCENTAGE">Percentage-Based (%)</option>
-                    <option value="SLAB">Slab-Wise Tiered Rules</option>
-                    <option value="FIXED">Fixed Amount (₹)</option>
-                  </select>
-                </div>
-              </div>
+              <FormSection title="General Settings">
+                <FormGrid columns={2}>
+                  <FormField label="Select State">
+                    <select 
+                      value={stateFeeForm.stateCode} 
+                      onChange={(e) => handleStateSelectChange(e.target.value)}
+                    >
+                      {INDIAN_STATES.map(s => (
+                        <option key={s.code} value={s.code}>{s.name} ({s.code})</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Rule Calculation Mode">
+                    <select 
+                      value={stateFeeForm.ruleType} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, ruleType: e.target.value }))}
+                    >
+                      <option value="PERCENTAGE">Percentage-Based (%)</option>
+                      <option value="SLAB">Slab-Wise Tiered Rules</option>
+                      <option value="FIXED">Fixed Amount (₹)</option>
+                    </select>
+                  </FormField>
+                </FormGrid>
+              </FormSection>
 
-              {/* Effective Window */}
-              <div className="fgrid">
-                <div className="f" style={{ flex: 1 }}>
-                  <label>Effective From Date</label>
-                  <input 
-                    type="date" 
-                    value={stateFeeForm.effectiveFrom} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, effectiveFrom: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="f" style={{ flex: 1 }}>
-                  <label>Effective To Date (Leave blank for open-ended)</label>
-                  <input 
-                    type="date" 
-                    value={stateFeeForm.effectiveTo} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, effectiveTo: e.target.value }))}
-                  />
-                </div>
-              </div>
+              <FormSection title="Effective Window">
+                <FormGrid columns={2}>
+                  <FormField label="Effective From Date" required={true}>
+                    <input 
+                      type="date" 
+                      value={stateFeeForm.effectiveFrom} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, effectiveFrom: e.target.value }))}
+                      required
+                    />
+                  </FormField>
+                  <FormField label="Effective To Date (Leave blank for open-ended)">
+                    <input 
+                      type="date" 
+                      value={stateFeeForm.effectiveTo} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, effectiveTo: e.target.value }))}
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormSection>
 
-              {/* Government Act & Notification details */}
-              <div className="fgrid">
-                <div className="f" style={{ flex: 2 }}>
-                  <label>Government Act Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. AP Court Fees and Suits Valuation Act, 1956" 
-                    value={stateFeeForm.actName} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, actName: e.target.value }))}
-                  />
-                </div>
-                <div className="f" style={{ flex: 1 }}>
-                  <label>Act Version</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Amended 2022" 
-                    value={stateFeeForm.actVersion} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, actVersion: e.target.value }))}
-                  />
-                </div>
-              </div>
+              <FormSection title="Government Act & Notification Details">
+                <FormGrid columns={2}>
+                  <FormField label="Government Act Name">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. AP Court Fees and Suits Valuation Act, 1956" 
+                      value={stateFeeForm.actName} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, actName: e.target.value }))}
+                    />
+                  </FormField>
+                  <FormField label="Act Version">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Amended 2022" 
+                      value={stateFeeForm.actVersion} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, actVersion: e.target.value }))}
+                    />
+                  </FormField>
+                </FormGrid>
+                <FormGrid columns={1}>
+                  <FormField label="Notification / G.O. Reference No.">
+                    <input 
+                      type="text" 
+                      placeholder="e.g. G.O.Ms.No. 42 / Legal Affairs" 
+                      value={stateFeeForm.notificationNo} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, notificationNo: e.target.value }))}
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormSection>
 
-              <div className="f">
-                <label>Notification / G.O. Reference No.</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. G.O.Ms.No. 42 / Legal Affairs" 
-                  value={stateFeeForm.notificationNo} 
-                  onChange={(e) => setStateFeeForm(p => ({ ...p, notificationNo: e.target.value }))}
-                />
-              </div>
-
-              {/* Rule specific fields */}
               {stateFeeForm.ruleType === 'FIXED' && (
-                <div className="f">
-                  <label>Fixed Court Fee Amount (₹)</label>
-                  <input 
-                    type="number" 
-                    className="mono" 
-                    value={stateFeeForm.fixedAmount} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, fixedAmount: e.target.value }))}
-                    required
-                  />
-                </div>
+                <FormSection title="Fixed Rule Details">
+                  <FormGrid columns={1}>
+                    <FormField label="Fixed Court Fee Amount (₹)" required={true}>
+                      <input 
+                        type="number" 
+                        className="mono" 
+                        value={stateFeeForm.fixedAmount} 
+                        onChange={(e) => setStateFeeForm(p => ({ ...p, fixedAmount: e.target.value }))}
+                        required
+                      />
+                    </FormField>
+                  </FormGrid>
+                </FormSection>
               )}
 
               {stateFeeForm.ruleType === 'PERCENTAGE' && (
-                <div className="fgrid">
-                  <div className="f">
-                    <label>Court Fee Percentage Rate (%)</label>
-                    <input 
-                      type="number" 
-                      step="0.01" 
-                      className="mono" 
-                      value={stateFeeForm.percentageRate} 
-                      onChange={(e) => setStateFeeForm(p => ({ ...p, percentageRate: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="f">
-                    <label>Minimum Fee Cap (₹)</label>
-                    <input 
-                      type="number" 
-                      className="mono" 
-                      value={stateFeeForm.minFee} 
-                      onChange={(e) => setStateFeeForm(p => ({ ...p, minFee: e.target.value }))}
-                    />
-                  </div>
-                  <div className="f">
-                    <label>Maximum Fee Cap (₹)</label>
-                    <input 
-                      type="number" 
-                      className="mono" 
-                      value={stateFeeForm.maxFee} 
-                      onChange={(e) => setStateFeeForm(p => ({ ...p, maxFee: e.target.value }))}
-                    />
-                  </div>
-                </div>
+                <FormSection title="Percentage Rule Details">
+                  <FormGrid columns={3}>
+                    <FormField label="Court Fee Percentage Rate (%)" required={true}>
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        className="mono" 
+                        value={stateFeeForm.percentageRate} 
+                        onChange={(e) => setStateFeeForm(p => ({ ...p, percentageRate: e.target.value }))}
+                        required
+                      />
+                    </FormField>
+                    <FormField label="Minimum Fee Cap (₹)">
+                      <input 
+                        type="number" 
+                        className="mono" 
+                        value={stateFeeForm.minFee} 
+                        onChange={(e) => setStateFeeForm(p => ({ ...p, minFee: e.target.value }))}
+                      />
+                    </FormField>
+                    <FormField label="Maximum Fee Cap (₹)">
+                      <input 
+                        type="number" 
+                        className="mono" 
+                        value={stateFeeForm.maxFee} 
+                        onChange={(e) => setStateFeeForm(p => ({ ...p, maxFee: e.target.value }))}
+                      />
+                    </FormField>
+                  </FormGrid>
+                </FormSection>
               )}
 
               {stateFeeForm.ruleType === 'SLAB' && (
-                <div className="card" style={{ padding: '12px', background: 'var(--card-bg, #fff)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>Dynamic Relational Slabs Manager</div>
-                    <button type="button" className="btn sm g" onClick={handleAddSlabRow}>+ Add Slab Tier</button>
+                <div className="card" style={{ padding: 'var(--space-3)', background: 'var(--card)', marginBottom: 'var(--space-3)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: 'var(--text-sm)' }}>Dynamic Relational Slabs Manager</div>
+                    <button type="button" className="btn secondary sm" onClick={handleAddSlabRow}>+ Add Slab Tier</button>
                   </div>
 
                   <div style={{ overflowX: 'auto' }}>
-                    <table className="t sm" style={{ fontSize: '12px' }}>
+                    <table className="t sm" style={{ fontSize: 'var(--text-xs)' }}>
                       <thead>
                         <tr>
                           <th>From Amount (₹)</th>
@@ -1090,7 +1082,7 @@ export default function MasterSettings() {
                             </td>
                             <td>
                               <select 
-                                style={{ padding: '4px', fontSize: '11.5px' }}
+                                style={{ padding: 'var(--space-1)', fontSize: 'var(--text-xs)' }}
                                 value={slab.feeType}
                                 onChange={(e) => handleSlabChange(idx, 'feeType', e.target.value)}
                               >
@@ -1121,7 +1113,7 @@ export default function MasterSettings() {
                               {stateFeeForm.slabs.length > 1 && (
                                 <button 
                                   type="button" 
-                                  className="btn sm t" 
+                                  className="btn danger sm" 
                                   onClick={() => handleRemoveSlabRow(idx)}
                                 >
                                   ×
@@ -1136,73 +1128,70 @@ export default function MasterSettings() {
                 </div>
               )}
 
-              {/* Separate Additional Charges */}
-              <div style={{ fontWeight: 'bold', fontSize: '12.5px', marginTop: '6px' }}>Separate Additional Charges</div>
-              <div className="fgrid">
-                <div className="f">
-                  <label>Process Fee (₹)</label>
-                  <input 
-                    type="number" 
-                    className="mono" 
-                    value={stateFeeForm.processFee} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, processFee: e.target.value }))}
-                  />
-                </div>
-                <div className="f">
-                  <label>Filing Fee (₹)</label>
-                  <input 
-                    type="number" 
-                    className="mono" 
-                    value={stateFeeForm.filingFee} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, filingFee: e.target.value }))}
-                  />
-                </div>
-                <div className="f">
-                  <label>Misc. Charges (₹)</label>
-                  <input 
-                    type="number" 
-                    className="mono" 
-                    value={stateFeeForm.miscCharges} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, miscCharges: e.target.value }))}
-                  />
-                </div>
-                <div className="f">
-                  <label>Advocate Fee Default %</label>
-                  <input 
-                    type="number" 
-                    step="0.5" 
-                    className="mono" 
-                    value={stateFeeForm.defaultAdvocateFeePct} 
-                    onChange={(e) => setStateFeeForm(p => ({ ...p, defaultAdvocateFeePct: e.target.value }))}
-                  />
-                </div>
-              </div>
+              <FormSection title="Separate Additional Charges">
+                <FormGrid columns={4}>
+                  <FormField label="Process Fee (₹)">
+                    <input 
+                      type="number" 
+                      className="mono" 
+                      value={stateFeeForm.processFee} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, processFee: e.target.value }))}
+                    />
+                  </FormField>
+                  <FormField label="Filing Fee (₹)">
+                    <input 
+                      type="number" 
+                      className="mono" 
+                      value={stateFeeForm.filingFee} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, filingFee: e.target.value }))}
+                    />
+                  </FormField>
+                  <FormField label="Misc. Charges (₹)">
+                    <input 
+                      type="number" 
+                      className="mono" 
+                      value={stateFeeForm.miscCharges} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, miscCharges: e.target.value }))}
+                    />
+                  </FormField>
+                  <FormField label="Advocate Fee Default %">
+                    <input 
+                      type="number" 
+                      step="0.5" 
+                      className="mono" 
+                      value={stateFeeForm.defaultAdvocateFeePct} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, defaultAdvocateFeePct: e.target.value }))}
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormSection>
 
-              <div className="f">
-                <label>Notes / Act References</label>
-                <textarea 
-                  placeholder="Notes, Gazette citations, or exemption clauses..." 
-                  value={stateFeeForm.notes} 
-                  onChange={(e) => setStateFeeForm(p => ({ ...p, notes: e.target.value }))}
-                  rows="2"
-                />
-              </div>
-
-              <div className="f" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  id="stateFeeActive" 
-                  checked={stateFeeForm.isActive} 
-                  onChange={(e) => setStateFeeForm(p => ({ ...p, isActive: e.target.checked }))}
-                />
-                <label htmlFor="stateFeeActive" style={{ textTransform: 'none', margin: 0, fontSize: '13px' }}>Is this state fee configuration active?</label>
-              </div>
+              <FormSection title="Additional Notes & Status">
+                <FormGrid columns={1}>
+                  <FormField label="Notes / Act References">
+                    <textarea 
+                      placeholder="Notes, Gazette citations, or exemption clauses..." 
+                      value={stateFeeForm.notes} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, notes: e.target.value }))}
+                      rows="2"
+                    />
+                  </FormField>
+                  <FormField label="Is this state fee configuration active?">
+                    <input 
+                      type="checkbox" 
+                      id="stateFeeActive" 
+                      checked={stateFeeForm.isActive} 
+                      onChange={(e) => setStateFeeForm(p => ({ ...p, isActive: e.target.checked }))}
+                    />
+                  </FormField>
+                </FormGrid>
+              </FormSection>
             </>
           )}
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-3)', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+            <button type="button" className="btn secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save Configuration'}
             </button>
           </div>

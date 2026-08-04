@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import Modal from '../components/ui/Modal';
+import Chip from '../components/ui/Chip';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { getCaseTypes, createCaseType, updateCaseType, deactivateCaseType, activateCaseType } from '../services/caseMastersService';
 
 export default function CaseTypesSettings() {
@@ -111,17 +113,17 @@ export default function CaseTypesSettings() {
         title="Case Types Masters" 
         description="Configure lookup values for enterprise matter types."
         actions={
-          <button className="btn" onClick={handleOpenAdd}>Add Case Type</button>
+          <button className="btn primary" onClick={handleOpenAdd}>Add Case Type</button>
         }
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <input 
           type="text" 
           placeholder="Search by code or name..." 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
-          style={{ width: '100%' }}
+          style={{ width: '100%', padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
         />
       </div>
 
@@ -154,20 +156,18 @@ export default function CaseTypesSettings() {
                   <td className="mut">{t.description || '—'}</td>
                   <td>{t.displayOrder}</td>
                   <td>
-                    <span className={`chip ${t.isActive ? 'c-baize' : 'c-grey'}`}>
-                      {t.isActive ? 'Active' : 'Inactive'}
-                    </span>
+                    <Chip type={t.isActive ? "success" : "ghost"} label={t.isActive ? 'Active' : 'Inactive'} />
                   </td>
                   <td className="c" style={{ whiteSpace: 'nowrap' }}>
                     <button 
-                      className="btn g sm" 
+                      className="btn outline sm" 
                       onClick={() => handleOpenEdit(t)}
-                      style={{ marginRight: '6px' }}
+                      style={{ marginRight: 'var(--space-2)' }}
                     >
                       Edit
                     </button>
                     <button 
-                      className={`btn sm ${t.isActive ? 't' : ''}`}
+                      className={`btn sm ${t.isActive ? 'danger' : 'success'}`}
                       onClick={() => handleToggleActive(t)}
                     >
                       {t.isActive ? 'Deactivate' : 'Activate'}
@@ -185,59 +185,63 @@ export default function CaseTypesSettings() {
         onClose={() => setIsModalOpen(false)}
         title={editingType ? 'Edit Case Type' : 'Add Case Type'}
       >
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
               {error}
             </div>
           )}
 
-          <div className="f">
-            <label>Code (Unique identifier)</label>
-            <input 
-              type="text" 
-              placeholder="e.g. PTN" 
-              value={form.code} 
-              onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
-              disabled={!!editingType}
-              required
-            />
-          </div>
+          <FormSection title="Type Details">
+            <FormGrid columns={1}>
+              <FormField label="Code (Unique identifier)" required={true}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. PTN" 
+                  value={form.code} 
+                  onChange={(e) => setForm(p => ({ ...p, code: e.target.value }))}
+                  disabled={!!editingType}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Name</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Partition Suit" 
-              value={form.name} 
-              onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
-              required
-            />
-          </div>
+              <FormField label="Name" required={true}>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Partition Suit" 
+                  value={form.name} 
+                  onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Description</label>
-            <textarea 
-              placeholder="Add details about this case type..." 
-              value={form.description} 
-              onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
-              rows="3"
-            />
-          </div>
+              <FormField label="Description" required={false}>
+                <textarea 
+                  placeholder="Add details about this case type..." 
+                  value={form.description} 
+                  onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
+                  rows="3"
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                />
+              </FormField>
 
-          <div className="f">
-            <label>Display Order</label>
-            <input 
-              type="number" 
-              value={form.displayOrder} 
-              onChange={(e) => setForm(p => ({ ...p, displayOrder: e.target.value }))}
-              required
-            />
-          </div>
+              <FormField label="Display Order" required={true}>
+                <input 
+                  type="number" 
+                  value={form.displayOrder} 
+                  onChange={(e) => setForm(p => ({ ...p, displayOrder: e.target.value }))}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn" disabled={saving}>
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+            <button type="button" className="btn ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving...' : 'Save'}
             </button>
           </div>

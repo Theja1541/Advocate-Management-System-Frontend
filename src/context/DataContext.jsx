@@ -125,31 +125,29 @@ export const DataProvider = ({ children }) => {
       });
 
       // Map backend cases to frontend format
-      const TITLE_META_SEP = ' :: ';
-      const TITLE_VS_SEP = ' — vs ';
       const mappedCases = caseList.map(c => {
-        const [head = '', stage = 'Filing', val = '0', fee = '10'] = String(c.title || '').split(TITLE_META_SEP);
-        let caseType = head;
-        let opponent = '';
-        const vsIdx = head.indexOf(TITLE_VS_SEP);
+        let opponent = '—';
+        const vsIdx = String(c.title || '').indexOf(' — vs ');
         if (vsIdx >= 0) {
-          caseType = head.slice(0, vsIdx);
-          opponent = head.slice(vsIdx + TITLE_VS_SEP.length);
+          opponent = String(c.title).slice(vsIdx + ' — vs '.length);
         }
         return {
           id: c.id,
           no: c.caseNo,
           ct: c.court ? Math.max(0, COURTS.indexOf(c.court)) : 0,
-          ty: caseType || '—',
+          ty: c.caseType?.name || '—',
           cl: c.clientId,
-          opp: opponent || '—',
+          opp: opponent,
           adv: c.advocateId,
-          stage: stage || 'Filing',
+          stage: c.currentStage?.name || 'Filing',
           next: c.nextHearing || '—',
-          val: Number(val) || 0,
+          val: Number(c.suitValue) || 0,
           st: (c.status || 'Active').toLowerCase(),
           lvl: c.approvalLevel || 4,
-          fee: Number(fee) || 10
+          fee: Number(c.feePercentage) || 0,
+          advocateFee: Number(c.advocateFee) || 0,
+          courtFee: Number(c.courtFee) || 0,
+          totalPayable: Number(c.totalPayable) || 0
         };
       });
 

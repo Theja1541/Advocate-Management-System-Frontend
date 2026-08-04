@@ -4,6 +4,7 @@ import KPICard from '../components/ui/KPICard';
 import DataTable from '../components/ui/DataTable';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import { inr } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -15,12 +16,12 @@ import {
 } from '../services/membershipService';
 import { getAdvocates } from '../services/advocateService';
 
-const PAGE_SIZE = 10;
+
 
 const MST = {
-  active: ['Active', 'c-baize'],
-  expiring: ['Expiring soon', 'c-brass'],
-  expired: ['Expired', 'c-tape'],
+  active: ['Active', 'success'],
+  expiring: ['Expiring soon', 'warning'],
+  expired: ['Expired', 'danger'],
 };
 
 const STATUS_FILTERS = [
@@ -75,6 +76,7 @@ export default function Member() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedViewMember, setSelectedViewMember] = useState(null);
@@ -133,10 +135,10 @@ export default function Member() {
     return haystack.includes(q);
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pagedMembers = filteredMembers.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedMembers = filteredMembers.slice(pageStart, pageStart + pageSize);
 
   const assignedAdvocateIds = new Set(members.map((m) => String(m.advocateId)));
   const availableAdvocates = advocates.filter((a) => {
@@ -271,7 +273,7 @@ export default function Member() {
 
   const headerActions = canEdit ? (
     <button
-      className="btn"
+      className="btn primary"
       onClick={openAddModal}
       disabled={!availableAdvocates.length && !editingMember}
     >
@@ -298,26 +300,27 @@ export default function Member() {
         />
       </div>
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
         <div className="fgrid">
-          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
-            <label>Search memberships</label>
+          <div className="f" style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Search memberships</label>
             <input
               type="text"
               placeholder="Advocate, plan, status…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
             />
           </div>
         </div>
       </div>
 
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         {STATUS_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={statusFilter === btn.key ? 'on' : ''}
+            className={`btn sm ${statusFilter === btn.key ? 'primary' : 'outline'}`}
             onClick={() => setStatusFilter(btn.key)}
           >
             {btn.label}
@@ -329,10 +332,12 @@ export default function Member() {
         <div
           className="card"
           style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
+            marginBottom: 'var(--space-3)',
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            fontSize: 'var(--text-sm)',
+            padding: 'var(--space-3)',
+            borderRadius: 'var(--radius-md)'
           }}
         >
           {error}
@@ -360,22 +365,21 @@ export default function Member() {
                 </td>
                 <td className="mut">{m.planName}</td>
                 <td className="r mono">{inr(Number(m.feeAmount || 0))}</td>
-                <td className="mono" style={{ fontSize: '11px' }}>
+                <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                   {formatDate(m.startDate)}
                 </td>
-                <td className="mono" style={{ fontSize: '11px' }}>
+                <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                   {formatDate(m.expiryDate)}
                 </td>
                 <td>
                   <Chip type={statusChip[1]} label={statusChip[0]} />
                 </td>
-                <td style={{ whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                <td style={{ whiteSpace: 'nowrap', gap: 'var(--space-2)', display: 'flex', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
                   {canEdit && (m.status === 'expiring' || m.status === 'expired') ? (
                     <button
-                      className="btn sm"
+                      className="btn primary sm"
                       onClick={() => handleRenew(m)}
                       disabled={actingId === m.id}
-                      style={{ marginRight: '6px' }}
                     >
                       {actingId === m.id ? 'Renewing…' : 'Renew'}
                     </button>
@@ -384,21 +388,15 @@ export default function Member() {
                     <>
                       <button
                         type="button"
-                        className="btn g sm"
+                        className="btn ghost sm"
                         onClick={() => openEditModal(m)}
-                        style={{ marginRight: '6px' }}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
-                        className="btn sm"
+                        className="btn danger sm"
                         onClick={() => handleDelete(m)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--tape)',
-                          color: 'var(--tape)',
-                        }}
                       >
                         Delete
                       </button>
@@ -417,6 +415,26 @@ export default function Member() {
         )}
       </DataTable>
 
+      {!loading && filteredMembers.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filteredMembers.length)} of {filteredMembers.length}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button type="button" className="btn ghost sm" disabled={currentPage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Previous</button>
+            <button type="button" className="btn ghost sm" disabled style={{ cursor: 'default' }}>{currentPage} / {totalPages}</button>
+            <button type="button" className="btn ghost sm" disabled={currentPage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+          </div>
+        </div>
+      )}
+
       {/* Membership Details View Modal */}
       <Modal
         isOpen={isViewModalOpen}
@@ -424,46 +442,46 @@ export default function Member() {
         title="Membership Details"
       >
         {selectedViewMember && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px solid var(--rule-2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Advocate</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{getAdvocateName(selectedViewMember)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Advocate</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{getAdvocateName(selectedViewMember)}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Status</span>
-                <Chip type={(MST[selectedViewMember.status] || ['Unknown', 'c-grey'])[1]} label={(MST[selectedViewMember.status] || ['Unknown', 'c-grey'])[0]} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Membership Plan</span>
-                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewMember.planName}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Membership Fee</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{inr(Number(selectedViewMember.feeAmount || 0))}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Status</span>
+                <Chip type={(MST[selectedViewMember.status] || ['Unknown', 'ghost'])[1]} label={(MST[selectedViewMember.status] || ['Unknown', 'ghost'])[0]} />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px dashed var(--rule)', paddingTop: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Start Date</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatDate(selectedViewMember.startDate)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Membership Plan</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{selectedViewMember.planName}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Expiry Date</span>
-                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatDate(selectedViewMember.expiryDate)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Membership Fee</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{inr(Number(selectedViewMember.feeAmount || 0))}</span>
               </div>
             </div>
 
-            <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn g" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderTop: '1px dashed var(--border)', paddingTop: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Start Date</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{formatDate(selectedViewMember.startDate)}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Expiry Date</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{formatDate(selectedViewMember.expiryDate)}</span>
+              </div>
+            </div>
+
+            <div className="modal-foot" style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn ghost" onClick={() => setIsViewModalOpen(false)}>Close</button>
               {canEdit && (selectedViewMember.status === 'expiring' || selectedViewMember.status === 'expired') && (
                 <button
                   type="button"
-                  className="btn sm"
+                  className="btn primary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     handleRenew(selectedViewMember);
@@ -476,7 +494,7 @@ export default function Member() {
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn secondary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     openEditModal(selectedViewMember);
@@ -495,79 +513,90 @@ export default function Member() {
         onClose={closeModal}
         title={editingMember ? 'Edit Membership' : 'Add Membership'}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && isModalOpen && (
             <div
               style={{
-                padding: '8px 10px',
-                marginBottom: '8px',
+                padding: 'var(--space-3)',
+                marginBottom: 'var(--space-2)',
                 backgroundColor: 'rgba(235, 94, 85, 0.1)',
-                border: '1px solid var(--tape)',
-                color: 'var(--tape)',
-                borderRadius: '5px',
-                fontSize: '12px',
+                border: '1px solid var(--danger)',
+                color: 'var(--danger)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: 'var(--text-sm)',
               }}
             >
               {error}
             </div>
           )}
-          <div className="f">
-            <label>Advocate</label>
-            <select
-              value={form.advocateId}
-              onChange={setField('advocateId')}
-              disabled={!!editingMember}
-              required
-            >
-              {availableAdvocates.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>Membership Plan</label>
-            <select value={form.planName} onChange={setField('planName')}>
-              {PLAN_OPTIONS.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="f">
-            <label>Fee Amount (₹)</label>
-            <input
-              type="number"
-              value={form.feeAmount}
-              onChange={setField('feeAmount')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Start Date</label>
-            <input
-              type="date"
-              value={form.startDate}
-              onChange={setField('startDate')}
-              required
-            />
-          </div>
-          <div className="f">
-            <label>Expiry Date</label>
-            <input
-              type="date"
-              value={form.expiryDate}
-              onChange={setField('expiryDate')}
-              required
-            />
-          </div>
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+          <FormSection title="Account & Role">
+            <FormGrid columns={2}>
+              <FormField label="Advocate" required={true}>
+                <select
+                  value={form.advocateId}
+                  onChange={setField('advocateId')}
+                  disabled={!!editingMember}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                >
+                  {availableAdvocates.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Membership Plan" required={false}>
+                <select value={form.planName} onChange={setField('planName')} style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}>
+                  {PLAN_OPTIONS.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Fee Amount (₹)" required={true}>
+                <input
+                  type="number"
+                  value={form.feeAmount}
+                  onChange={setField('feeAmount')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection title="Membership Details">
+            <FormGrid columns={2}>
+              <FormField label="Start Date" required={true}>
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={setField('startDate')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+
+              <FormField label="Expiry Date" required={true}>
+                <input
+                  type="date"
+                  value={form.expiryDate}
+                  onChange={setField('expiryDate')}
+                  required
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+          <div className="modal-foot" style={{ paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn ghost" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

@@ -19,12 +19,12 @@ export const ToastProvider = ({ children }) => {
       {children}
       <div className="toast-container" style={{
         position: 'fixed',
-        bottom: '20px',
-        right: '20px',
+        bottom: '24px',
+        right: '24px',
         zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '12px',
         pointerEvents: 'none'
       }}>
         {toasts.map((t) => (
@@ -32,24 +32,25 @@ export const ToastProvider = ({ children }) => {
             key={t.id}
             className={`toast ${t.type}`}
             style={{
-              padding: '12px 18px',
-              borderRadius: '6px',
-              color: '#F1F2EE',
-              fontSize: '13px',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--text-primary)',
+              fontSize: 'var(--text-sm)',
               fontWeight: '500',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              boxShadow: 'var(--shadow-lg)',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '12px',
               animation: 'slideIn 0.25s ease-out forwards',
               pointerEvents: 'auto',
+              border: '1px solid var(--border)',
               borderLeft: '4px solid',
               // Dynamic background colors
-              backgroundColor: 'var(--panel)',
-              borderColor: t.type === 'success' ? 'var(--baize)' : t.type === 'error' ? 'var(--tape)' : 'var(--brass)',
+              backgroundColor: 'var(--card)',
+              borderLeftColor: t.type === 'success' ? 'var(--success)' : t.type === 'error' ? 'var(--danger)' : 'var(--primary)',
             }}
           >
-            <span style={{ fontSize: '15px' }}>
+            <span style={{ fontSize: '16px' }}>
               {t.type === 'success' ? '✅' : t.type === 'error' ? '⚠️' : 'ℹ️'}
             </span>
             <span>{t.message}</span>

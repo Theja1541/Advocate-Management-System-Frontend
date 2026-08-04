@@ -5,10 +5,12 @@ import KPICard from '../components/ui/KPICard';
 import Chip from '../components/ui/Chip';
 import { inr } from '../utils/formatters';
 import { getDashboard } from '../services/dashboardService';
+import { getAlerts } from '../services/alertService';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
+  const [activeAlerts, setActiveAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -16,11 +18,16 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const data = await getDashboard();
+      const [data, alerts] = await Promise.all([
+        getDashboard(),
+        getAlerts({ status: 'active' })
+      ]);
       setDashboard(data);
+      setActiveAlerts(alerts);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard');
       setDashboard(null);
+      setActiveAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -30,10 +37,24 @@ export default function Dashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
+  useEffect(() => {
+    const fetchAlertsOnly = async () => {
+      try {
+        const alerts = await getAlerts({ status: 'active' });
+        setActiveAlerts(alerts);
+      } catch (err) {
+        console.error('Background alert fetch failed', err);
+      }
+    };
+    
+    const interval = setInterval(fetchAlertsOnly, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const headerActions = (
     <>
-      <button className="btn g" onClick={() => navigate('/diary')}>Open case diary</button>
-      <button className="btn" onClick={() => navigate('/cases')}>New case</button>
+      <button className="btn secondary" onClick={() => navigate('/hearings')}>Open hearings</button>
+      <button className="btn primary" onClick={() => navigate('/cases')}>New case</button>
     </>
   );
 
@@ -44,6 +65,11 @@ export default function Dashboard() {
   const notifications = dashboard?.notifications || [];
   const displayDate = dashboard?.displayDate || '—';
 
+  const highPriority = activeAlerts.filter(a => a.priority === 'high').length;
+  const dueToday = activeAlerts.filter(a => a.alertType.includes('TODAY') || a.alertType === 'PAYMENT_DUE').length;
+  const overdue = activeAlerts.filter(a => a.alertType.includes('OVERDUE') || a.alertType.includes('MISSED')).length;
+  const totalActive = activeAlerts.length;
+
   return (
     <>
       <PageHeader
@@ -53,9 +79,9 @@ export default function Dashboard() {
       />
 
       {error ? (
-        <div className="card" style={{ marginBottom: '12px', color: 'var(--tape)' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-2)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
           {error}
-          <button type="button" className="btn g sm" style={{ marginLeft: '10px' }} onClick={loadDashboard}>
+          <button type="button" className="btn outline sm" style={{ marginLeft: 'var(--space-2)' }} onClick={loadDashboard}>
             Retry
           </button>
         </div>
@@ -69,33 +95,49 @@ export default function Dashboard() {
         <>
           <div className="kpis">
             <KPICard label="Total cases" value={kpis.totalCases || 0} status="on the register" />
-            <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="b" />
+            <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="success" />
             <KPICard label="Closed" value={kpis.closedCases || 0} status="disposed" />
             <KPICard
               label="Today's hearings"
               value={kpis.todayHearings || causeList.length || 0}
               status={`${kpis.pendingHearings ?? causeMeta.pendingCount ?? 0} still to be called`}
-              type="t"
+              type="danger"
             />
             <KPICard
               label="Pending payments"
               value={inr(kpis.duePaymentAmount || 0)}
               status={`across ${kpis.pendingPaymentsCount || 0} matters`}
-              type="r"
-              valueStyle={{ fontSize: '21px' }}
+              type="warning"
+              valueStyle={{ fontSize: 'var(--text-xl)' }}
             />
             <KPICard
               label="Pending tasks"
               value={kpis.pendingTasks || 0}
               status="approvals & filings"
-              type="r"
+              type="warning"
             />
             <KPICard
               label="Disputed title"
               value={kpis.disputedTitle || 0}
               status="land records"
-              type="t"
+              type="danger"
             />
+          </div>
+
+          <h3 style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-heading)' }}>Notifications Center</h3>
+          <div className="kpis">
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', priorityFilter: 'high' } })}>
+              <KPICard label="High Priority" value={highPriority} status="requires immediate action" type="danger" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'TODAY' } })}>
+              <KPICard label="Due Today" value={dueToday} status="deadlines and hearings" type="success" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active', query: 'OVERDUE' } })}>
+              <KPICard label="Overdue" value={overdue} status="missed dates and payments" type="warning" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/alerts', { state: { statusFilter: 'active' } })}>
+              <KPICard label="Total Active" value={totalActive} status="all open notifications" />
+            </div>
           </div>
 
           <div className="cause">
@@ -128,7 +170,7 @@ export default function Dashboard() {
                 </div>
               ))
             ) : (
-              <div className="empty" style={{ padding: '16px' }}>No hearings listed for this date.</div>
+              <div className="empty" style={{ padding: 'var(--space-3)' }}>No hearings listed for this date.</div>
             )}
           </div>
 
@@ -155,28 +197,32 @@ export default function Dashboard() {
               <div className="card-t">Notifications</div>
               <div className="card-s">REQUIRING ATTENTION</div>
               {notifications.length ? (
-                notifications.map((a) => (
-                  <div key={a.id} className="act-item">
-                    <span
-                      className="dot"
-                      style={{
-                        backgroundColor: `var(--${a.severity === 'ink' ? 'ink-3' : a.severity})`,
-                      }}
-                    ></span>
-                    <div>
-                      <div className="x">
-                        <b>{a.type}</b> — {a.description}
+                notifications.map((a) => {
+                  const sevMap = { tape: 'danger', baize: 'success', brass: 'warning', ink: 'text-secondary' };
+                  const sevColor = sevMap[a.severity] || 'text-secondary';
+                  return (
+                    <div key={a.id} className="act-item">
+                      <span
+                        className="dot"
+                        style={{
+                          backgroundColor: `var(--${sevColor})`,
+                        }}
+                      ></span>
+                      <div>
+                        <div className="x">
+                          <b>{a.type}</b> — {a.description}
+                        </div>
+                        <div className="w">{a.dueInfo}</div>
                       </div>
-                      <div className="w">{a.dueInfo}</div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="empty">No open alerts.</div>
               )}
               <button
-                className="btn g sm"
-                style={{ marginTop: '10px' }}
+                className="btn ghost sm"
+                style={{ marginTop: 'var(--space-2)' }}
                 onClick={() => navigate('/alerts')}
               >
                 See all alerts

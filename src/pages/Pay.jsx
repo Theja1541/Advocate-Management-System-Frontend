@@ -4,6 +4,7 @@ import KPICard from '../components/ui/KPICard';
 import DataTable from '../components/ui/DataTable';
 import Chip from '../components/ui/Chip';
 import Modal from '../components/ui/Modal';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
 import SearchableSelect from '../components/ui/SearchableSelect';
 import PaymentReceipt from '../components/ui/PaymentReceipt';
 import { inr } from '../utils/formatters';
@@ -18,18 +19,16 @@ import { getCases } from '../services/caseService';
 import { getClients } from '../services/clientService';
 import { getAdvocates } from '../services/advocateService';
 
-const PAGE_SIZE = 10;
 
 const PST = {
-  paid: ['Paid', 'c-baize'],
-  part: ['Part paid', 'c-brass'],
-  pending: ['Pending', 'c-tape'],
+  paid: ['Paid', 'success'],
+  part: ['Pending', 'danger'],
+  pending: ['Pending', 'danger'],
 };
 
 const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'paid', label: 'Paid' },
-  { key: 'part', label: 'Part paid' },
   { key: 'pending', label: 'Pending' },
 ];
 
@@ -38,6 +37,7 @@ const emptyForm = {
   caseId: '',
   partyType: 'Client',
   partyId: '',
+  totalAmount: '',
   amountReceived: '',
   amountOutstanding: '',
   transactionDate: '',
@@ -69,6 +69,7 @@ export default function Pay() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedViewPayment, setSelectedViewPayment] = useState(null);
@@ -152,10 +153,10 @@ export default function Pay() {
     return haystack.includes(q);
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredPayments.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pagedPayments = filteredPayments.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedPayments = filteredPayments.slice(pageStart, pageStart + pageSize);
 
   const openAddModal = () => {
     setEditingPayment(null);
@@ -178,10 +179,11 @@ export default function Pay() {
       caseId: p.caseId != null ? String(p.caseId) : '',
       partyType: p.partyType || 'Client',
       partyId: p.partyId != null ? String(p.partyId) : '',
+      totalAmount: String((Number(p.amountReceived) || 0) + (Number(p.amountOutstanding) || 0)),
       amountReceived: String(p.amountReceived ?? ''),
       amountOutstanding: String(p.amountOutstanding ?? ''),
       transactionDate: p.transactionDate || '',
-      status: p.status || 'pending',
+      status: (p.status === 'part' || Number(p.amountOutstanding) > 0) ? 'pending' : 'paid',
     });
     setError('');
     setIsModalOpen(true);
@@ -201,6 +203,7 @@ export default function Pay() {
   const setField = (key) => (e) => {
     const value = e.target.value;
     setForm((prev) => {
+      let newState = { ...prev, [key]: value };
       if (key === 'partyType') {
         const nextPartyId =
           value === 'Client'
@@ -210,9 +213,18 @@ export default function Pay() {
             : advocates[0]
               ? String(advocates[0].id)
               : '';
-        return { ...prev, partyType: value, partyId: nextPartyId };
+        newState = { ...newState, partyType: value, partyId: nextPartyId };
       }
-      return { ...prev, [key]: value };
+      
+      if (key === 'totalAmount' || key === 'amountReceived') {
+        const total = Number(newState.totalAmount || 0);
+        const received = Number(newState.amountReceived || 0);
+        const outstanding = Math.max(0, total - received);
+        newState.amountOutstanding = String(outstanding);
+        newState.status = outstanding > 0 ? 'pending' : 'paid';
+      }
+      
+      return newState;
     });
   };
 
@@ -287,8 +299,9 @@ export default function Pay() {
     { label: 'Case no.' },
     { label: 'Party' },
     { label: 'Type' },
+    { label: 'Total', className: 'r' },
     { label: 'Received', className: 'r' },
-    { label: 'Outstanding', className: 'r' },
+    { label: 'Pending Amount', className: 'r' },
     { label: 'Date' },
     { label: 'Status' },
     { label: '' },
@@ -296,7 +309,7 @@ export default function Pay() {
 
   const headerActions = canEdit ? (
     <button
-      className="btn"
+      className="btn primary"
       onClick={openAddModal}
       disabled={!cases.length || !clients.length}
     >
@@ -311,7 +324,7 @@ export default function Pay() {
     <>
       <PageHeader
         title="Payments"
-        description="Client fees, advocate shares and what is still outstanding."
+        description="Client fees, advocate shares and what is still pending."
         actions={headerActions}
       />
 
@@ -321,19 +334,19 @@ export default function Pay() {
           value={inr(totalReceived)}
           status="to date"
           type="b"
-          valueStyle={{ fontSize: '20px' }}
+          valueStyle={{ fontSize: 'var(--text-base)' }}
         />
         <KPICard
-          label="Outstanding"
+          label="Pending Amount"
           value={inr(totalOutstanding)}
           status={`across ${outstandingMattersCount} matters`}
           type="t"
-          valueStyle={{ fontSize: '20px' }}
+          valueStyle={{ fontSize: 'var(--text-base)' }}
         />
         <KPICard label="Receipts" value={receiptsCount} status="issued" />
       </div>
 
-      <div className="card" style={{ marginBottom: '14px' }}>
+      <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
         <div className="fgrid">
           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
             <label>Search payments</label>
@@ -347,12 +360,12 @@ export default function Pay() {
         </div>
       </div>
 
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)' }}>
         {STATUS_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={statusFilter === btn.key ? 'on' : ''}
+            className={statusFilter === btn.key ? 'btn primary sm' : 'btn ghost sm'}
             onClick={() => setStatusFilter(btn.key)}
           >
             {btn.label}
@@ -364,10 +377,10 @@ export default function Pay() {
         <div
           className="card"
           style={{
-            marginBottom: '12px',
-            borderColor: 'var(--tape)',
-            color: 'var(--tape)',
-            fontSize: '12.5px',
+            marginBottom: 'var(--space-3)',
+            borderColor: 'var(--danger)',
+            color: 'var(--danger)',
+            fontSize: 'var(--text-sm)',
           }}
         >
           {error}
@@ -404,16 +417,19 @@ export default function Pay() {
                   </span>
                 </td>
                 <td className="mut">{p.partyType}</td>
-                <td className="r mono" style={{ color: 'var(--baize)' }}>
+                <td className="r mono" style={{ color: 'var(--text-primary)' }}>
+                  {received || due ? inr(received + due) : '—'}
+                </td>
+                <td className="r mono" style={{ color: 'var(--success)' }}>
                   {received ? inr(received) : '—'}
                 </td>
                 <td
                   className="r mono"
-                  style={{ color: due ? 'var(--tape)' : 'var(--muted)' }}
+                  style={{ color: due ? 'var(--danger)' : 'var(--text-secondary)' }}
                 >
                   {due ? inr(due) : '—'}
                 </td>
-                <td className="mono" style={{ fontSize: '11px' }}>
+                <td className="mono" style={{ fontSize: 'var(--text-xs)' }}>
                   {formatDate(p.transactionDate)}
                 </td>
                 <td>
@@ -423,9 +439,9 @@ export default function Pay() {
                   {received ? (
                     <button
                       type="button"
-                      className="btn g sm"
+                      className="btn ghost sm"
                       onClick={() => handleReceipt(p)}
-                      style={{ marginRight: canEdit ? '6px' : 0 }}
+                      style={{ marginRight: canEdit ? 'var(--space-2)' : 0 }}
                     >
                       Receipt
                     </button>
@@ -434,21 +450,16 @@ export default function Pay() {
                     <>
                       <button
                         type="button"
-                        className="btn g sm"
+                        className="btn ghost sm"
                         onClick={() => openEditModal(p)}
-                        style={{ marginRight: '6px' }}
+                        style={{ marginRight: 'var(--space-2)' }}
                       >
                         Edit
                       </button>
                       <button
                         type="button"
-                        className="btn sm"
+                        className="btn danger sm"
                         onClick={() => handleDelete(p)}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid var(--tape)',
-                          color: 'var(--tape)',
-                        }}
                       >
                         Delete
                       </button>
@@ -467,6 +478,60 @@ export default function Pay() {
         )}
       </DataTable>
 
+      {!loading && filteredPayments.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            marginTop: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>
+              entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filteredPayments.length)} of {filteredPayments.length}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="button"
+              className="btn ghost sm"
+              disabled={currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </button>
+            <button type="button" className="btn ghost sm" disabled style={{ cursor: 'default' }}>
+              {currentPage} / {totalPages}
+            </button>
+            <button
+              type="button"
+              className="btn ghost sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Payment Details View Modal */}
       <Modal
         isOpen={isViewModalOpen}
@@ -474,51 +539,56 @@ export default function Pay() {
         title="Payment Record Details"
       >
         {selectedViewPayment && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderBottom: '1px solid var(--rule-2)', paddingBottom: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Receipt No</span>
-                <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewPayment.receiptNo}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Receipt No</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{selectedViewPayment.receiptNo}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Status</span>
-                <Chip type={(PST[selectedViewPayment.status] || ['Unknown', 'c-grey'])[1]} label={(PST[selectedViewPayment.status] || ['Unknown', 'c-grey'])[0]} />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Party Name ({selectedViewPayment.partyType})</span>
-                <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--ink)' }}>{getPartyName(selectedViewPayment.partyType, selectedViewPayment.partyId)}</span>
-              </div>
-              <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Case Number</span>
-                <span className="mono font-semibold" style={{ fontSize: '13px', color: 'var(--ink)' }}>{getCaseNo(selectedViewPayment)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Status</span>
+                <Chip type={(PST[selectedViewPayment.status] || ['Unknown', 'ghost'])[1]} label={(PST[selectedViewPayment.status] || ['Unknown', 'ghost'])[0]} />
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Amount Received</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--baize)' }}>{inr(Number(selectedViewPayment.amountReceived || 0))}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Party Name ({selectedViewPayment.partyType})</span>
+                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{getPartyName(selectedViewPayment.partyType, selectedViewPayment.partyId)}</span>
               </div>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Amount Outstanding</span>
-                <span className="mono" style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--tape)' }}>{inr(Number(selectedViewPayment.amountOutstanding || 0))}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Case Number</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{getCaseNo(selectedViewPayment)}</span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Total Amount</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{inr(Number(selectedViewPayment.amountReceived || 0) + Number(selectedViewPayment.amountOutstanding || 0))}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Amount Received</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--success)' }}>{inr(Number(selectedViewPayment.amountReceived || 0))}</span>
               </div>
             </div>
 
-            <div>
-              <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Transaction Date</span>
-              <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{formatDate(selectedViewPayment.transactionDate)}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Pending Amount</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--danger)' }}>{inr(Number(selectedViewPayment.amountOutstanding || 0))}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Transaction Date</span>
+                <span className="mono" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{formatDate(selectedViewPayment.transactionDate)}</span>
+              </div>
             </div>
 
-            <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn g" onClick={() => setIsViewModalOpen(false)}>Close</button>
+            <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn ghost" onClick={() => setIsViewModalOpen(false)}>Close</button>
               {Number(selectedViewPayment.amountReceived || 0) > 0 && (
                 <button
                   type="button"
-                  className="btn g"
+                  className="btn ghost"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     handleReceipt(selectedViewPayment);
@@ -530,7 +600,7 @@ export default function Pay() {
               {canEdit && (
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   onClick={() => {
                     setIsViewModalOpen(false);
                     openEditModal(selectedViewPayment);
@@ -549,101 +619,109 @@ export default function Pay() {
         onClose={closeModal}
         title={editingPayment ? 'Edit Payment Record' : 'Record Payment'}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {error && isModalOpen && (
-            <div className="card" style={{ borderColor: 'var(--tape)', color: 'var(--tape)', padding: '10px', marginBottom: '14px' }}>
+            <div className="card" style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: 'var(--space-3)', marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-md)' }}>
               {error}
             </div>
           )}
 
-          <div className="fgrid">
-            <div className="f">
-              <label>Receipt Number (Leave blank to auto-generate)</label>
-              <input
-                type="text"
-                placeholder="e.g. PY-047"
-                value={form.receiptNo}
-                onChange={setField('receiptNo')}
-                disabled={!!editingPayment}
-              />
-            </div>
-            <div className="f">
-              <label>Transaction Date</label>
-              <input
-                type="date"
-                value={form.transactionDate}
-                onChange={setField('transactionDate')}
-                required
-              />
-            </div>
-          </div>
+          <FormSection title="Transaction Info">
+            <FormGrid columns={2}>
+              <FormField label="Receipt Number (Leave blank to auto-generate)">
+                <input
+                  type="text"
+                  placeholder="e.g. PY-047"
+                  value={form.receiptNo}
+                  onChange={setField('receiptNo')}
+                  disabled={!!editingPayment}
+                />
+              </FormField>
+              <FormField label="Transaction Date" required={true}>
+                <input
+                  type="date"
+                  value={form.transactionDate}
+                  onChange={setField('transactionDate')}
+                  required
+                />
+              </FormField>
+            </FormGrid>
+          </FormSection>
 
-          <div className="f" style={{ marginTop: '12px' }}>
-            <label>Case Matter</label>
-            <SearchableSelect
-              options={cases.map(c => ({ id: c.id, name: c.caseNo }))}
-              value={form.caseId}
-              onChange={(e) => setForm(p => ({ ...p, caseId: e.target.value }))}
-              placeholder="Select Case"
-              name="caseId"
-            />
-          </div>
-
-          <div className="fgrid" style={{ marginTop: '12px' }}>
-            <div className="f">
-              <label>Party Type</label>
-              <select value={form.partyType} onChange={setField('partyType')}>
-                <option value="Client">Client</option>
-                <option value="Advocate">Advocate</option>
-              </select>
-            </div>
-            <div className="f">
-              <label>Recipient / Payer</label>
+          <FormSection title="Payment Details">
+            <FormField label="Case Matter">
               <SearchableSelect
-                options={partyOptions}
-                value={form.partyId}
-                onChange={(e) => setForm(p => ({ ...p, partyId: e.target.value }))}
-                placeholder="Select Recipient/Payer"
-                name="partyId"
+                options={cases.map(c => ({ id: c.id, name: c.caseNo }))}
+                value={form.caseId}
+                onChange={(e) => setForm(p => ({ ...p, caseId: e.target.value }))}
+                placeholder="Select Case"
+                name="caseId"
               />
-            </div>
-          </div>
+            </FormField>
 
-          <div className="fgrid" style={{ marginTop: '12px' }}>
-            <div className="f">
-              <label>Amount Received (₹)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={form.amountReceived}
-                onChange={setField('amountReceived')}
-              />
-            </div>
-            <div className="f">
-              <label>Amount Outstanding (₹)</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={form.amountOutstanding}
-                onChange={setField('amountOutstanding')}
-              />
-            </div>
-          </div>
+            <FormGrid columns={2}>
+              <FormField label="Party Type">
+                <select value={form.partyType} onChange={setField('partyType')}>
+                  <option value="Client">Client</option>
+                  <option value="Advocate">Advocate</option>
+                </select>
+              </FormField>
+              <FormField label="Recipient / Payer">
+                <SearchableSelect
+                  options={partyOptions}
+                  value={form.partyId}
+                  onChange={(e) => setForm(p => ({ ...p, partyId: e.target.value }))}
+                  placeholder="Select Recipient/Payer"
+                  name="partyId"
+                />
+              </FormField>
+            </FormGrid>
 
-          <div className="f" style={{ marginTop: '12px' }}>
-            <label>Status</label>
-            <select value={form.status} onChange={setField('status')}>
-              <option value="paid">Paid</option>
-              <option value="part">Part Paid</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
+            <FormGrid columns={3}>
+              <FormField label="Total Amount (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.totalAmount}
+                  onChange={setField('totalAmount')}
+                />
+              </FormField>
+              <FormField label="Amount Received (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.amountReceived}
+                  onChange={setField('amountReceived')}
+                />
+              </FormField>
+              <FormField label="Pending Amount (₹)">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={form.amountOutstanding}
+                  readOnly
+                  style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
+                />
+              </FormField>
+            </FormGrid>
 
-          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
-            <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
+            <FormField label="Status">
+              <select 
+                value={form.status} 
+                disabled 
+                style={{ backgroundColor: 'var(--bg-secondary)', cursor: 'not-allowed' }}
+              >
+                <option value="paid">Paid</option>
+                <option value="pending">Pending</option>
+              </select>
+            </FormField>
+          </FormSection>
+
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn ghost" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

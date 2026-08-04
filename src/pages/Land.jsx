@@ -16,8 +16,6 @@ import { getCases } from '../services/caseService';
 import SearchableSelect from '../components/ui/SearchableSelect';
 
 
-const PAGE_SIZE = 10;
-
 const ENC = {
   clear: ['Clear', 'c-baize'],
   noted: ['Encumbrance noted', 'c-tape'],
@@ -57,6 +55,7 @@ export default function Land() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedViewLand, setSelectedViewLand] = useState(null);
@@ -120,10 +119,10 @@ export default function Land() {
     return haystack.includes(q);
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredLands.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredLands.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pagedLands = filteredLands.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedLands = filteredLands.slice(pageStart, pageStart + pageSize);
 
   const clearCount = lands.filter((l) => l.titleStatus === 'clear').length;
   const disputedCount = lands.filter((l) => l.titleStatus === 'disputed').length;
@@ -371,8 +370,24 @@ export default function Land() {
 
       {!loading && filteredLands.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
-          <div className="mut" style={{ fontSize: '11.5px' }}>
-            Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filteredLands.length)} of {filteredLands.length}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+            <select 
+              value={pageSize} 
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="mut" style={{ fontSize: '11.5px' }}>
+              entries | Showing {pageStart + 1}–{Math.min(pageStart + pageSize, filteredLands.length)} of {filteredLands.length}
+            </span>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button

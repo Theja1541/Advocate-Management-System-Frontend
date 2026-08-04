@@ -19,12 +19,23 @@ const isAuthEndpoint = (url = '') =>
   url.includes('/auth/refresh') ||
   url.includes('/auth/logout');
 
+let activeRequests = 0;
+const updateLoader = () => {
+  window.dispatchEvent(new CustomEvent('globalLoader', { detail: activeRequests > 0 }));
+};
+
 api.interceptors.request.use((config) => {
+  activeRequests++;
+  updateLoader();
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  activeRequests = Math.max(0, activeRequests - 1);
+  updateLoader();
+  return Promise.reject(error);
 });
 
 let refreshPromise = null;
@@ -49,8 +60,14 @@ const refreshAccessToken = async () => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    activeRequests = Math.max(0, activeRequests - 1);
+    updateLoader();
+    return response;
+  },
   async (error) => {
+    activeRequests = Math.max(0, activeRequests - 1);
+    updateLoader();
     const originalRequest = error.config;
     const status = error.response?.status;
     const requestUrl = originalRequest?.url || '';

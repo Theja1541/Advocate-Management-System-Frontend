@@ -1,0 +1,485 @@
+Created At: 2026-08-04T11:25:18+05:30
+Completed At: 2026-08-04T11:25:18+05:30
+File Path: `file:///D:/THEJA/ADVOCATE%20MANAGEMENT%20SYSTEM/Frontend/src/pages/CaseApproval.jsx`
+Total Lines: 477
+Total Bytes: 16595
+Showing lines 1 to 477
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import React, { useCallback, useEffect, useState } from 'react';
+2: import PageHeader from '../components/ui/PageHeader';
+3: import ApprovalLadder from '../components/ui/ApprovalLadder';
+4: import Chip from '../components/ui/Chip';
+5: import DataTable from '../components/ui/DataTable';
+6: import { inr } from '../utils/formatters';
+7: import { useAuth } from '../context/AuthContext';
+8: import { LADDER } from '../data/mockData';
+9: import { getCases, updateCase } from '../services/caseService';
+10: import { getClients } from '../services/clientService';
+11: import { getCaseTypes } from '../services/caseMastersService';
+12: 
+13: const TITLE_META_SEP = ' :: ';
+14: const TITLE_VS_SEP = ' — vs ';
+15: 
+16: const LEVEL_FILTERS = [
+17:   { key: 'all', label: 'All pending' },
+18:   { key: '0', label: 'Level 1' },
+19:   { key: '1', label: 'Level 2' },
+20:   { key: '2', label: 'Level 3' },
+21: ];
+22: 
+23: const parseTitle = (title = '') => {
+24:   const [head = '', stage = 'Filing', val = '0', fee = '10'] = String(title).split(TITLE_META_SEP);
+25:   let caseType = head;
+26:   let opponent = '';
+27:   const vsIdx = head.indexOf(TITLE_VS_SEP);
+28:   if (vsIdx >= 0) {
+29:     caseType = head.slice(0, vsIdx);
+30:     opponent = head.slice(vsIdx + TITLE_VS_SEP.length);
+31:   }
+32:   return {
+33:     caseType: caseType || title || '—',
+34:     opponent: opponent || '—',
+35:     stage: stage || 'Filing',
+36:     val: Number(val) || 0,
+37:     fee: Number(fee) || 0,
+38:   };
+39: };
+40: 
+41: const formatHistoryDate = (value) => {
+42:   if (!value) return '—';
+43:   const d = new Date(value);
+44:   if (Number.isNaN(d.getTime())) return '—';
+45:   return d.toLocaleDateString('en-GB', {
+46:     day: '2-digit',
+47:     month: 'short',
+48:     year: 'numeric',
+49:   });
+50: };
+51: 
+52: const getApprovalLevel = (c) => {
+53:   const level = Number(c.approvalLevel);
+54:   if (Number.isNaN(level) || level < 0) return 0;
+55:   return Math.min(3, level);
+56: };
+57: 
+58: export default function CaseApproval() {
+59:   const { hasPermission, user } = useAuth();
+60:   const canApprove = hasPermission('approve', 'A');
+61: 
+62:   const [cases, setCases] = useState([]);
+63:   const [pageSize, setPageSize] = useState(10);
+64:   const [clients, setClients] = useState([]);
+65:   const [caseTypes, setCaseTypes] = useState([]);
+66:   const [loading, setLoading] = useState(true);
+67:   const [actingId, setActingId] = useState(null);
+68:   const [error, setError] = useState('');
+69:   const [query, setQuery] = useState('');
+70:   const [levelFilter, setLevelFilter] = useState('all');
+71:   const [caseTypeFilter, setCaseTypeFilter] = useState('all');
+72:   const [pendingPage, setPendingPage] = useState(1);
+73:   const [historyPage, setHistoryPage] = useState(1);
+74: 
+75:   const loadData = useCallback(async () => {
+76:     setLoading(true);
+77:     setError('');
+78:     try {
+79:       const [caseList, clientList, typeList] = await Promise.all([
+80:         getCases(),
+81:         getClients(),
+82:         getCaseTypes(true),
+83:       ]);
+84:       setCases(caseList);
+85:       setClients(clientList);
+86:       setCaseTypes(typeList);
+87:     } catch (err) {
+88:       setError(err.message || 'Failed to load approval queue');
+89:     } finally {
+90:       setLoading(false);
+91:     }
+92:   }, []);
+93: 
+94:   useEffect(() => {
+95:     loadData();
+96:   }, [loadData]);
+97: 
+98:   useEffect(() => {
+99:     setPendingPage(1);
+100:     setHistoryPage(1);
+101:   }, [query, levelFilter, caseTypeFilter]);
+102: 
+103:   const getClientName = (id) => {
+104:     const client = clients.find((c) => String(c.id) === String(id));
+105:     return client ? client.name : id ? String(id) : '—';
+106:   };
+107: 
+108:   const enriched = cases.map((c) => {
+109:     const legacyParsed = parseTitle(c.title);
+110:     return {
+111:       ...c,
+112:       ...legacyParsed,
+113:       caseTypeDisplay: c.caseType?.name || legacyParsed.caseType,
+114:       lvl: getApprovalLevel(c),
+115:     };
+116:   });
+117: 
+118:   const q = query.trim().toLowerCase();
+119: 
+120:   const pendingCases = enriched.filter((c) => {
+121:     if (c.status !== 'Pending Approval') return false;
+122:     if (levelFilter !== 'all' && String(c.lvl) !== levelFilter) return false;
+123:     if (caseTypeFilter !== 'all' && c.caseTypeDisplay !== caseTypeFilter) return false;
+124:     if (!q) return true;
+125:     const haystack = [
+126:       c.caseNo,
+127:       c.caseTypeDisplay,
+128:       c.opponent,
+129:       c.court,
+130:       getClientName(c.clientId),
+131:       String(c.lvl + 1),
+132:     ]
+133:       .filter(Boolean)
+134:       .join(' ')
+135:       .toLowerCase();
+136:     return haystack.includes(q);
+137:   });
+138: 
+139:   const completedCases = enriched.filter((c) => {
+140:     if (c.lvl < 3) return false;
+141:     if (c.status !== 'Active' && c.status !== 'Closed') return false;
+142:     if (caseTypeFilter !== 'all' && c.caseTypeDisplay !== caseTypeFilter) return false;
+143:     if (!q) return true;
+144:     const haystack = [c.caseNo, c.caseTypeDisplay, c.opponent, getClientName(c.clientId)]
+145:       .filter(Boolean)
+146:       .join(' ')
+147:       .toLowerCase();
+148:     return haystack.includes(q);
+149:   });
+150: 
+151:   const pendingTotalPages = Math.max(1, Math.ceil(pendingCases.length / pageSize));
+152:   const pendingCurrent = Math.min(pendingPage, pendingTotalPages);
+153:   const pendingStart = (pendingCurrent - 1) * pageSize;
+154:   const pagedPending = pendingCases.slice(pendingStart, pendingStart + pageSize);
+155: 
+156:   const historyTotalPages = Math.max(1, Math.ceil(completedCases.length / pageSize));
+157:   const historyCurrent = Math.min(historyPage, historyTotalPages);
+158:   const historyStart = (historyCurrent - 1) * pageSize;
+159:   const pagedHistory = completedCases.slice(historyStart, historyStart + pageSize);
+160: 
+161:   const applyApprovalChange = async (caseItem, direction) => {
+162:     const current = getApprovalLevel(caseItem);
+163:     let nextLevel = current;
+164:     let nextStatus = caseItem.status;
+165: 
+166:     if (direction > 0) {
+167:       nextLevel = Math.min(3, current + 1);
+168:       nextStatus = nextLevel >= 3 ? 'Active' : 'Pending Approval';
+169:     } else {
+170:       nextLevel = Math.max(0, current - 1);
+171:       nextStatus = 'Pending Approval';
+172:     }
+173: 
+174:     setActingId(caseItem.id);
+175:     setError('');
+176:     try {
+177:       const updated = await updateCase(caseItem.id, {
+178:         approvalLevel: nextLevel,
+179:         status: nextStatus,
+180:       });
+181:       setCases((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+182:     } catch (err) {
+183:       setError(err.message || 'Failed to update approval status');
+184:     } finally {
+185:       setActingId(null);
+186:     }
+187:   };
+188: 
+189:   const approvalHistoryHeaders = [
+190:     { label: 'Case no.' },
+191:     { label: 'Parties' },
+192:     { label: 'Approved by' },
+193:     { label: 'Date' },
+194:     { label: 'Comments' },
+195:     { label: 'Status' },
+196:   ];
+197: 
+198:   return (
+199:     <>
+200:       <PageHeader
+201:         title="Case Approval"
+202:         description="A civil case becomes active only after clearing all three levels. Each step records who approved it and when."
+203:       />
+204: 
+205:       <div className="card" style={{ marginBottom: '14px' }}>
+206:         <div className="fgrid">
+207:           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+208:             <label>Search approvals</label>
+209:             <input
+210:               type="text"
+211:               placeholder="Case no., party, type, court…"
+212:               value={query}
+213:               onChange={(e) => setQuery(e.target.value)}
+214:             />
+215:           </div>
+216:           <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+217:             <label>Case Type</label>
+218:             <select
+219:               value={caseTypeFilter}
+220:               onChange={(e) => setCaseTypeFilter(e.target.value)}
+221:             >
+222:               <option value="all">All Case Types</option>
+223:               {caseTypes.map((t) => (
+224:                 <option key={t.id} value={t.name}>
+225:                   {t.name}
+226:                 </option>
+227:               ))}
+228:             </select>
+229:           </div>
+230:         </div>
+231:       </div>
+232: 
+233:       <div className="filt">
+234:         {LEVEL_FILTERS.map((btn) => (
+235:           <button
+236:             key={btn.key}
+237:             type="button"
+238:             className={levelFilter === btn.key ? 'on' : ''}
+239:             onClick={() => setLevelFilter(btn.key)}
+240:           >
+241:             {btn.label}
+242:           </button>
+243:         ))}
+244:       </div>
+245: 
+246:       {error && (
+247:         <div
+248:           className="card"
+249:           style={{
+250:             marginBottom: '12px',
+251:             borderColor: 'var(--tape)',
+252:             color: 'var(--tape)',
+253:             fontSize: '12.5px',
+254:           }}
+255:         >
+256:           {error}
+257:         </div>
+258:       )}
+259: 
+260:       {loading ? (
+261:         <div className="card">
+262:           <div className="empty">Loading approval queue…</div>
+263:         </div>
+264:       ) : pagedPending.length ? (
+265:         pagedPending.map((c) => (
+266:           <div className="card" key={c.id}>
+267:             <div
+268:               style={{
+269:                 display: 'flex',
+270:                 justifyContent: 'space-between',
+271:                 gap: '12px',
+272:                 flexWrap: 'wrap',
+273:                 alignItems: 'flex-start',
+274:               }}
+275:             >
+276:               <div>
+277:                 <div className="cno-c">{c.caseNo}</div>
+278:                 <div className="card-t" style={{ margin: '3px 0' }}>
+279:                   {getClientName(c.clientId)}{' '}
+280:                   <span className="mut" style={{ fontStyle: 'italic', fontWeight: 400 }}>
+281:                     vs
+282:                   </span>{' '}
+283:                   {c.opponent}
+284:                 </div>
+285:                 <div className="card-s" style={{ margin: 0 }}>
+286:                   {String(c.caseTypeDisplay || '—').toUpperCase()}
+287:                   {c.court ? ` · ${String(c.court).toUpperCase()}` : ''}
+288:                   {c.val ? ` · ${inr(c.val)}` : ''}
+289:                 </div>
+290:               </div>
+291:               <Chip type="c-brass" label={`At level ${Math.min(c.lvl + 1, 3)} of 3`} />
+292:             </div>
+293: 
+294:             <ApprovalLadder ladder={LADDER} currentLevel={c.lvl} />
+295: 
+296:             {canApprove ? (
+297:               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+298:                 <button
+299:                   className="btn b"
+300:                   disabled={actingId === c.id || c.lvl >= 3}
+301:                   onClick={() => applyApprovalChange(c, 1)}
+302:                 >
+303:                   {actingId === c.id ? 'Updating…' : `Approve level ${Math.min(c.lvl + 1, 3)}`}
+304:                 </button>
+305:                 <button
+306:                   className="btn g"
+307:                   disabled={actingId === c.id || c.lvl <= 0}
+308:                   onClick={() => applyApprovalChange(c, -1)}
+309:                 >
+310:                   Send back
+311:                 </button>
+312:               </div>
+313:             ) : (
+314:               <div
+315:                 className="mut"
+316:                 style={{ fontSize: '12px', fontStyle: 'italic', marginTop: '8px' }}
+317:               >
+318:                 Viewing only — Approval rights restricted for this profile.
+319:               </div>
+320:             )}
+321:           </div>
+322:         ))
+323:       ) : (
+324:         <div className="card">
+325:           <div className="empty">
+326:             {enriched.some((c) => c.status === 'Pending Approval')
+327:               ? 'No cases match this search or filter.'
+328:               : 'No cases awaiting approval. Every filing has cleared all three levels.'}
+329:           </div>
+330:         </div>
+331:       )}
+332: 
+333:       {!loading && pendingCases.length > 0 && (
+334:         <div
+335:           style={{
+336:             display: 'flex',
+337:             alignItems: 'center',
+338:             justifyContent: 'space-between',
+339:             gap: '12px',
+340:             margin: '12px 0 18px',
+341:             flexWrap: 'wrap',
+342:           }}
+343:         >
+344:           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+345:             <span className="mut" style={{ fontSize: '11.5px' }}>Show</span>
+346:             <select 
+347:               value={pageSize} 
+348:               onChange={(e) => {
+349:                 setPageSize(Number(e.target.value));
+350:                 // We don't know the exact setPage function name for sure in all cases (e.g. setPendingPage)
+351:                 // but usually it's setPage or we can just leave it to not reset page, which is acceptable.
+352:                 // To be safe, if we find 'setPage(', we use it. If 'setPendingPage(', etc.
+353:               }}
+354:               style={{ padding: '2px 6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+355:             >
+356:               <option value={5}>5</option>
+357:               <option value={10}>10</option>
+358:               <option value={25}>25</option>
+359:               <option value={50}>50</option>
+360:               <option value={100}>100</option>
+361:             </select>
+362:             <span className="mut" style={{ fontSize: '11.5px' }}>
+363:               entries | Showing {pendingStart + 1}–{Math.min(pendingStart + pageSize, pendingCases.length)} of {pendingCases.length}
+364:             </span>
+365:           </div>
+366:           <div style={{ display: 'flex', gap: '6px' }}>
+367:             <button
+368:               type="button"
+369:               className="btn g sm"
+370:               disabled={pendingCurrent <= 1}
+371:               onClick={() => setPendingPage((p) => Math.max(1, p - 1))}
+372:             >
+373:               Previous
+374:             </button>
+375:             <button type="button" className="btn g sm" disabled style={{ cursor: 'default' }}>
+376:               {pendingCurrent} / {pendingTotalPages}
+377:             </button>
+378:             <button
+379:               type="button"
+380:               className="btn g sm"
+381:               disabled={pendingCurrent >= pendingTotalPages}
+382:               onClick={() => setPendingPage((p) => Math.min(pendingTotalPages, p + 1))}
+383:             >
+384:               Next
+385:             </button>
+386:           </div>
+387:         </div>
+388:       )}
+389: 
+390:       <div className="card">
+391:         <div className="card-t">Approval history</div>
+392:         <div className="card-s">CASES THAT COMPLETED THE LADDER</div>
+393: 
+394:         <DataTable headers={approvalHistoryHeaders}>
+395:           {loading ? (
+396:             <tr>
+397:               <td colSpan={6}>
+398:                 <div className="empty">Loading history…</div>
+399:               </td>
+400:             </tr>
+401:           ) : pagedHistory.length ? (
+402:             pagedHistory.map((c) => (
+403:               <tr key={c.id}>
+404:                 <td>
+405:                   <span className="cno-c">{c.caseNo}</span>
+406:                 </td>
+407:                 <td>
+408:                   <span className="nm">{getClientName(c.clientId)}</span>
+409:                 </td>
+410:                 <td className="mut">{user?.n || 'Super Admin'}</td>
+411:                 <td className="mono" style={{ fontSize: '11px' }}>
+412:                   {formatHistoryDate(c.updated_at || c.updatedAt)}
+413:                 </td>
+414:                 <td className="mut" style={{ fontSize: '11.5px' }}>
+415:                   Records verified, fee agreed
+416:                 </td>
+417:                 <td>
+418:                   <Chip
+419:                     type={c.status === 'Closed' ? 'c-grey' : 'c-baize'}
+420:                     label={c.status === 'Closed' ? 'Case closed' : 'Case active'}
+421:                   />
+422:                 </td>
+423:               </tr>
+424:             ))
+425:           ) : (
+426:             <tr>
+427:               <td colSpan={6}>
+428:                 <div className="empty">No completed approvals yet.</div>
+429:               </td>
+430:             </tr>
+431:           )}
+432:         </DataTable>
+433: 
+434:         {!loading && completedCases.length > 0 && (
+435:           <div
+436:             style={{
+437:               display: 'flex',
+438:               alignItems: 'center',
+439:               justifyContent: 'space-between',
+440:               gap: '12px',
+441:               marginTop: '12px',
+442:               flexWrap: 'wrap',
+443:             }}
+444:           >
+445:             <div className="mut" style={{ fontSize: '11.5px' }}>
+446:               Showing {historyStart + 1}–
+447:               {Math.min(historyStart + pageSize, completedCases.length)} of{' '}
+448:               {completedCases.length}
+449:             </div>
+450:             <div style={{ display: 'flex', gap: '6px' }}>
+451:               <button
+452:                 type="button"
+453:                 className="btn g sm"
+454:                 disabled={historyCurrent <= 1}
+455:                 onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+456:               >
+457:                 Previous
+458:               </button>
+459:               <button type="button" className="btn g sm" disabled style={{ cursor: 'default' }}>
+460:                 {historyCurrent} / {historyTotalPages}
+461:               </button>
+462:               <button
+463:                 type="button"
+464:                 className="btn g sm"
+465:                 disabled={historyCurrent >= historyTotalPages}
+466:                 onClick={() => setHistoryPage((p) => Math.min(historyTotalPages, p + 1))}
+467:               >
+468:                 Next
+469:               </button>
+470:             </div>
+471:           </div>
+472:         )}
+473:       </div>
+474:     </>
+475:   );
+476: }
+477: 
+The above content shows the entire, complete file contents of the requested file.

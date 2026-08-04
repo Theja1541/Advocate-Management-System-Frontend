@@ -1,3 +1,10 @@
+Created At: 2026-08-04T11:25:18+05:30
+Completed At: 2026-08-04T11:25:18+05:30
+File Path: `file:///D:/THEJA/ADVOCATE%20MANAGEMENT%20SYSTEM/Frontend/src/pages/CaseApproval.jsx`
+Total Lines: 477
+Total Bytes: 16595
+Showing lines 1 to 477
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
 import React, { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../components/ui/PageHeader';
 import ApprovalLadder from '../components/ui/ApprovalLadder';
@@ -285,8 +292,7 @@ export default function CaseApproval() {
                 <div className="card-s" style={{ margin: 0 }}>
                   {String(c.caseTypeDisplay || '—').toUpperCase()}
                   {c.court ? ` · ${String(c.court).toUpperCase()}` : ''}
-                  {c.val ? ` · Suit Value: ${inr(c.val)}` : ''}
-                  {c.totalPayable ? ` · Fee: ${inr(c.totalPayable)}` : ''}
+                  {c.val ? ` · ${inr(c.val)}` : ''}
                 </div>
               </div>
               <Chip type="c-brass" label={`At level ${Math.min(c.lvl + 1, 3)} of 3`} />
@@ -476,4 +482,5 @@ export default function CaseApproval() {
   );
 }
 
+The above content shows the entire, complete file contents of the requested file.
 

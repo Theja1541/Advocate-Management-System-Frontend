@@ -7,30 +7,33 @@ import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
 import Footer from './components/layout/Footer';
 import ScrollToTop from './components/layout/ScrollToTop';
+import GlobalLoader from './components/common/GlobalLoader';
 
-// Page components
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Cases from './pages/Cases';
-import CaseApproval from './pages/CaseApproval';
-import Diary from './pages/Diary';
-import Tasks from './pages/Tasks';
-import Docs from './pages/Docs';
-import Refs from './pages/Refs';
-import Land from './pages/Land';
-import Opinions from './pages/Opinions';
-import Advs from './pages/Advs';
-import Clients from './pages/Clients';
-import Member from './pages/Member';
-import Daybook from './pages/Daybook';
-import Pay from './pages/Pay';
-import Alerts from './pages/Alerts';
-import Reports from './pages/Reports';
-import BareActs from './pages/BareActs';
-import Amend from './pages/Amend';
-import Calculators from './pages/Calculators';
-import Roles from './pages/Roles';
-import MasterSettings from './pages/MasterSettings';
+import { Suspense } from 'react';
+
+// Page components using lazy loading for route-based code splitting
+const Login = React.lazy(() => import('./pages/Login'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Cases = React.lazy(() => import('./pages/Cases'));
+const CaseApproval = React.lazy(() => import('./pages/CaseApproval'));
+const Hearings = React.lazy(() => import('./pages/Hearings'));
+const Tasks = React.lazy(() => import('./pages/Tasks'));
+const Docs = React.lazy(() => import('./pages/Docs'));
+const Refs = React.lazy(() => import('./pages/Refs'));
+const Land = React.lazy(() => import('./pages/Land'));
+const Opinions = React.lazy(() => import('./pages/Opinions'));
+const Advs = React.lazy(() => import('./pages/Advs'));
+const Clients = React.lazy(() => import('./pages/Clients'));
+const Member = React.lazy(() => import('./pages/Member'));
+const Daybook = React.lazy(() => import('./pages/Daybook'));
+const Pay = React.lazy(() => import('./pages/Pay'));
+const Alerts = React.lazy(() => import('./pages/Alerts'));
+const Reports = React.lazy(() => import('./pages/Reports'));
+const BareActs = React.lazy(() => import('./pages/BareActs'));
+const Amend = React.lazy(() => import('./pages/Amend'));
+const Calculators = React.lazy(() => import('./pages/Calculators'));
+const Roles = React.lazy(() => import('./pages/Roles'));
+const MasterSettings = React.lazy(() => import('./pages/MasterSettings'));
 
 const ProtectedRoute = ({ element, moduleKey }) => {
   const { hasPermission } = useAuth();
@@ -39,57 +42,71 @@ const ProtectedRoute = ({ element, moduleKey }) => {
 
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    return localStorage.getItem('sidebar-collapsed') === 'true';
-  });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+
+  // Close sidebar automatically on mobile navigation
+  const closeSidebarOnMobile = () => {
+    if (window.innerWidth <= 768 && !isSidebarCollapsed) {
+      setIsSidebarCollapsed(true);
+    }
+  };
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed(prev => {
-      const next = !prev;
-      localStorage.setItem('sidebar-collapsed', String(next));
-      return next;
-    });
+    setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <Suspense fallback={<GlobalLoader forceShow={true} />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
     );
   }
 
   return (
-    <div className={`wrap ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{ height: '100vh', overflow: 'hidden' }}>
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} />
-      <div className="main-container" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', overflow: 'hidden' }}>
+    <div className={`wrap ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} closeMobileMenu={closeSidebarOnMobile} />
+      <div 
+        className="main-container" 
+        style={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, height: '100%', overflow: 'hidden' }}
+        onClick={() => {
+          if (window.innerWidth <= 768 && !isSidebarCollapsed) {
+            setIsSidebarCollapsed(true);
+          }
+        }}
+      >
+        <GlobalLoader />
         <Header toggleSidebar={toggleSidebar} />
-        <main id="main" style={{ flex: 1, overflowY: 'auto' }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/cases" element={<ProtectedRoute element={<Cases />} moduleKey="cases" />} />
-            <Route path="/approve" element={<ProtectedRoute element={<CaseApproval />} moduleKey="approve" />} />
-            <Route path="/diary" element={<ProtectedRoute element={<Diary />} moduleKey="diary" />} />
-            <Route path="/tasks" element={<ProtectedRoute element={<Tasks />} moduleKey="cases" />} />
-            <Route path="/docs" element={<ProtectedRoute element={<Docs />} moduleKey="docs" />} />
-            <Route path="/refs" element={<ProtectedRoute element={<Refs />} moduleKey="refs" />} />
-            <Route path="/land" element={<ProtectedRoute element={<Land />} moduleKey="land" />} />
-            <Route path="/opinions" element={<ProtectedRoute element={<Opinions />} moduleKey="opinions" />} />
-            <Route path="/advs" element={<ProtectedRoute element={<Advs />} moduleKey="advs" />} />
-            <Route path="/clients" element={<ProtectedRoute element={<Clients />} moduleKey="clients" />} />
-            <Route path="/member" element={<ProtectedRoute element={<Member />} moduleKey="member" />} />
-            <Route path="/daybook" element={<ProtectedRoute element={<Daybook />} moduleKey="daybook" />} />
-            <Route path="/pay" element={<ProtectedRoute element={<Pay />} moduleKey="pay" />} />
-            <Route path="/alerts" element={<ProtectedRoute element={<Alerts />} moduleKey="alerts" />} />
-            <Route path="/reports" element={<ProtectedRoute element={<Reports />} moduleKey="reports" />} />
-            <Route path="/acts" element={<ProtectedRoute element={<BareActs />} moduleKey="acts" />} />
-            <Route path="/amend" element={<ProtectedRoute element={<Amend />} moduleKey="amend" />} />
-            <Route path="/tools" element={<ProtectedRoute element={<Calculators />} moduleKey="tools" />} />
-            <Route path="/roles" element={<ProtectedRoute element={<Roles />} moduleKey="roles" />} />
-            <Route path="/settings/masters" element={<ProtectedRoute element={<MasterSettings />} moduleKey="roles" />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+        <main id="main">
+          <Suspense fallback={<GlobalLoader forceShow={true} />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/cases" element={<ProtectedRoute element={<Cases />} moduleKey="cases" />} />
+              <Route path="/approve" element={<ProtectedRoute element={<CaseApproval />} moduleKey="approve" />} />
+              <Route path="/hearings" element={<ProtectedRoute element={<Hearings />} moduleKey="diary" />} />
+              <Route path="/tasks" element={<ProtectedRoute element={<Tasks />} moduleKey="cases" />} />
+              <Route path="/docs" element={<ProtectedRoute element={<Docs />} moduleKey="docs" />} />
+              <Route path="/refs" element={<ProtectedRoute element={<Refs />} moduleKey="refs" />} />
+              <Route path="/land" element={<ProtectedRoute element={<Land />} moduleKey="land" />} />
+              <Route path="/opinions" element={<ProtectedRoute element={<Opinions />} moduleKey="opinions" />} />
+              <Route path="/advs" element={<ProtectedRoute element={<Advs />} moduleKey="advs" />} />
+              <Route path="/clients" element={<ProtectedRoute element={<Clients />} moduleKey="clients" />} />
+              <Route path="/member" element={<ProtectedRoute element={<Member />} moduleKey="member" />} />
+              <Route path="/daybook" element={<ProtectedRoute element={<Daybook />} moduleKey="daybook" />} />
+              <Route path="/pay" element={<ProtectedRoute element={<Pay />} moduleKey="pay" />} />
+              <Route path="/alerts" element={<ProtectedRoute element={<Alerts />} moduleKey="alerts" />} />
+              <Route path="/reports" element={<ProtectedRoute element={<Reports />} moduleKey="reports" />} />
+              <Route path="/acts" element={<ProtectedRoute element={<BareActs />} moduleKey="acts" />} />
+              <Route path="/amend" element={<ProtectedRoute element={<Amend />} moduleKey="amend" />} />
+              <Route path="/tools" element={<ProtectedRoute element={<Calculators />} moduleKey="tools" />} />
+              <Route path="/roles" element={<ProtectedRoute element={<Roles />} moduleKey="roles" />} />
+              <Route path="/settings/masters" element={<ProtectedRoute element={<MasterSettings />} moduleKey="roles" />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </main>
         <Footer />
       </div>

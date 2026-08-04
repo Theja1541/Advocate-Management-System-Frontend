@@ -1,15 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useLegalData } from '../../context/DataContext';
+import { getAlerts } from '../../services/alertService';
 
 export default function Header({ toggleSidebar }) {
   const { user, logout } = useAuth();
-  const { alerts } = useLegalData();
   const navigate = useNavigate();
 
   const [searchVal, setSearchVal] = useState('');
-  const unreadCount = alerts.filter(a => !a.isResolved).length;
+  const [activeAlerts, setActiveAlerts] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const fetchAlerts = () => {
+      getAlerts({ status: 'active' }).then((list) => {
+        setActiveAlerts(list);
+      }).catch(console.error);
+    };
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const unreadCount = activeAlerts.filter(a => !a.isRead).length;
   const avatar = user?.av || (user?.n || '?').split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
 
   const handleSearchSubmit = (e) => {
@@ -61,36 +86,102 @@ export default function Header({ toggleSidebar }) {
           </form>
           <div 
             className="bell" 
-            title="Alerts" 
-            style={{ cursor: 'pointer', transition: 'background 0.2s' }}
-            onClick={() => navigate('/alerts')}
+            title="Notification Center" 
+            style={{ cursor: 'pointer', transition: 'background 0.2s', position: 'relative' }}
+            ref={dropdownRef}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.7 21a2 2 0 01-3.4 0" />
-            </svg>
-            {unreadCount > 0 && <span className="b" id="bc">{unreadCount}</span>}
+            <div onClick={() => setShowDropdown(!showDropdown)} style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.7 21a2 2 0 01-3.4 0" />
+              </svg>
+              {unreadCount > 0 && <span className="b" id="bc">{unreadCount}</span>}
+            </div>
+
+            {showDropdown && (
+              <div
+                className="dropdown"
+                style={{
+                  top: '40px',
+                  right: 0,
+                  width: '320px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--rule)', fontWeight: 600, fontSize: '14px', color: 'var(--fg)' }}>
+                  Notifications
+                </div>
+                <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
+                  {activeAlerts.length > 0 ? (
+                    activeAlerts.slice(0, 10).map((a) => (
+                      <div
+                        key={a.id}
+                        style={{
+                          padding: '12px 16px',
+                          borderBottom: '1px solid var(--rule)',
+                          cursor: 'pointer',
+                          backgroundColor: !a.isRead ? 'rgba(var(--brand-rgb), 0.05)' : 'transparent',
+                          transition: 'background 0.2s'
+                        }}
+                        onClick={() => {
+                          setShowDropdown(false);
+                          navigate('/alerts');
+                        }}
+                      >
+                        <div style={{ fontSize: '13px', fontWeight: !a.isRead ? 600 : 500, color: 'var(--fg)', marginBottom: '4px' }}>
+                          {a.alertType ? a.alertType.replace(/_/g, ' ') : a.type}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--muted)', lineHeight: 1.4 }}>
+                          {a.message || a.description}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--muted)' }}>
+                      No active notifications
+                    </div>
+                  )}
+                </div>
+                <div
+                  style={{
+                    padding: '10px',
+                    textAlign: 'center',
+                    borderTop: '1px solid var(--rule)',
+                    background: 'var(--surface)',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: 'var(--brand)',
+                  }}
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate('/alerts');
+                  }}
+                >
+                  View All
+                </div>
+              </div>
+            )}
           </div>
           <div className="me" style={{ gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div className="av">{avatar}</div>
               <div className="w">
-                <div style={{ fontSize: '10px', color: '#9AA3B5', letterSpacing: '0.04em' }}>Signed in</div>
-                <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#F1F2EE', lineHeight: 1.25 }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Signed in</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.25 }}>
                   {user?.n}
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#C3CADB' }}>{user?.role}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{user?.role}</div>
               </div>
             </div>
             <button
-              className="btn sm"
+              className="btn signout-btn"
               onClick={() => {
                 void logout();
               }}
-              style={{
-                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.16)',
-                color: '#C3CADB', padding: '4px 8px', borderRadius: '5px'
-              }}
+              style={{ padding: '6px 12px', fontSize: '12px' }}
             >
               Sign Out
             </button>

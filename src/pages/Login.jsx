@@ -88,9 +88,9 @@ export default function Login() {
 
           {errorMsg && <div className="login-error">{errorMsg}</div>}
 
-          <form onSubmit={handleLogin} className="login-form">
-            <div className="login-field">
-              <label htmlFor="login-email">Email Address</label>
+          <form onSubmit={handleLogin} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              <label htmlFor="login-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Email Address</label>
               <input
                 id="login-email"
                 type="email"
@@ -99,11 +99,12 @@ export default function Login() {
                 placeholder="name@legaldesk.in"
                 required
                 autoComplete="email"
+                style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
               />
             </div>
 
-            <div className="login-field">
-              <label htmlFor="login-password">Password</label>
+            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+              <label htmlFor="login-password" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Password</label>
               <input
                 id="login-password"
                 type="password"
@@ -112,29 +113,31 @@ export default function Login() {
                 placeholder="••••••••"
                 required
                 autoComplete="current-password"
+                style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
               />
             </div>
 
-            <button type="submit" className="login-submit" disabled={loading}>
+            <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
               {loading ? 'Signing In…' : 'Sign In'}
             </button>
           </form>
 
-          <div className="login-demos">
-            <div className="login-demos-label">Demo credentials — click to fill</div>
-            <div className="login-demos-list">
+          <div className="login-demos" style={{ marginTop: '24px' }}>
+            <div className="login-demos-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: '12px' }}>Demo credentials — click to fill</div>
+            <div className="login-demos-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {DEMO_CREDENTIALS.map((cred) => (
                 <button
                   key={cred.email}
                   type="button"
-                  className={`login-demo${email === cred.email ? ' is-active' : ''}`}
+                  className={`btn outline sm${email === cred.email ? ' is-active' : ''}`}
                   onClick={() => applyDemo(cred)}
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 'var(--radius-md)' }}
                 >
-                  <div style={{ minWidth: 0 }}>
-                    <div className="login-demo-role">{cred.role}</div>
-                    <div className="login-demo-email">{cred.email}</div>
+                  <div style={{ minWidth: 0, textAlign: 'left' }}>
+                    <div className="login-demo-role" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{cred.role}</div>
+                    <div className="login-demo-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{cred.email}</div>
                   </div>
-                  <div className="login-demo-pass">{cred.password}</div>
+                  <div className="login-demo-pass" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{cred.password}</div>
                 </button>
               ))}
             </div>
