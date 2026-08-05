@@ -7,14 +7,13 @@ const AuthContext = createContext(null);
 import { DEMO_CREDENTIALS } from '../data/credentials';
 
 const KEY_ALIASES = {
-  refs: 'docs',
-  alerts: 'cases',
-  amend: 'acts',
-  tools: 'acts',
   casetypes: 'roles',
   casestages: 'roles',
   courts: 'roles',
-  masters: 'roles',
+  expensecats: 'roles',
+  doctypes: 'roles',
+  taxes: 'roles',
+  paymentmodes: 'roles',
   hearings: 'diary',
 };
 
@@ -87,14 +86,34 @@ export const AuthProvider = ({ children }) => {
 
   const hasPermission = (key, action = 'V') => {
     if (key === 'dash') return true;
-    const keyCode = KEY_ALIASES[key] || key;
     const userRole = user?.role || 'Super Admin';
-    const rolePerms = permByRole[userRole];
-    if (!rolePerms) {
-      // Until matrix loads, Super Admin retains access; others wait
-      return userRole === 'Super Admin';
+    
+    // Allow Tenant Admin to access Tenant Settings
+    if (key === 'tenantSettings' && userRole === 'Admin') return true;
+    
+    if (userRole === 'Super Admin') {
+      if (key === 'roles') return false; // Hidden for Super Admin
+      return true; // Super Admin bypasses all other permission checks
     }
-    const perm = rolePerms[keyCode] || '—';
+
+    const keyCode = KEY_ALIASES[key] || key;
+    const rolePerms = permByRole[userRole];
+    
+    if (!rolePerms) {
+      return false; // Wait until permissions matrix loads
+    }
+
+    let perm = rolePerms[keyCode];
+    
+    // Fallback for aliases or legacy keys
+    if (!perm && key !== keyCode) {
+      perm = rolePerms[key];
+    }
+    if (!perm && (key === 'diary' || key === 'hearings')) {
+      perm = rolePerms['diary'] || rolePerms['hearings'];
+    }
+
+    perm = perm || '---';
     return perm.includes(action);
   };
 

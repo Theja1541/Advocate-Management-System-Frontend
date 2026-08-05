@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { NAV } from '../../data/mockData';
 import { useLegalData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { getPublicSettings } from '../../services/settingsService';
 
 const getIcon = (key) => {
   switch (key) {
@@ -105,12 +106,32 @@ const getIcon = (key) => {
           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
         </svg>
       );
-    case 'notifications':
+    case 'alerts':
       return (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      );
+    case 'tenants':
+      return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 21h18"></path>
+          <path d="M9 8h1"></path>
+          <path d="M9 12h1"></path>
+          <path d="M9 16h1"></path>
+          <path d="M14 8h1"></path>
+          <path d="M14 12h1"></path>
+          <path d="M14 16h1"></path>
+          <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path>
+        </svg>
+      );
+    case 'plans':
+      return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="2" y1="10" x2="22" y2="10"></line>
         </svg>
       );
     case 'reports':
@@ -171,12 +192,20 @@ const getIcon = (key) => {
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       );
+    case 'tenantSettings':
+      return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      );
     default:
       return null;
   }
 };
 
 export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, closeMobileMenu }) {
+  const { user } = useAuth();
+  const location = useLocation();
   const {
     cases,
     alerts,
@@ -187,6 +216,18 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
     opinions
   } = useLegalData();
   const { hasPermission } = useAuth();
+  
+  const [superAdminLogo, setSuperAdminLogo] = useState(null);
+
+  useEffect(() => {
+    if (user?.role === 'Super Admin') {
+      getPublicSettings().then(settings => {
+        if (settings?.logo) {
+          setSuperAdminLogo(settings.logo);
+        }
+      }).catch(err => console.error("Failed to fetch super admin logo:", err));
+    }
+  }, [user?.role]);
 
   // Manage collapsed state for dropdown menus (groups)
   const [collapsedGroups, setCollapsedGroups] = useState({
@@ -202,8 +243,26 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
   const getRoutePath = (key) => {
     if (key === 'dash') return '/';
     if (key === 'masters') return '/settings/masters';
+    if (key === 'tenantSettings') return '/settings/tenant';
+    if (key === 'plans') return '/settings/plans';
     return `/${key}`;
   };
+
+  const isItemActive = (key) => {
+    const path = getRoutePath(key);
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  useEffect(() => {
+    // Automatically open the group that contains the active item
+    NAV.forEach(group => {
+      const isActive = group.items.some(item => hasPermission(item.k, 'V') && isItemActive(item.k));
+      if (isActive && collapsedGroups[group.g]) {
+        setCollapsedGroups(prev => ({ ...prev, [group.g]: false }));
+      }
+    });
+  }, [location.pathname]);
 
   const handleNavLinkClick = () => {
     if (window.innerWidth <= 768) {
@@ -233,12 +292,19 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
         marginBottom: '10px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-          <img src="/logo.png" alt="Logo" className="seal" style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            objectFit: 'cover',
-            flex: 'none'
+          <img 
+            src={user?.role === 'Super Admin' && superAdminLogo 
+              ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${superAdminLogo}`
+              : (user?.tenant?.logo ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${user.tenant.logo}` : "/logo.png")
+            } 
+            alt="Logo" 
+            className="seal" 
+            style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              flex: 'none'
           }} />
           {!isCollapsed && (
             <div style={{ overflow: 'hidden' }}>
@@ -249,7 +315,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                 fontWeight: 700,
                 color: '#F1F2EE',
                 lineHeight: 1.2
-              }}>Legal Desk</h2>
+              }}>{user?.tenant?.name || 'Legal Desk'}</h2>
               <div style={{
                 fontSize: '7.5px',
                 fontFamily: "'Inter', sans-serif",
@@ -257,7 +323,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                 textTransform: 'uppercase',
                 color: '#9BA6C2',
                 marginTop: '1px'
-              }}>Advocate Case Management</div>
+              }}>{user?.tenant ? 'Tenant Workspace' : 'Advocate Case Management'}</div>
             </div>
           )}
         </div>
@@ -309,6 +375,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
         }
 
         const isGroupCollapsed = collapsedGroups[group.g];
+        const isGroupActive = visibleItems.some(item => isItemActive(item.k));
 
         return (
           <div className="ngrp" key={group.g} style={{ marginBottom: '8px' }}>
@@ -320,15 +387,23 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                transition: 'background 0.2s',
-                userSelect: 'none'
+                padding: '6px 10px',
+                borderRadius: '6px',
+                transition: 'all 0.2s',
+                userSelect: 'none',
+                background: isGroupActive && !isCollapsed ? 'rgba(37, 99, 235, 0.15)' : 'transparent',
+                borderLeft: isGroupActive && !isCollapsed ? '3px solid var(--primary)' : '3px solid transparent'
               }}
-              onMouseEnter={(e) => { if (!isCollapsed) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
-              onMouseLeave={(e) => { if (!isCollapsed) e.currentTarget.style.background = 'transparent'; }}
+              onMouseEnter={(e) => { if (!isCollapsed && !isGroupActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              onMouseLeave={(e) => { if (!isCollapsed && !isGroupActive) e.currentTarget.style.background = 'transparent'; }}
             >
-              <span style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.08em', color: '#8F9BBA' }}>{group.g}</span>
+              <span style={{ 
+                fontSize: '12px', 
+                fontWeight: isGroupActive ? '700' : '600', 
+                letterSpacing: '0.05em', 
+                color: isGroupActive ? '#FFFFFF' : '#8F9BBA',
+                textTransform: 'uppercase'
+              }}>{group.g}</span>
               {!isCollapsed && (
                 <svg 
                   viewBox="0 0 24 24" 
@@ -340,8 +415,8 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                   style={{
                     transform: isGroupCollapsed ? 'rotate(-90deg)' : 'none',
                     transition: 'transform 0.2s',
-                    opacity: 0.6,
-                    color: '#8F9BBA'
+                    opacity: 0.8,
+                    color: isGroupActive ? '#FFFFFF' : '#8F9BBA'
                   }}
                 >
                   <polyline points="6 9 12 15 18 9"></polyline>

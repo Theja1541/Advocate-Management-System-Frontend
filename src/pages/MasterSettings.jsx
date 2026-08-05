@@ -10,6 +10,7 @@ import {
   getDocumentCategories, createDocumentCategory, updateDocumentCategory, deactivateDocumentCategory, activateDocumentCategory,
   getStateFeeConfigs, createStateFeeConfig, updateStateFeeConfig, activateStateFeeConfig, deactivateStateFeeConfig
 } from '../services/caseMastersService';
+import { getPublicSettings, uploadSuperAdminLogo } from '../services/settingsService';
 
 const INDIAN_STATES = [
   { code: 'AP', name: 'Andhra Pradesh' },
@@ -39,6 +40,8 @@ export default function MasterSettings() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
+  const [currentLogo, setCurrentLogo] = useState(null);
 
   // Lists state
   const [types, setTypes] = useState([]);
@@ -100,6 +103,9 @@ export default function MasterSettings() {
       } else if (activeTab === 'stateFees') {
         const data = await getStateFeeConfigs();
         setStateFees(data);
+      } else if (activeTab === 'systemLogo') {
+        const settings = await getPublicSettings();
+        if (settings?.logo) setCurrentLogo(settings.logo);
       }
     } catch (err) {
       setError(err.message || 'Failed to load master configuration.');
@@ -412,6 +418,25 @@ export default function MasterSettings() {
     }
   };
 
+  const handleSystemLogoUpload = async (e) => {
+    e.preventDefault();
+    if (!logoFile) return;
+    setSaving(true);
+    setError('');
+    try {
+      const data = await uploadSuperAdminLogo(logoFile);
+      if (data?.logo) {
+        setCurrentLogo(data.logo);
+        setLogoFile(null);
+        alert('Super Admin logo updated successfully. Refresh the page to see changes across the app.');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to upload logo.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Filter computations
   const getFilteredData = () => {
     const q = search.toLowerCase();
@@ -483,21 +508,29 @@ export default function MasterSettings() {
         >
           🏛️ State Fee Rules
         </button>
+        <button 
+          className={`btn ${activeTab === 'systemLogo' ? 'primary' : 'ghost'}`} 
+          onClick={() => setActiveTab('systemLogo')}
+        >
+          ⚙️ System Logo
+        </button>
       </div>
 
-      <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
-        <div className="fgrid">
-          <div className="f" style={{ flex: 1, minWidth: '220px' }}>
-            <label>Search masters</label>
-            <input 
-              type="text" 
-              placeholder="Search items by code, name, or act..." 
-              value={search} 
-              onChange={(e) => setSearch(e.target.value)} 
-            />
+      {activeTab !== 'systemLogo' && (
+        <div className="card" style={{ marginBottom: 'var(--space-3)' }}>
+          <div className="fgrid">
+            <div className="f" style={{ flex: 1, minWidth: '220px' }}>
+              <label>Search masters</label>
+              <input 
+                type="text" 
+                placeholder="Search items by code, name, or act..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {error && !isModalOpen && (
         <div className="card" style={{ marginBottom: 'var(--space-3)', borderColor: 'var(--danger)', color: 'var(--danger)', fontSize: 'var(--text-sm)' }}>
@@ -506,6 +539,37 @@ export default function MasterSettings() {
       )}
 
       {/* Dynamic Data Table Rendering */}
+      {activeTab === 'systemLogo' ? (
+        <div className="card" style={{ maxWidth: '600px' }}>
+          <h3>Global System Logo</h3>
+          <p className="mut mb-4">This logo will be displayed on the public login page and the Super Admin sidebar.</p>
+          
+          {currentLogo && (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '13px', fontWeight: 'bold' }}>Current Logo</label>
+              <img 
+                src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${currentLogo}`} 
+                alt="Current Super Admin Logo" 
+                style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px' }} 
+              />
+            </div>
+          )}
+
+          <form onSubmit={handleSystemLogoUpload}>
+            <div className="f mb-4">
+              <label>Upload New Logo (PNG, JPG, WEBP, SVG)</label>
+              <input 
+                type="file" 
+                accept=".png,.jpg,.jpeg,.webp,.svg"
+                onChange={(e) => setLogoFile(e.target.files[0])}
+              />
+            </div>
+            <button type="submit" className="btn primary" disabled={saving || !logoFile}>
+              {saving ? 'Uploading...' : 'Upload Logo'}
+            </button>
+          </form>
+        </div>
+      ) : (
       <div className="tbl-card">
         <table className="t">
           {activeTab === 'types' && (
@@ -728,6 +792,7 @@ export default function MasterSettings() {
           )}
         </table>
       </div>
+      )}
 
       {/* Modals Form configurations */}
       <Modal

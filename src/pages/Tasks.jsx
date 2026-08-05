@@ -10,7 +10,7 @@ import { useToast } from '../context/ToastContext';
 import { getTasks, createTask, updateTask, deleteTask } from '../services/taskService';
 import { getAdvocates } from '../services/advocateService';
 
-const PAGE_SIZE = 10;
+const pageSize = 10;
 
 const PRIORITIES = {
   high: ['High', 'danger'],
@@ -57,6 +57,7 @@ export default function Tasks() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -122,10 +123,10 @@ export default function Tasks() {
     return haystack.includes(q);
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / pageSize));
   const currentPage = Math.min(page, totalPages);
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-  const pagedTasks = filteredTasks.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pagedTasks = filteredTasks.slice(pageStart, pageStart + pageSize);
 
   const openAddModal = () => {
     setEditingTask(null);

@@ -9,7 +9,7 @@ export const NAV = [
  { g: 'Office', items: [{ k: 'daybook', l: 'Day Book' }, { k: 'pay', l: 'Payments' }, { k: 'alerts', l: 'Notification Center' }, { k: 'reports', l: 'Reports' }] },
  { g: 'Library', items: [{ k: 'acts', l: 'Bare Acts' }, { k: 'amend', l: 'Amendment Tracker' }] },
  { g: 'Tools', items: [{ k: 'tools', l: 'Calculators' }] },
- { g: 'Admin', items: [{ k: 'roles', l: 'Roles & Access' }, { k: 'masters', l: 'Master Settings' }] }
+ { g: 'Admin', items: [{ k: 'tenants', l: 'Tenants' }, { k: 'plans', l: 'Subscription Plans' }, { k: 'roles', l: 'Roles & Access' }, { k: 'masters', l: 'Master Settings' }, { k: 'tenantSettings', l: 'Tenant Settings' }] }
 ];
 
 export const COURTS = [];
@@ -24,7 +24,7 @@ export const LADDER = [
 ];
 export const INITIAL_DIARY = [];
 export const INITIAL_DAYBOOK = [];
-export const DB_CATS = ['Party Meeting', 'Court Visit', 'Office Visit', 'Field Visit', 'Client Payment', 'Advocate Payment', 'Office Expense', 'Misc.'];
+export const DB_CATS = ['Party Meeting', 'Court Visit', 'Office Visit', 'Field Visit', 'Office Expense', 'Misc.'];
 
 export const PAYS = [];
 export const MEMB = [];

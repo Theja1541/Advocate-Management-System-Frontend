@@ -255,7 +255,7 @@ export default function Land() {
         description="Survey-wise land records — extent, patta, encumbrance and the title position behind each matter."
         actions={
           canEdit ? (
-            <button className="btn" onClick={openAddModal} disabled={!clients.length}>
+            <button className="btn primary" onClick={openAddModal} disabled={!clients.length}>
               Add land record
             </button>
           ) : null

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { NAV } from '../data/mockData';
 import PageHeader from '../components/ui/PageHeader';
 import Chip from '../components/ui/Chip';
 import { useAuth } from '../context/AuthContext';
@@ -33,7 +32,6 @@ export default function Roles() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [savingKey, setSavingKey] = useState('');
-  const [activeGroup, setActiveGroup] = useState('Matters');
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -182,43 +180,10 @@ export default function Roles() {
             <div className="empty">Loading tenant modules...</div>
           </div>
         ) : (
-          
           <div style={{ marginTop: 'var(--space-4)' }}>
-            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: '600', marginBottom: 'var(--space-4)', color: 'var(--text-primary)', fontFamily: "'Spectral', serif" }}>Modules & Pages Access</h3>
-            
-            <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', overflowX: 'auto', paddingBottom: '4px' }}>
-              {NAV.filter(g => g.g !== 'Today').map((group) => {
-                const isActive = activeGroup === group.g;
-                return (
-                  <button
-                    key={group.g}
-                    onClick={() => setActiveGroup(group.g)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: 'var(--radius-md)',
-                      border: 'none',
-                      background: isActive ? 'var(--primary)' : 'var(--card)',
-                      color: isActive ? '#fff' : 'var(--text-secondary)',
-                      fontWeight: isActive ? '600' : '500',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap',
-                      boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {group.g}
-                  </button>
-                );
-              })}
-            </div>
-
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: '600', marginBottom: 'var(--space-4)', color: 'var(--text-primary)', fontFamily: "'Spectral', serif" }}>Subscribed Modules</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 'var(--space-4)' }}>
-              {modules
-                .filter(m => {
-                  const currentGroup = NAV.find(g => g.g === activeGroup);
-                  return currentGroup ? currentGroup.items.some(item => item.k === m.keyCode) : false;
-                })
-                .map((m) => {
+              {modules.map((m) => {
                 const isEnabled = tenantAdminRole ? (matrix[tenantAdminRole.id]?.[m.id] !== '---' && matrix[tenantAdminRole.id]?.[m.id] !== undefined) : false;
                 const isSaving = savingKey === `toggle-${m.id}`;
                 return (

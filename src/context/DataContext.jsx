@@ -396,7 +396,7 @@ export const DataProvider = ({ children }) => {
   };
 
   const updatePermission = async (roleOrPayload, moduleIndex, value) => {
-    let roleId;
+    let roleId; let targetTenantId;
     let moduleId;
     let accessLevel;
     let roleName;
@@ -407,7 +407,7 @@ export const DataProvider = ({ children }) => {
       moduleId = roleOrPayload.moduleId;
       accessLevel = roleOrPayload.accessLevel;
       roleName = roleOrPayload.roleName;
-      modIndex = roleOrPayload.moduleIndex;
+      modIndex = roleOrPayload.moduleIndex; targetTenantId = roleOrPayload.targetTenantId;
     } else {
       roleName = roleOrPayload;
       modIndex = moduleIndex;

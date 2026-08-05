@@ -34,6 +34,9 @@ const Amend = React.lazy(() => import('./pages/Amend'));
 const Calculators = React.lazy(() => import('./pages/Calculators'));
 const Roles = React.lazy(() => import('./pages/Roles'));
 const MasterSettings = React.lazy(() => import('./pages/MasterSettings'));
+const Tenants = React.lazy(() => import('./pages/Tenants'));
+const TenantSettings = React.lazy(() => import('./pages/TenantSettings'));
+const SubscriptionPlans = React.lazy(() => import('./pages/SubscriptionPlans'));
 
 const ProtectedRoute = ({ element, moduleKey }) => {
   const { hasPermission } = useAuth();
@@ -103,7 +106,11 @@ const AppContent = () => {
               <Route path="/amend" element={<ProtectedRoute element={<Amend />} moduleKey="amend" />} />
               <Route path="/tools" element={<ProtectedRoute element={<Calculators />} moduleKey="tools" />} />
               <Route path="/roles" element={<ProtectedRoute element={<Roles />} moduleKey="roles" />} />
-              <Route path="/settings/masters" element={<ProtectedRoute element={<MasterSettings />} moduleKey="roles" />} />
+              <Route path="/tenants" element={<ProtectedRoute element={<Tenants />} moduleKey="tenants" />} />
+              <Route path="/tenants/:id/roles" element={<ProtectedRoute element={<Roles />} moduleKey="tenants" />} />
+              <Route path="/settings/tenant" element={<ProtectedRoute element={<TenantSettings />} moduleKey="tenantSettings" />} />
+              <Route path="/settings/masters" element={<ProtectedRoute element={<MasterSettings />} moduleKey="masters" />} />
+              <Route path="/settings/plans" element={<ProtectedRoute element={<SubscriptionPlans />} moduleKey="plans" />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

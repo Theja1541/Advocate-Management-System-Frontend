@@ -53,6 +53,7 @@ export default function Daybook() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [showEntryForm, setShowEntryForm] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -168,6 +169,7 @@ export default function Daybook() {
       });
       setEntries((prev) => [...prev, created]);
       setForm((prev) => ({ ...prev, particulars: '', amount: '' }));
+      setShowEntryForm(false);
     } catch (err) {
       setError(err.message || 'Failed to add day book entry');
     } finally {
@@ -295,78 +297,15 @@ export default function Daybook() {
         <KPICard label="Entries" value={sortedRows.length} status="recorded" />
       </div>
 
-      {canEdit && (
-        <div className="card">
-          <div className="card-t">Record a day book entry</div>
-          <div className="card-s">DAILY ACTIVITY OR CASH MOVEMENT</div>
-          <div className="fgrid">
-            <div className="f" style={{ maxWidth: '140px' }}>
-              <label>Date</label>
-              <input
-                type="date"
-                value={form.transactionDate}
-                onChange={setField(setForm)('transactionDate')}
-              />
-            </div>
-            <div className="f" style={{ maxWidth: '160px' }}>
-              <label>Activity</label>
-              <select
-                value={form.category}
-                onChange={setField(setForm)('category')}
-              >
-                {DB_CATS.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="f" style={{ flex: 2.4 }}>
-              <label>Particulars</label>
-              <input
-                type="text"
-                placeholder="What was done, and for which case?"
-                value={form.particulars}
-                onChange={setField(setForm)('particulars')}
-              />
-            </div>
-            <div className="f" style={{ maxWidth: '110px' }}>
-              <label>Mode</label>
-              <select
-                value={form.paymentMode}
-                onChange={setField(setForm)('paymentMode')}
-              >
-                <option>Cash</option>
-                <option>Bank</option>
-                <option>UPI</option>
-                <option>Cheque</option>
-              </select>
-            </div>
-            <div className="f" style={{ maxWidth: '130px' }}>
-              <label>In / Out</label>
-              <select value={form.type} onChange={setField(setForm)('type')}>
-                <option value="out">Paid out</option>
-                <option value="in">Received</option>
-              </select>
-            </div>
-            <div className="f" style={{ maxWidth: '120px' }}>
-              <label>Amount</label>
-              <input
-                type="number"
-                className="mono"
-                placeholder="0"
-                min="0"
-                step="0.01"
-                value={form.amount}
-                onChange={setField(setForm)('amount')}
-              />
-            </div>
-            <div className="f" style={{ display: 'flex', justifyContent: 'flex-end', flexDirection: 'column' }}>
-              <button className="btn" onClick={handleSubmit} disabled={saving}>
-                {saving ? 'Saving…' : 'Add entry'}
-              </button>
-            </div>
-          </div>
+      {canEdit && !showEntryForm && (
+        <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn primary" onClick={() => setShowEntryForm(true)}>
+            Add Entry
+          </button>
         </div>
       )}
+
+
 
       <div className="card" style={{ marginBottom: '14px' }}>
         <div className="fgrid">
@@ -419,7 +358,7 @@ export default function Daybook() {
         ))}
       </div>
 
-      {error && !isEditOpen && (
+      {error && !isEditOpen && !showEntryForm && (
         <div
           className="card"
           style={{
@@ -562,71 +501,7 @@ export default function Daybook() {
         </div>
       )}
 
-      <div className="card" style={{ marginTop: '18px', display: 'block' }}>
-        <div style={{ display: 'block', marginBottom: '14px' }}>
-          <div className="card-t" style={{ display: 'block', width: '100%' }}>Payment transaction history</div>
-          <div className="card-s" style={{ display: 'block', width: '100%', margin: '4px 0 0 0' }}>LIVE RECEIPTS FROM THE PAYMENTS REGISTER</div>
-        </div>
-        <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
-          <DataTable headers={paymentHeaders}>
-            {loading ? (
-              <tr>
-                <td colSpan={6}>
-                  <div className="empty">Loading payments…</div>
-                </td>
-              </tr>
-            ) : paymentHistory.length ? (
-              paymentHistory.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <span className="cno-c">{p.receiptNo}</span>
-                  </td>
-                  <td>
-                    <span className="cno-c">{getCaseNo(p)}</span>
-                  </td>
-                  <td>
-                    <span className="nm">
-                      {p.partyType === 'Client'
-                        ? getClientName(p.partyId)
-                        : `Advocate #${p.partyId}`}
-                    </span>
-                  </td>
-                  <td className="r mono" style={{ color: 'var(--baize)' }}>
-                    {inr(Number(p.amountReceived || 0))}
-                  </td>
-                  <td className="mono" style={{ fontSize: '11px' }}>
-                    {formatDisplayDate(p.transactionDate)}
-                  </td>
-                  <td>
-                    <Chip
-                      type={
-                        p.status === 'paid'
-                          ? 'c-baize'
-                          : p.status === 'part'
-                            ? 'c-brass'
-                            : 'c-tape'
-                      }
-                      label={
-                        p.status === 'paid'
-                          ? 'Paid'
-                          : p.status === 'part'
-                            ? 'Part paid'
-                            : 'Pending'
-                      }
-                    />
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6}>
-                  <div className="empty">No payment receipts recorded yet.</div>
-                </td>
-              </tr>
-            )}
-          </DataTable>
-        </div>
-      </div>
+
 
       <Modal isOpen={isEditOpen} onClose={closeEdit} title="Edit Day Book Entry">
         <form
@@ -715,6 +590,101 @@ export default function Daybook() {
             </button>
             <button type="submit" className="btn" disabled={saving}>
               {saving ? 'Saving…' : 'Save changes'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showEntryForm && canEdit} onClose={() => setShowEntryForm(false)} title="Record a day book entry">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          className="fgrid"
+          style={{ flexDirection: 'column', alignItems: 'stretch' }}
+        >
+          {error && showEntryForm && (
+            <div
+              style={{
+                padding: '8px 10px',
+                marginBottom: '8px',
+                backgroundColor: 'rgba(235, 94, 85, 0.1)',
+                border: '1px solid var(--tape)',
+                color: 'var(--tape)',
+                borderRadius: '5px',
+                fontSize: '12px',
+              }}
+            >
+              {error}
+            </div>
+          )}
+          <div className="f">
+            <label>Date</label>
+            <input
+              type="date"
+              value={form.transactionDate}
+              onChange={setField(setForm)('transactionDate')}
+              required
+            />
+          </div>
+          <div className="f">
+            <label>Activity</label>
+            <select
+              value={form.category}
+              onChange={setField(setForm)('category')}
+            >
+              {DB_CATS.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div className="f">
+            <label>Particulars</label>
+            <input
+              type="text"
+              value={form.particulars}
+              onChange={setField(setForm)('particulars')}
+              required
+            />
+          </div>
+          <div className="f">
+            <label>Mode</label>
+            <select
+              value={form.paymentMode}
+              onChange={setField(setForm)('paymentMode')}
+            >
+              <option>Cash</option>
+              <option>Bank</option>
+              <option>UPI</option>
+              <option>Cheque</option>
+            </select>
+          </div>
+          <div className="f">
+            <label>In / Out</label>
+            <select value={form.type} onChange={setField(setForm)('type')}>
+              <option value="out">Paid out</option>
+              <option value="in">Received</option>
+            </select>
+          </div>
+          <div className="f">
+            <label>Amount</label>
+            <input
+              type="number"
+              className="mono"
+              min="0"
+              step="0.01"
+              value={form.amount}
+              onChange={setField(setForm)('amount')}
+              required
+            />
+          </div>
+          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0' }}>
+            <button type="button" className="btn g" onClick={() => setShowEntryForm(false)} disabled={saving}>
+              Cancel
+            </button>
+            <button type="submit" className="btn" disabled={saving}>
+              {saving ? 'Saving…' : 'Save entry'}
             </button>
           </div>
         </form>

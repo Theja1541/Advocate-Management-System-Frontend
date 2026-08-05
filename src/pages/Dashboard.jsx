@@ -6,8 +6,13 @@ import Chip from '../components/ui/Chip';
 import { inr } from '../utils/formatters';
 import { getDashboard } from '../services/dashboardService';
 import { getAlerts } from '../services/alertService';
+import { useAuth } from '../context/AuthContext';
+import { getDashboardStats } from '../services/tenantService';
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'Super Admin';
+  const [superStats, setSuperStats] = useState(null);
   const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [activeAlerts, setActiveAlerts] = useState([]);
@@ -18,12 +23,13 @@ export default function Dashboard() {
     setLoading(true);
     setError('');
     try {
-      const [data, alerts] = await Promise.all([
-        getDashboard(),
-        getAlerts({ status: 'active' })
-      ]);
-      setDashboard(data);
-      setActiveAlerts(alerts);
+      const promises = [getDashboard(), getAlerts({ status: 'active' })];
+      if (isSuperAdmin) promises.push(getDashboardStats());
+      const res = await Promise.all(promises);
+      setDashboard(res[0]);
+      setActiveAlerts(res[1]);
+      if (res[2]) setSuperStats(res[2]);
+      
     } catch (err) {
       setError(err.message || 'Failed to load dashboard');
       setDashboard(null);

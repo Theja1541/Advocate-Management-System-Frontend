@@ -369,17 +369,7 @@ export default function Amend() {
         actions={
           canEdit && (
             <div style={{ display: 'flex', gap: '8px' }}>
-              <label className="btn g" style={{ cursor: 'pointer', margin: 0, display: 'flex', alignItems: 'center' }} disabled={loading || saving}>
-                Import CSV/Excel
-                <input
-                  type="file"
-                  accept=".csv,.xlsx"
-                  style={{ display: 'none' }}
-                  onChange={handleImportFile}
-                  disabled={loading || saving}
-                />
-              </label>
-              <button className="btn" onClick={openAddModal} disabled={loading || saving}>
+              <button className="btn primary" onClick={openAddModal} disabled={loading || saving}>
                 Add Mapping
               </button>
             </div>
@@ -387,169 +377,175 @@ export default function Amend() {
         }
       />
 
-      <div className="card" style={{ marginBottom: '14px' }}>
-        <div className="card-t" style={{ fontSize: '13.5px', marginBottom: '8px' }}>Filters</div>
+      <div className="card" style={{ 
+        background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(37,99,235,0.1) 100%)', 
+        border: '1px solid rgba(37,99,235,0.2)', 
+        borderRadius: '12px', 
+        padding: '24px',
+        marginBottom: '24px' 
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 600, color: 'var(--primary)' }}>Three codes replaced on 1 July 2024</h3>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+              IPC → BNS &nbsp;·&nbsp; CrPC → BNSS &nbsp;·&nbsp; EVIDENCE ACT → BSA
+            </div>
+          </div>
+        </div>
         <div className="fgrid">
           <div className="f" style={{ flex: 1 }}>
-            <label>Source Act (Old)</label>
-            <input
-              type="text"
-              placeholder="e.g. Indian Penal Code, 1860"
-              value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
-            />
-          </div>
-          <div className="f" style={{ flex: 1 }}>
-            <label>Target Act (New)</label>
-            <input
-              type="text"
-              placeholder="e.g. Bharatiya Nyaya Sanhita, 2023"
-              value={targetFilter}
-              onChange={(e) => setTargetFilter(e.target.value)}
-            />
-          </div>
-          <div className="f" style={{ flex: 1 }}>
-            <label>Effective Date</label>
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-            <button
-              type="button"
-              className="btn g"
-              onClick={handleExportCSV}
-              disabled={loading || saving}
-            >
-              Export CSV
-            </button>
-            <button
-              type="button"
-              className="btn g"
-              onClick={() => window.print()}
-              disabled={loading || saving}
-            >
-              Print / PDF
-            </button>
-            <button
-              type="button"
-              className="btn g"
-              onClick={() => {
-                setSourceFilter('');
-                setTargetFilter('');
-                setDateFilter('');
-              }}
-              disabled={loading}
-            >
-              Reset
-            </button>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search by section number (e.g. 302, 65B) or keyword (e.g. cheating)..."
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  padding: '12px 16px 12px 42px', 
+                  fontSize: '15px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  background: '#fff'
+                }}
+              />
+              <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ borderLeft: '3px solid var(--tape)', marginBottom: '14px' }}>
-        <div className="card-t">Three codes replaced on 1 July 2024</div>
-        <div className="card-s" style={{ marginBottom: '9px' }}>
-          IPC → BNS &nbsp;·&nbsp; CrPC → BNSS &nbsp;·&nbsp; EVIDENCE ACT → BSA
+      <div className="card" style={{ borderRadius: '12px', padding: '20px', marginBottom: '24px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>Advanced Filters</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button type="button" className="btn outline sm" onClick={handleExportCSV} disabled={loading || saving}>Export CSV</button>
+            <button type="button" className="btn outline sm" onClick={() => window.print()} disabled={loading || saving}>Print / PDF</button>
+            <button type="button" className="btn primary sm" onClick={() => { setSourceFilter(''); setTargetFilter(''); setDateFilter(''); }} disabled={loading}>Reset Filters</button>
+          </div>
         </div>
         <div className="fgrid">
-          <div className="f" style={{ flex: 3 }}>
-            <label>Find a section in either law</label>
-            <input
-              type="text"
-              className="mono"
-              placeholder="e.g. 302, 65B, cheating"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-            />
+          <div className="f" style={{ flex: 1 }}>
+            <label style={{ fontSize: '12px' }}>Source Act (Old)</label>
+            <input type="text" placeholder="e.g. Indian Penal Code, 1860" value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} style={{ padding: '8px 12px', fontSize: '13px' }} />
+          </div>
+          <div className="f" style={{ flex: 1 }}>
+            <label style={{ fontSize: '12px' }}>Target Act (New)</label>
+            <input type="text" placeholder="e.g. Bharatiya Nyaya Sanhita, 2023" value={targetFilter} onChange={(e) => setTargetFilter(e.target.value)} style={{ padding: '8px 12px', fontSize: '13px' }} />
+          </div>
+          <div className="f" style={{ flex: 1 }}>
+            <label style={{ fontSize: '12px' }}>Effective Date</label>
+            <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{ padding: '8px 12px', fontSize: '13px' }} />
           </div>
         </div>
       </div>
 
       {error && !isModalOpen && (
-        <div className="card" style={{ marginBottom: '12px', borderColor: 'var(--tape)', color: 'var(--tape)' }}>
+        <div className="card" style={{ marginBottom: '16px', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: 'var(--danger)', borderRadius: '12px', padding: '16px' }}>
           {error}
         </div>
       )}
 
-      <div id="amWrap" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div id="amWrap" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {loading ? (
-          <div className="card mut" style={{ textAlign: 'center', padding: '24px' }}>
+          <div className="card mut" style={{ textAlign: 'center', padding: '48px', borderRadius: '12px' }}>
+            <div className="spinner" style={{ margin: '0 auto 16px', display: 'block', width: '28px', height: '28px', borderWidth: '3px' }}></div>
             Loading amendments…
           </div>
         ) : filteredBlocks.length ? (
           filteredBlocks.map((g, gi) => (
-            <div className="tbl-card" key={gi}>
-              <div style={{ padding: '12px 14px', borderBottom: '1.5px solid var(--rule)', backgroundColor: 'var(--panel)' }}>
-                <div className="card-t" style={{ fontSize: '13.5px', margin: 0 }}>{g.g}</div>
-                <div className="card-s" style={{ margin: '2px 0 0' }}>EFFECTIVE {formatHeaderDate(g.effectiveDate)}</div>
-              </div>
-              {g.rows.map((r, ri) => (
-                <div className="amend" key={ri} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: ri === g.rows.length - 1 ? 'none' : '1px solid var(--rule)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '10px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <div className="old" style={{ flex: 1 }}>
-                        <div className="sec" style={{ fontSize: '13px', fontWeight: 'bold' }}>Section {r[0]}</div>
-                        <div className="ttl" style={{ fontSize: '12px', color: 'var(--muted)' }}>{r[1]}</div>
-                      </div>
-                      <div className="arrow" style={{ padding: '0 20px', color: 'var(--muted)' }}>→</div>
-                      <div className="new" style={{ flex: 1 }}>
-                        <div className="sec" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--brass)' }}>Section {r[2]}</div>
-                        <div className="ttl" style={{ fontSize: '12px', color: 'var(--muted)' }}>{r[3]}</div>
-                      </div>
-                    </div>
-                    {canEdit && (
-                      <div style={{ marginTop: '5px', fontSize: '10px', color: 'var(--muted)', fontFamily: "'IBM Plex Mono', monospace" }}>
-                        Created by: <span style={{ color: 'var(--ink)' }}>{r[5]}</span> ({formatDateTime(r[7])}) &nbsp;·&nbsp; Updated by: <span style={{ color: 'var(--ink)' }}>{r[6]}</span> ({formatDateTime(r[8])})
-                      </div>
-                    )}
-                  </div>
-                  {canEdit && (
-                    <div style={{ display: 'flex', gap: '6px', paddingRight: '14px' }}>
-                      <button
-                        type="button"
-                        className="btn g sm"
-                        style={{ padding: '3px 8px', fontSize: '10px' }}
-                        disabled={loading || saving}
-                        onClick={() => openEditModal({
-                          id: r[4],
-                          sourceAct: g.g.split(' → ')[0],
-                          targetAct: g.g.split(' → ')[1],
-                          oldSection: r[0],
-                          oldTitle: r[1],
-                          newSection: r[2],
-                          newTitle: r[3],
-                          effectiveDate: g.effectiveDate
-                        })}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="btn sm"
-                        disabled={loading || saving}
-                        style={{
-                          padding: '3px 8px',
-                          fontSize: '10px',
-                          background: 'transparent',
-                          border: '1px solid var(--tape)',
-                          color: 'var(--tape)'
-                        }}
-                        onClick={() => handleDelete(r[4], r[0], r[2])}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+            <div key={gi} style={{ background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ padding: '16px 20px', background: 'var(--background)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}>
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  {g.g}
                 </div>
-              ))}
+                <div className="chip c-grey" style={{ fontSize: '11px', letterSpacing: '0.05em' }}>EFFECTIVE {formatHeaderDate(g.effectiveDate)}</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {g.rows.map((r, ri) => (
+                  <div key={ri} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    padding: '20px',
+                    borderBottom: ri === g.rows.length - 1 ? 'none' : '1px solid var(--border)',
+                    transition: 'background 200ms ease',
+                  }} onMouseEnter={(e) => e.currentTarget.style.background = 'var(--background)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: '240px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: '8px', padding: '14px 16px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--danger)' }}></div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--danger)', marginBottom: '4px', fontFamily: 'var(--font-heading)' }}>Section {r[0]}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{r[1]}</div>
+                      </div>
+                      
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', padding: '0 8px' }}>
+                        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'var(--shadow-sm)' }}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div style={{ flex: 1, minWidth: '240px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '8px', padding: '14px 16px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'var(--success)' }}></div>
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--success)', marginBottom: '4px', fontFamily: 'var(--font-heading)' }}>Section {r[2]}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{r[3]}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '24px', minWidth: '120px' }}>
+                      {canEdit && (
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                          <button
+                            type="button"
+                            className="btn secondary sm"
+                            disabled={loading || saving}
+                            onClick={() => openEditModal({
+                              id: r[4], sourceAct: g.g.split(' → ')[0], targetAct: g.g.split(' → ')[1],
+                              oldSection: r[0], oldTitle: r[1], newSection: r[2], newTitle: r[3], effectiveDate: g.effectiveDate
+                            })}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn danger sm"
+                            style={{ background: 'transparent', color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.3)' }}
+                            disabled={loading || saving}
+                            onClick={() => handleDelete(r[4], r[0], r[2])}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                      {canEdit && (
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', textAlign: 'right', fontFamily: 'var(--font-sans)', lineHeight: 1.4 }}>
+                          Updated by <b style={{ color: 'var(--text-primary)' }}>{r[6]}</b><br/>{formatDateTime(r[8])?.split(',')[0]}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ))
         ) : (
-          <div className="card">
-            <div className="empty">No section matches that search.</div>
+          <div className="card empty-state" style={{ padding: '64px 24px', border: '1px dashed var(--border)', borderRadius: '12px', background: 'transparent' }}>
+            <svg width="48" height="48" fill="none" stroke="var(--border)" strokeWidth="1.5" style={{ marginBottom: '16px' }}>
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '8px' }}>No amendments found</div>
+            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Try adjusting your search or filters to find what you're looking for.</div>
           </div>
         )}
       </div>

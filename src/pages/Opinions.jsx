@@ -228,7 +228,7 @@ export default function Opinions() {
         description="Title opinions issued to clients and banks — the finding, the reasoning and the land it concerns."
         actions={
           canEdit ? (
-            <button className="btn" onClick={openAddModal} disabled={!clients.length || !advocates.length}>
+            <button className="btn primary" onClick={openAddModal} disabled={!clients.length || !advocates.length}>
               Draft opinion
             </button>
           ) : null

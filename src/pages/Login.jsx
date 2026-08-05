@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { DEMO_CREDENTIALS } from '../data/credentials';
 import { login as loginRequest } from '../services/authService';
-
+import { getPublicSettings } from '../services/settingsService';
 
 export default function Login() {
   const { login } = useAuth();
@@ -11,7 +11,22 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLogo = async () => {
+      try {
+        const settings = await getPublicSettings();
+        if (settings?.logo) {
+          setLogoUrl(settings.logo);
+        }
+      } catch (err) {
+        console.error('Failed to load public settings:', err);
+      }
+    };
+    fetchLogo();
+  }, []);
 
   const initialsFromName = (name = '') =>
     name.split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2).toUpperCase() || 'U';
@@ -61,7 +76,11 @@ export default function Login() {
     <div className="login-page">
       <aside className="login-brand" aria-hidden={false}>
         <div className="login-brand-top">
-          <div className="login-seal">LD</div>
+          {logoUrl ? (
+            <img src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${logoUrl}`} alt="Legal Desk" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+          ) : (
+            <div className="login-seal">LD</div>
+          )}
         </div>
 
         <div className="login-brand-hero">

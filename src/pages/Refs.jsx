@@ -189,7 +189,7 @@ export default function Refs() {
         description="Judgments, citations and circulars relied on — searchable by citation, act, section, court or judge."
         actions={
           canEdit ? (
-            <button className="btn" onClick={openAddModal}>
+            <button className="btn primary" onClick={openAddModal}>
               Add reference
             </button>
           ) : null
@@ -241,7 +241,7 @@ export default function Refs() {
               onChange={(e) => setKeywordQ(e.target.value)}
             />
           </div>
-          <button type="submit" className="btn">
+          <button type="submit" className="btn primary">
             Search
           </button>
         </form>
