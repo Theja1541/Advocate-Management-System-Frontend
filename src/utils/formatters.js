@@ -1,5 +1,8 @@
 export const inr = (n) => {
-  return '₹' + Math.round(n).toLocaleString('en-IN');
+  return '\u20b9' + Number(n).toLocaleString('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
 
 export const TODAY = '15 July 2026';

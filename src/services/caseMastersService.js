@@ -123,48 +123,6 @@ export const deactivateDocumentCategory = async (id) => {
   return data?.data?.documentCategory;
 };
 
-// State Court Fee Rules API
-export const getStateFeeConfigs = async (activeOnly = false, stateCode = '') => {
-  const query = new URLSearchParams();
-  if (activeOnly) query.append('activeOnly', 'true');
-  if (stateCode) query.append('stateCode', stateCode);
-  const { data } = await api.get(`/masters/state-fees?${query.toString()}`);
-  return data?.data?.rules || [];
-};
-
-export const getStateFeeConfigById = async (id) => {
-  const { data } = await api.get(`/masters/state-fees/${id}`);
-  return data?.data?.rule;
-};
-
-export const createStateFeeConfig = async (payload) => {
-  const { data } = await api.post('/masters/state-fees', payload);
-  return data?.data?.rule;
-};
-
-export const updateStateFeeConfig = async (id, payload) => {
-  const { data } = await api.put(`/masters/state-fees/${id}`, payload);
-  return data?.data?.rule;
-};
-
-export const activateStateFeeConfig = async (id) => {
-  const { data } = await api.patch(`/masters/state-fees/${id}/activate`);
-  return data?.data?.rule;
-};
-
-export const deactivateStateFeeConfig = async (id) => {
-  const { data } = await api.patch(`/masters/state-fees/${id}/deactivate`);
-  return data?.data?.rule;
-};
-
-export const calculateCourtFeeApi = async (stateCode, suitValue, advocateFeePct = null) => {
-  const { data } = await api.post('/masters/state-fees/calculate', {
-    stateCode,
-    suitValue,
-    advocateFeePct,
-  });
-  return data?.data;
-};
 
 export default {
   getCaseTypes,
@@ -191,11 +149,5 @@ export default {
   updateDocumentCategory,
   activateDocumentCategory,
   deactivateDocumentCategory,
-  getStateFeeConfigs,
-  getStateFeeConfigById,
-  createStateFeeConfig,
-  updateStateFeeConfig,
-  activateStateFeeConfig,
-  deactivateStateFeeConfig,
-  calculateCourtFeeApi,
+
 };
