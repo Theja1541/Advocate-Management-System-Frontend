@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { getCases, createCase, updateCase, deleteCase } from '../services/caseService';
 import { getClients } from '../services/clientService';
 import { getAdvocates } from '../services/advocateService';
-import { getCaseTypes, getCaseStages, getCourts, getStateFeeConfigs } from '../services/caseMastersService';
+import { getCaseTypes, getCaseStages, getCourts } from "../services/caseMastersService";
 import { calculateCourtFeeClient } from '../services/courtFeeCalculator.service';
 
 const PAGE_SIZE = 10;
@@ -164,59 +164,48 @@ export default function Cases() {
       return;
     }
 
-    // Find active rule for state
-    const today = new Date();
-    const activeRule = stateFeeConfigs.find(r => 
-      r.stateCode === courtStateCode && 
-      r.isActive && 
-      new Date(r.effectiveFrom) <= today && 
-      (!r.effectiveTo || new Date(r.effectiveTo) >= today)
-    );
-
-    if (activeRule) {
+    const timeoutId = setTimeout(async () => {
       try {
-        const clonedRule = {
-          ...activeRule,
-          processFee: pf !== null && pf !== 0 ? pf : activeRule.processFee,
-          filingFee: ff !== null && ff !== 0 ? ff : activeRule.filingFee,
-          miscCharges: mc !== null && mc !== 0 ? mc : activeRule.miscCharges,
-        };
-        const calc = calculateCourtFeeClient(clonedRule, sv, fp);
+        const result = await calculateCourtFeeClient(courtStateCode, 'MONEY_SUIT', sv);
         setLivePreview({
-          advocateFee: calc.advocateFee,
-          courtFee: calc.courtFee,
-          processFee: calc.processFee,
-          filingFee: calc.filingFee,
-          miscCharges: calc.miscCharges,
-          totalPayable: calc.totalAmount,
+          advocateFee: advFee,
+          courtFee: result ? result.courtFee : 0,
+          processFee: pf,
+          filingFee: ff,
+          miscCharges: mc,
+          totalPayable: advFee + (result ? result.courtFee : 0) + pf + ff + mc,
           status: 'COMPLETE',
           warning: null,
         });
       } catch (err) {
-        setLivePreview({
-          advocateFee: advFee,
-          courtFee: 0,
-          processFee: pf,
-          filingFee: ff,
-          miscCharges: mc,
-          totalPayable: advFee + pf + ff + mc,
-          status: 'ERROR',
-          warning: 'Error calculating fee. Using fallback totals.',
-        });
+        if (err.status === 501) {
+          setLivePreview({
+            advocateFee: advFee,
+            courtFee: 0,
+            processFee: pf,
+            filingFee: ff,
+            miscCharges: mc,
+            totalPayable: advFee + pf + ff + mc,
+            status: 'PARTIAL',
+            warning: 'Court Fee Calculator is not yet available for the selected state.',
+          });
+        } else {
+          setLivePreview({
+            advocateFee: advFee,
+            courtFee: 0,
+            processFee: pf,
+            filingFee: ff,
+            miscCharges: mc,
+            totalPayable: advFee + pf + ff + mc,
+            status: 'ERROR',
+            warning: 'Error calculating fee. Using fallback totals.',
+          });
+        }
       }
-    } else {
-      setLivePreview({
-        advocateFee: advFee,
-        courtFee: 0,
-        processFee: pf,
-        filingFee: ff,
-        miscCharges: mc,
-        totalPayable: advFee + pf + ff + mc,
-        status: 'PARTIAL',
-        warning: 'No active fee configuration found for this state.',
-      });
-    }
-  }, [form.val, form.fee, form.processFee, form.filingFee, form.miscCharges, form.courtId, isModalOpen, courts, stateFeeConfigs]);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [form.val, form.fee, form.processFee, form.filingFee, form.miscCharges, form.courtId, isModalOpen, courts]);
 
   const getClientName = (id) => {
     const client = clients.find((c) => String(c.id) === String(id));
