@@ -33,6 +33,10 @@ const ALL_INDIAN_STATES = [
   { code: 'CT', name: 'Chhattisgarh' },
   { code: 'RJ', name: 'Rajasthan' },
   { code: 'AS', name: 'Assam' },
+  { code: 'HP', name: 'Himachal Pradesh' },
+  { code: 'JK', name: 'Jammu and Kashmir' },
+  { code: 'CH', name: 'Chandigarh' },
+  { code: 'UT', name: 'Uttarakhand' },
 ];
 
 export default function Calculators() {
