@@ -21,6 +21,9 @@ import { getDocumentCategories } from '../services/caseMastersService';
 import { searchNotesAndDocuments } from '../services/searchService';
 import { extractTextFromPdfBlob } from '../utils/pdfTextExtract';
 import PdfFindViewer from '../components/documents/PdfFindViewer';
+import { useSmartText } from '../hooks/useSmartText';
+import SmartTextGroupModal from '../components/ui/SmartTextGroupModal';
+import SmartTextContextPanel from '../components/ui/SmartTextContextPanel';
 
 const emptyForm = {
   name: '',
@@ -111,18 +114,35 @@ export default function Docs() {
   const viewerContentRef = useRef(null);
   const viewerPreviewUrlRef = useRef('');
 
+  const {
+    searchQuery: smartSearchQuery,
+    searchResults: smartSearchResults,
+    isGroupModalOpen: isSmartGroupModalOpen,
+    handleSaveIntercept: handleSmartSaveIntercept,
+    onGroupChoice: onSmartGroupChoice,
+    onIndependentChoice: onSmartIndependentChoice,
+    onCancelModal: onSmartCancelModal,
+    performGrouping: performSmartGrouping,
+    performAppend: performSmartAppend
+  } = useSmartText('Document', form.textContent, !!editingDoc);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [docList, caseList, catList] = await Promise.all([
+      const [docsResult, casesResult, catsResult] = await Promise.allSettled([
         getDocuments(),
         getCases(),
         getDocumentCategories(true), // activeOnly = true
       ]);
-      setDocuments(docList);
-      setCases(caseList);
-      setCategories(catList);
+
+      if (docsResult.status === 'rejected') {
+        throw docsResult.reason;
+      }
+
+      setDocuments(docsResult.value || []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setCategories(catsResult.status === 'fulfilled' ? catsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load documents');
     } finally {
@@ -439,61 +459,88 @@ export default function Docs() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.caseId || !form.documentCategoryId) {
-      setError('Please fill out all required fields.');
-      return;
-    }
 
-    let fileToUpload = form.file;
-    if (!fileToUpload && form.textContent.trim()) {
-      const fileName = form.name.trim() ? `${form.name.trim().replace(/[\s/\\?%*:|"<>]/g, '_')}.txt` : 'document.txt';
-      const blob = new Blob([form.textContent], { type: 'text/plain' });
-      fileToUpload = new File([blob], fileName, { type: 'text/plain' });
-    }
-
-    if (!editingDoc && !fileToUpload) {
-      setError('Please select a file to upload OR write some text content.');
-      return;
-    }
-
-    if (fileToUpload) {
-      const fileExt = fileToUpload.name.split('.').pop()?.toLowerCase() || '';
-      if (!ALLOWED_DOCUMENT_EXTENSIONS.includes(fileExt)) {
-        setError('Invalid file format. Accepted types: PDF, DOC, DOCX, TXT.');
+    handleSmartSaveIntercept(async (groupingInfo) => {
+      if (groupingInfo && groupingInfo.isAppended) {
+        setSaving(true);
+        setError('');
+        try {
+          await performSmartAppend(form.textContent.trim(), groupingInfo);
+          alert('Appended to existing text successfully!');
+          loadData();
+          closeModal();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message || 'Failed to append text');
+        } finally {
+          setSaving(false);
+        }
         return;
       }
 
-      if (fileToUpload.size > MAX_DOCUMENT_SIZE_BYTES) {
-        setError('File size must be less than or equal to 5MB.');
+      if (!form.name.trim() || !form.caseId || !form.documentCategoryId) {
+        setError('Please fill out all required fields.');
         return;
       }
-    }
-
-    setSaving(true);
-    setError('');
-    try {
-      if (editingDoc) {
-        await updateDocument(editingDoc.id, {
-          name: form.name.trim(),
-          documentCategoryId: Number(form.documentCategoryId),
-          caseId: Number(form.caseId),
-          file: fileToUpload,
-        });
-      } else {
-        await uploadDocument({
-          name: form.name.trim(),
-          documentCategoryId: Number(form.documentCategoryId),
-          caseId: Number(form.caseId),
-          file: fileToUpload,
-        });
+  
+      let fileToUpload = form.file;
+      if (!fileToUpload && form.textContent.trim()) {
+        const fileName = form.name.trim() ? `${form.name.trim().replace(/[\s/\\?%*:|"<>]/g, '_')}.txt` : 'document.txt';
+        const blob = new Blob([form.textContent], { type: 'text/plain' });
+        fileToUpload = new File([blob], fileName, { type: 'text/plain' });
       }
-      await loadData();
-      closeModal();
-    } catch (err) {
-      setError(err.message || 'Failed to save document');
-    } finally {
-      setSaving(false);
-    }
+  
+      if (!editingDoc && !fileToUpload) {
+        setError('Please select a file to upload OR write some text content.');
+        return;
+      }
+  
+      if (fileToUpload) {
+        const fileExt = fileToUpload.name.split('.').pop()?.toLowerCase() || '';
+        if (!ALLOWED_DOCUMENT_EXTENSIONS.includes(fileExt)) {
+          setError('Invalid file format. Accepted types: PDF, DOC, DOCX, TXT.');
+          return;
+        }
+  
+        if (fileToUpload.size > MAX_DOCUMENT_SIZE_BYTES) {
+          setError('File size must be less than or equal to 5MB.');
+          return;
+        }
+      }
+
+      setSaving(true);
+      setError('');
+      try {
+        let savedDocId;
+        if (editingDoc) {
+          await updateDocument(editingDoc.id, {
+            name: form.name.trim(),
+            documentCategoryId: Number(form.documentCategoryId),
+            caseId: Number(form.caseId),
+            file: fileToUpload,
+          });
+          savedDocId = editingDoc.id;
+        } else {
+          const res = await uploadDocument({
+            name: form.name.trim(),
+            documentCategoryId: Number(form.documentCategoryId),
+            caseId: Number(form.caseId),
+            file: fileToUpload,
+          });
+          savedDocId = res.data?.id || res.id; 
+        }
+
+        if (groupingInfo && savedDocId) {
+          await performSmartGrouping(savedDocId, groupingInfo);
+        }
+
+        await loadData();
+        closeModal();
+      } catch (err) {
+        setError(err.message || 'Failed to save document');
+      } finally {
+        setSaving(false);
+      }
+    });
   };
 
   const handleDownload = async (doc) => {
@@ -947,30 +994,33 @@ export default function Docs() {
             </FormField>
             <div style={{ textAlign: 'center', margin: 'var(--space-1) 0', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.1em' }}>— OR —</div>
             <FormField label={editingDoc ? 'Replace File with Text (Optional)' : 'Text Content'} required={false}>
-              <textarea
-                placeholder="Type or paste document content here to upload as a text file..."
-                rows={5}
-                value={form.textContent}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    textContent: e.target.value,
-                    name: prev.name || 'Text Document',
-                  }))
-                }
-                style={{
-                  width: '100%',
-                  padding: 'var(--space-2) var(--space-3)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--text-sm)',
-                  resize: 'vertical',
-                  minHeight: '100px',
-                  fontFamily: 'inherit',
-                  outline: 'none',
-                }}
-                required={false}
-              />
+              <div style={{ overflow: 'visible' }}>
+                <textarea
+                  placeholder="Type or paste document content here to upload as a text file..."
+                  rows={5}
+                  value={form.textContent}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      textContent: e.target.value,
+                      name: prev.name || 'Text Document',
+                    }))
+                  }
+                  style={{
+                    width: '100%',
+                    padding: 'var(--space-2) var(--space-3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: 'var(--text-sm)',
+                    resize: 'vertical',
+                    minHeight: '100px',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                  }}
+                  required={false}
+                />
+                <SmartTextContextPanel occurrences={smartSearchResults?.occurrences} searchQuery={smartSearchQuery} />
+              </div>
             </FormField>
           </FormSection>
 
@@ -1081,6 +1131,14 @@ export default function Docs() {
           </div>
         </div>
       </Modal>
+
+      <SmartTextGroupModal
+        isOpen={isSmartGroupModalOpen}
+        onClose={onSmartCancelModal}
+        onGroup={onSmartGroupChoice}
+        onIndependent={onSmartIndependentChoice}
+        data={{ query: smartSearchQuery, occurrences: smartSearchResults?.occurrences, phraseGroup: smartSearchResults?.phraseGroup }}
+      />
     </>
   );
 }

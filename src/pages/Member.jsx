@@ -87,12 +87,17 @@ export default function Member() {
     setLoading(true);
     setError('');
     try {
-      const [membershipList, advocateList] = await Promise.all([
+      const [membershipsResult, advocatesResult] = await Promise.allSettled([
         getMemberships(),
         getAdvocates(),
       ]);
-      setMembers(membershipList);
-      setAdvocates(advocateList);
+
+      if (membershipsResult.status === 'rejected') {
+        throw membershipsResult.reason;
+      }
+
+      setMembers(membershipsResult.value || []);
+      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load memberships');
     } finally {

@@ -25,11 +25,15 @@ export default function Dashboard() {
     try {
       const promises = [getDashboard(), getAlerts({ status: 'active' })];
       if (isSuperAdmin) promises.push(getDashboardStats());
-      const res = await Promise.all(promises);
-      setDashboard(res[0]);
-      setActiveAlerts(res[1]);
-      if (res[2]) setSuperStats(res[2]);
-      
+      const settled = await Promise.allSettled(promises);
+
+      if (settled[0].status === 'rejected') {
+        throw settled[0].reason;
+      }
+
+      setDashboard(settled[0].value);
+      setActiveAlerts(settled[1]?.status === 'fulfilled' ? settled[1].value || [] : []);
+      if (settled[2]?.status === 'fulfilled') setSuperStats(settled[2].value);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard');
       setDashboard(null);
@@ -37,7 +41,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     loadDashboard();

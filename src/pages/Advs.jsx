@@ -86,10 +86,19 @@ export default function Advs() {
     setLoading(true);
     setError('');
     try {
-      const [list, caseList, roleList] = await Promise.all([getAdvocates(), getCases(), getRoles()]);
-      setAdvocates(list);
-      setCases(caseList);
-      setRoles(roleList);
+      const [advocatesResult, casesResult, rolesResult] = await Promise.allSettled([
+        getAdvocates(),
+        getCases(),
+        getRoles(),
+      ]);
+
+      if (advocatesResult.status === 'rejected') {
+        throw advocatesResult.reason;
+      }
+
+      setAdvocates(advocatesResult.value || []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setRoles(rolesResult.status === 'fulfilled' ? rolesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load advocates');
     } finally {

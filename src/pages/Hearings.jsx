@@ -15,6 +15,9 @@ import { getAdvocates } from '../services/advocateService';
 import { getCourts } from '../services/caseMastersService';
 import { downloadDocument } from '../services/documentService';
 import Chip from '../components/ui/Chip';
+import { useSmartText } from '../hooks/useSmartText';
+import SmartTextGroupModal from '../components/ui/SmartTextGroupModal';
+import SmartTextContextPanel from '../components/ui/SmartTextContextPanel';
 
 const PAGE_SIZE = 10;
 
@@ -99,6 +102,18 @@ export default function Hearings() {
   const [viewMode, setViewMode] = useState('list');
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  const {
+    searchQuery: smartSearchQuery,
+    searchResults: smartSearchResults,
+    isGroupModalOpen: isSmartGroupModalOpen,
+    handleSaveIntercept: handleSmartSaveIntercept,
+    onGroupChoice: onSmartGroupChoice,
+    onIndependentChoice: onSmartIndependentChoice,
+    onCancelModal: onSmartCancelModal,
+    performGrouping: performSmartGrouping,
+    performAppend: performSmartAppend
+  } = useSmartText('CaseDiary', form.note, !!editingEntry);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const incomingQuery = params.get('search') || '';
@@ -112,20 +127,26 @@ export default function Hearings() {
     setLoading(true);
     setError('');
     try {
-      const [diaryList, caseList, advocateList, courtList] = await Promise.all([
+      const [diariesResult, casesResult, advocatesResult, courtsResult] = await Promise.allSettled([
         getDiaries(),
         getCases(),
         getAdvocates(),
         getCourts(true),
       ]);
+
+      if (diariesResult.status === 'rejected') {
+        throw diariesResult.reason;
+      }
+
+      const diaryList = diariesResult.value || [];
       const mappedDiaries = diaryList.map((d) => ({
         ...d,
         courtId: d.courtId !== undefined && d.courtId !== null ? String(d.courtId) : '',
       }));
       setDiaries(mappedDiaries);
-      setCases(caseList);
-      setAdvocates(advocateList);
-      setCourts(courtList);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
+      setCourts(courtsResult.status === 'fulfilled' ? courtsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load hearings');
     } finally {
@@ -233,61 +254,88 @@ export default function Hearings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.caseId || !form.note.trim()) {
-      setError('Please select a case and enter a summary note.');
-      return;
-    }
-    if (!form.advocateId || !form.hearingDate || !form.hearingTime || !form.courtId) {
-      setError('Please fill out date, time, court, and advocate.');
-      return;
-    }
-    if (form.nextHearingDate && form.nextHearingDate < form.hearingDate) {
-      setError('Next hearing date cannot be before the current hearing date.');
-      return;
-    }
 
-    setSaving(true);
-    setError('');
-
-    const newFiles = formFiles.filter((f) => f.file).map((f) => f.file);
-    const retainedIds = formFiles.filter((f) => f.dbId).map((f) => f.dbId);
-
-    const payload = {
-      caseId: Number(form.caseId),
-      hearingDate: form.hearingDate,
-      hearingTime: toApiTime(form.hearingTime),
-      advocateId: Number(form.advocateId),
-      courtIndex: Number(form.courtId),
-      note: form.note.trim(),
-      nextHearingDate: form.nextHearingDate || undefined,
-      files: newFiles,
-      retainedAttachmentIds: retainedIds,
-    };
-
-    try {
-      if (editingEntry) {
-        const updated = await updateDiary(editingEntry.id, payload);
-        const mappedUpdated = {
-          ...updated,
-          courtId: updated.courtId !== undefined && updated.courtId !== null ? String(updated.courtId) : '',
-        };
-        setDiaries((prev) =>
-          prev.map((item) => (item.id === mappedUpdated.id ? mappedUpdated : item))
-        );
-      } else {
-        const created = await createDiary(payload);
-        const mappedCreated = {
-          ...created,
-          courtId: created.courtId !== undefined && created.courtId !== null ? String(created.courtId) : '',
-        };
-        setDiaries((prev) => [mappedCreated, ...prev]);
+    handleSmartSaveIntercept(async (groupingInfo) => {
+      if (groupingInfo && groupingInfo.isAppended) {
+        setSaving(true);
+        setError('');
+        try {
+          await performSmartAppend(form.note.trim(), groupingInfo);
+          alert('Appended to existing text successfully!');
+          loadData();
+          closeModal();
+        } catch (err) {
+          setError(err.response?.data?.message || err.message || 'Failed to append text');
+        } finally {
+          setSaving(false);
+        }
+        return;
       }
-      closeModal();
-    } catch (err) {
-      setError(err.message || 'Failed to save hearing');
-    } finally {
-      setSaving(false);
-    }
+
+      if (!form.caseId || !form.note.trim()) {
+        setError('Please select a case and enter a summary note.');
+        return;
+      }
+      if (!form.advocateId || !form.hearingDate || !form.hearingTime || !form.courtId) {
+        setError('Please fill out date, time, court, and advocate.');
+        return;
+      }
+      if (form.nextHearingDate && form.nextHearingDate < form.hearingDate) {
+        setError('Next hearing date cannot be before the current hearing date.');
+        return;
+      }
+
+      setSaving(true);
+      setError('');
+
+      const newFiles = formFiles.filter((f) => f.file).map((f) => f.file);
+      const retainedIds = formFiles.filter((f) => f.dbId).map((f) => f.dbId);
+
+      const payload = {
+        caseId: Number(form.caseId),
+        hearingDate: form.hearingDate,
+        hearingTime: toApiTime(form.hearingTime),
+        advocateId: Number(form.advocateId),
+        courtIndex: Number(form.courtId),
+        note: form.note.trim(),
+        nextHearingDate: form.nextHearingDate || undefined,
+        files: newFiles,
+        retainedAttachmentIds: retainedIds,
+      };
+
+      try {
+        let savedDiaryId;
+        if (editingEntry) {
+          const updated = await updateDiary(editingEntry.id, payload);
+          savedDiaryId = editingEntry.id;
+          const mappedUpdated = {
+            ...updated,
+            courtId: updated.courtId !== undefined && updated.courtId !== null ? String(updated.courtId) : '',
+          };
+          setDiaries((prev) =>
+            prev.map((item) => (item.id === mappedUpdated.id ? mappedUpdated : item))
+          );
+        } else {
+          const created = await createDiary(payload);
+          savedDiaryId = created.id || created.data?.id;
+          const mappedCreated = {
+            ...created,
+            courtId: created.courtId !== undefined && created.courtId !== null ? String(created.courtId) : '',
+          };
+          setDiaries((prev) => [mappedCreated, ...prev]);
+        }
+
+        if (groupingInfo && savedDiaryId) {
+          await performSmartGrouping(savedDiaryId, groupingInfo);
+        }
+
+        closeModal();
+      } catch (err) {
+        setError(err.message || 'Failed to save hearing');
+      } finally {
+        setSaving(false);
+      }
+    });
   };
 
   const handleDelete = async (entry) => {
@@ -782,24 +830,27 @@ export default function Hearings() {
                 <input type="text" placeholder="e.g., File reply, Bring witness" value={form.nextAction} onChange={setField('nextAction')} />
               </FormField>
               <FormField label="Hearing Note / Summary" required>
-                <textarea
-                  placeholder="Record details..."
-                  rows="4"
-                  value={form.note}
-                  onChange={setField('note')}
-                  required
-                  style={{
-                    fontSize: 'var(--text-sm)',
-                    padding: 'var(--space-2) var(--space-3)',
-                    border: '1px solid var(--border)',
-                    background: 'var(--card)',
-                    color: 'var(--text-primary)',
-                    borderRadius: 'var(--radius-md)',
-                    outline: 'none',
-                    width: '100%',
-                    fontFamily: 'inherit',
-                  }}
-                />
+                <div style={{ overflow: 'visible' }}>
+                  <textarea
+                    placeholder="Record details..."
+                    rows="4"
+                    value={form.note}
+                    onChange={setField('note')}
+                    required
+                    style={{
+                      width: '100%',
+                      fontSize: 'var(--text-sm)',
+                      padding: 'var(--space-2) var(--space-3)',
+                      border: '1px solid var(--border)',
+                      background: 'var(--card)',
+                      color: 'var(--text-primary)',
+                      borderRadius: 'var(--radius-md)',
+                      outline: 'none',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <SmartTextContextPanel occurrences={smartSearchResults?.occurrences} searchQuery={smartSearchQuery} />
+                </div>
               </FormField>
             </FormGrid>
             <FormGrid columns={2}>
@@ -1001,6 +1052,14 @@ export default function Hearings() {
           </div>
         </Modal>
       )}
+
+      <SmartTextGroupModal
+        isOpen={isSmartGroupModalOpen}
+        onClose={onSmartCancelModal}
+        onGroup={onSmartGroupChoice}
+        onIndependent={onSmartIndependentChoice}
+        data={{ query: smartSearchQuery, occurrences: smartSearchResults?.occurrences, phraseGroup: smartSearchResults?.phraseGroup }}
+      />
     </>
   );
 }

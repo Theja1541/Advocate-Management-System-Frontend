@@ -69,14 +69,19 @@ export default function Tenants() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const [tenantsData, statsData, plansRes] = await Promise.all([
+      const [tenantsResult, statsResult, plansResult] = await Promise.allSettled([
         getTenants(),
         getDashboardStats(),
         planService.getAllPlans()
       ]);
-      setPlans(plansRes.data || []);
-      setTenants(tenantsData);
-      setStats(statsData);
+
+      if (tenantsResult.status === 'rejected') {
+        throw tenantsResult.reason;
+      }
+
+      setTenants(tenantsResult.value || []);
+      setStats(statsResult.status === 'fulfilled' ? statsResult.value : null);
+      setPlans(plansResult.status === 'fulfilled' ? plansResult.value?.data || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load data');
     } finally {

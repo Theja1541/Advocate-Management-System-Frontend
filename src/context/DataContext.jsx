@@ -426,6 +426,7 @@ export const DataProvider = ({ children }) => {
       roleId: Number(roleId),
       moduleId: Number(moduleId),
       accessLevel,
+      targetTenantId,
     });
 
     const resolvedRoleName =

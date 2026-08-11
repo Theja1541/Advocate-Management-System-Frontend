@@ -10,11 +10,12 @@ export const getDocumentById = async (id) => {
   return data?.data?.document;
 };
 
-export const uploadDocument = async ({ name, documentCategoryId, caseId, file }) => {
+export const uploadDocument = async ({ name, documentCategoryId, caseId, landId, file }) => {
   const formData = new FormData();
   formData.append('name', name);
   formData.append('documentCategoryId', String(documentCategoryId));
-  formData.append('caseId', String(caseId));
+  if (caseId) formData.append('caseId', String(caseId));
+  if (landId) formData.append('landId', String(landId));
   formData.append('file', file);
 
   const { data } = await api.post('/documents', formData, {
@@ -67,11 +68,12 @@ export const downloadDocument = async (id, fallbackName = 'document') => {
   }
 };
 
-export const updateDocument = async (id, { name, documentCategoryId, caseId, file }) => {
+export const updateDocument = async (id, { name, documentCategoryId, caseId, landId, file }) => {
   const formData = new FormData();
   if (name !== undefined) formData.append('name', name);
   if (documentCategoryId !== undefined) formData.append('documentCategoryId', String(documentCategoryId));
   if (caseId !== undefined) formData.append('caseId', String(caseId));
+  if (landId !== undefined) formData.append('landId', String(landId));
   if (file !== undefined && file !== null) formData.append('file', file);
 
   const { data } = await api.put(`/documents/${id}`, formData, {

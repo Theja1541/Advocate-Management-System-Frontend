@@ -50,9 +50,14 @@ export default function Clients() {
     setLoading(true);
     setError('');
     try {
-      const [list, caseList] = await Promise.all([getClients(), getCases()]);
-      setClients(list);
-      setCases(caseList);
+      const [clientsResult, casesResult] = await Promise.allSettled([getClients(), getCases()]);
+
+      if (clientsResult.status === 'rejected') {
+        throw clientsResult.reason;
+      }
+
+      setClients(clientsResult.value || []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load clients');
     } finally {

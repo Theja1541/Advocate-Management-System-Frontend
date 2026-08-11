@@ -75,7 +75,6 @@ export default function Cases() {
   const [caseTypes, setCaseTypes] = useState([]);
   const [caseStages, setCaseStages] = useState([]);
   const [courts, setCourts] = useState([]);
-  const [stateFeeConfigs, setStateFeeConfigs] = useState([]);
   const [livePreview, setLivePreview] = useState(null);
 
   const [loading, setLoading] = useState(true);
@@ -100,22 +99,34 @@ export default function Cases() {
     setLoading(true);
     setError('');
     try {
-      const [caseList, clientList, advocateList, typeList, stageList, courtList, feeConfigs] = await Promise.all([
+      const settled = await Promise.allSettled([
         getCases(),
         getClients(),
         getAdvocates(),
         getCaseTypes(true),
         getCaseStages(true),
         getCourts(true),
-        getStateFeeConfigs(),
       ]);
-      setCases(caseList);
-      setClients(clientList);
-      setAdvocates(advocateList);
-      setCaseTypes(typeList);
-      setCaseStages(stageList);
-      setCourts(courtList);
-      setStateFeeConfigs(feeConfigs);
+
+      const [
+        casesResult,
+        clientsResult,
+        advocatesResult,
+        typesResult,
+        stagesResult,
+        courtsResult,
+      ] = settled;
+
+      if (casesResult.status === 'rejected') {
+        throw casesResult.reason;
+      }
+
+      setCases(casesResult.value || []);
+      setClients(clientsResult.status === 'fulfilled' ? clientsResult.value || [] : []);
+      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
+      setCaseTypes(typesResult.status === 'fulfilled' ? typesResult.value || [] : []);
+      setCaseStages(stagesResult.status === 'fulfilled' ? stagesResult.value || [] : []);
+      setCourts(courtsResult.status === 'fulfilled' ? courtsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load cases');
     } finally {

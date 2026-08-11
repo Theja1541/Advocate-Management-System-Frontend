@@ -13,6 +13,10 @@ import {
 } from '../services/landService';
 import { getClients } from '../services/clientService';
 import { getCases } from '../services/caseService';
+import { getAdvocates } from '../services/advocateService';
+import { getTitleSearches, createTitleSearch, deleteTitleSearch } from '../services/titleSearchService';
+import { getDocuments, uploadDocument, downloadDocument, deleteDocument } from '../services/documentService';
+import { getDocumentCategories } from '../services/caseMastersService';
 import SearchableSelect from '../components/ui/SearchableSelect';
 
 
@@ -37,18 +41,53 @@ const emptyForm = {
   extent: '',
   classification: 'Agricultural (Dry)',
   pattaNo: '',
+  subDivisionNo: '',
+  sro: '',
+  registrationDistrict: '',
+  documentNo: '',
+  documentYear: '',
+  registrationDate: '',
+  acquisitionType: '',
+  currentOwnerName: '',
+  remarks: '',
   encumbranceStatus: 'clear',
   titleStatus: 'clear',
   caseId: '',
 };
 
 export default function Land() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const canEdit = hasPermission('land', 'E');
 
   const [lands, setLands] = useState([]);
   const [clients, setClients] = useState([]);
   const [cases, setCases] = useState([]);
+  const [advocates, setAdvocates] = useState([]);
+  const [titleSearches, setTitleSearches] = useState([]);
+  const [isTitleSearchModalOpen, setIsTitleSearchModalOpen] = useState(false);
+  const [titleSearchForm, setTitleSearchForm] = useState({
+    searchDate: new Date().toISOString().slice(0, 10),
+    periodFrom: '',
+    periodTo: '',
+    ecStatus: 'clear',
+    ecReferenceNo: '',
+    revenueRecordsVerified: false,
+    registrationRecordsVerified: false,
+    litigationChecked: false,
+    documentsVerified: false,
+    remarks: '',
+    conductedBy: '',
+  });
+
+  const [documents, setDocuments] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [docForm, setDocForm] = useState({
+    name: '',
+    documentCategoryId: '',
+    file: null,
+  });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -66,14 +105,35 @@ export default function Land() {
     setLoading(true);
     setError('');
     try {
-      const [landList, clientList, caseList] = await Promise.all([
+      const [
+        landsResult,
+        clientsResult,
+        casesResult,
+        advocatesResult,
+        titleSearchesResult,
+        docsResult,
+        catsResult,
+      ] = await Promise.allSettled([
         getLands(),
         getClients(),
         getCases(),
+        getAdvocates(),
+        getTitleSearches(),
+        getDocuments(),
+        getDocumentCategories(),
       ]);
-      setLands(landList);
-      setClients(clientList);
-      setCases(caseList);
+
+      if (landsResult.status === 'rejected') {
+        throw landsResult.reason;
+      }
+
+      setLands(landsResult.value || []);
+      setClients(clientsResult.status === 'fulfilled' ? clientsResult.value || [] : []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
+      setTitleSearches(titleSearchesResult.status === 'fulfilled' ? titleSearchesResult.value || [] : []);
+      setDocuments(docsResult.status === 'fulfilled' ? docsResult.value || [] : []);
+      setCategories(catsResult.status === 'fulfilled' ? catsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load land records');
     } finally {
@@ -150,6 +210,15 @@ export default function Land() {
       extent: l.extent || '',
       classification: l.classification || 'Agricultural (Dry)',
       pattaNo: l.pattaNo || '',
+      subDivisionNo: l.subDivisionNo || '',
+      sro: l.sro || '',
+      registrationDistrict: l.registrationDistrict || '',
+      documentNo: l.documentNo || '',
+      documentYear: l.documentYear != null ? String(l.documentYear) : '',
+      registrationDate: l.registrationDate || '',
+      acquisitionType: l.acquisitionType || '',
+      currentOwnerName: l.currentOwnerName || '',
+      remarks: l.remarks || '',
       encumbranceStatus: l.encumbranceStatus || 'clear',
       titleStatus: l.titleStatus || 'clear',
       caseId: l.caseId != null ? String(l.caseId) : '',
@@ -191,6 +260,15 @@ export default function Land() {
       extent: form.extent.trim(),
       classification: form.classification.trim(),
       pattaNo: form.pattaNo.trim(),
+      subDivisionNo: form.subDivisionNo.trim() || undefined,
+      sro: form.sro.trim() || undefined,
+      registrationDistrict: form.registrationDistrict.trim() || undefined,
+      documentNo: form.documentNo.trim() || undefined,
+      documentYear: form.documentYear ? Number(form.documentYear) : undefined,
+      registrationDate: form.registrationDate || undefined,
+      acquisitionType: form.acquisitionType.trim() || undefined,
+      currentOwnerName: form.currentOwnerName.trim() || undefined,
+      remarks: form.remarks.trim() || undefined,
       encumbranceStatus: form.encumbranceStatus,
       titleStatus: form.titleStatus,
       caseId: form.caseId ? Number(form.caseId) : undefined,
@@ -224,6 +302,108 @@ export default function Land() {
       }
     } catch (err) {
       setError(err.message || 'Failed to delete land record');
+    }
+  };
+
+  const handleTitleSearchSubmit = async (e) => {
+    e.preventDefault();
+    if (!titleSearchForm.periodFrom || !titleSearchForm.periodTo || !titleSearchForm.conductedBy) {
+      alert('Please fill out all required fields.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        landId: selectedViewLand.id,
+        searchDate: titleSearchForm.searchDate,
+        periodFrom: titleSearchForm.periodFrom,
+        periodTo: titleSearchForm.periodTo,
+        ecStatus: titleSearchForm.ecStatus,
+        ecReferenceNo: titleSearchForm.ecReferenceNo.trim() || undefined,
+        revenueRecordsVerified: !!titleSearchForm.revenueRecordsVerified,
+        registrationRecordsVerified: !!titleSearchForm.registrationRecordsVerified,
+        litigationChecked: !!titleSearchForm.litigationChecked,
+        documentsVerified: !!titleSearchForm.documentsVerified,
+        remarks: titleSearchForm.remarks.trim() || undefined,
+        conductedBy: Number(titleSearchForm.conductedBy),
+      };
+      const created = await createTitleSearch(payload);
+      setTitleSearches((prev) => [...prev, created]);
+      setIsTitleSearchModalOpen(false);
+      setTitleSearchForm({
+        searchDate: new Date().toISOString().slice(0, 10),
+        periodFrom: '',
+        periodTo: '',
+        ecStatus: 'clear',
+        ecReferenceNo: '',
+        revenueRecordsVerified: false,
+        registrationRecordsVerified: false,
+        litigationChecked: false,
+        documentsVerified: false,
+        remarks: '',
+        conductedBy: '',
+      });
+    } catch (err) {
+      alert(err.message || 'Failed to save title search record');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTitleSearchDelete = async (searchId) => {
+    if (!window.confirm('Delete this title search record?')) return;
+    try {
+      await deleteTitleSearch(searchId);
+      setTitleSearches((prev) => prev.filter((s) => s.id !== searchId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete title search record');
+    }
+  };
+
+  const handleDocSubmit = async (e) => {
+    e.preventDefault();
+    if (!docForm.name || !docForm.documentCategoryId || !docForm.file) {
+      alert('Please fill out all required fields and select a file.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        name: docForm.name.trim(),
+        documentCategoryId: Number(docForm.documentCategoryId),
+        landId: selectedViewLand.id,
+        file: docForm.file,
+      };
+      const created = await uploadDocument(payload);
+      setDocuments((prev) => [created, ...prev]);
+      setIsDocModalOpen(false);
+      setDocForm({
+        name: '',
+        documentCategoryId: '',
+        file: null,
+      });
+    } catch (err) {
+      alert(err.message || 'Failed to upload document');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDocDelete = async (docId) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    try {
+      await deleteDocument(docId);
+      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+    } catch (err) {
+      alert(err.message || 'Failed to delete document');
+    }
+  };
+
+  const handleDocDownload = async (doc) => {
+    try {
+      await downloadDocument(doc.id, doc.name);
+    } catch (err) {
+      alert(err.message || 'Failed to download document');
     }
   };
 
@@ -465,6 +645,52 @@ export default function Land() {
               </div>
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px solid var(--rule-2)', paddingTop: '12px' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Sub Division Number</span>
+                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewLand.subDivisionNo || '—'}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Sub Registrar Office (SRO)</span>
+                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewLand.sro || '—'}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Registration District</span>
+                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewLand.registrationDistrict || '—'}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Document Number & Year</span>
+                <span className="mono" style={{ fontSize: '13px', color: 'var(--ink)' }}>
+                  {selectedViewLand.documentNo ? `${selectedViewLand.documentNo} / ${selectedViewLand.documentYear || '—'}` : '—'}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Registration Date</span>
+                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewLand.registrationDate ? formatDate(selectedViewLand.registrationDate) : '—'}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Acquisition Type</span>
+                <span style={{ fontSize: '13px', color: 'var(--ink)' }}>{selectedViewLand.acquisitionType || '—'}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Current Owner Name</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink)' }}>{selectedViewLand.currentOwnerName || '—'}</span>
+              </div>
+              <div>
+                <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Remarks</span>
+                <span style={{ fontSize: '12.5px', color: 'var(--muted)' }}>{selectedViewLand.remarks || '—'}</span>
+              </div>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', borderTop: '1px dashed var(--rule)', paddingTop: '12px' }}>
               <div>
                 <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Encumbrance Status</span>
@@ -474,6 +700,160 @@ export default function Land() {
                 <span className="mono font-semibold" style={{ fontSize: '9.5px', textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>Title Marketability</span>
                 <Chip type={TIS[selectedViewLand.titleStatus]?.[1] || 'c-grey'} label={TIS[selectedViewLand.titleStatus]?.[0] || selectedViewLand.titleStatus} />
               </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '16px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>Title Search History</h4>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    onClick={() => {
+                      setTitleSearchForm({
+                        searchDate: new Date().toISOString().slice(0, 10),
+                        periodFrom: '',
+                        periodTo: '',
+                        ecStatus: 'clear',
+                        ecReferenceNo: '',
+                        revenueRecordsVerified: false,
+                        registrationRecordsVerified: false,
+                        litigationChecked: false,
+                        documentsVerified: false,
+                        remarks: '',
+                        conductedBy: advocates[0] ? String(advocates[0].userId || '') : '',
+                      });
+                      setIsTitleSearchModalOpen(true);
+                    }}
+                  >
+                    + Add Title Search
+                  </button>
+                )}
+              </div>
+
+              {titleSearches.filter(s => String(s.landId) === String(selectedViewLand.id)).length === 0 ? (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--muted)', fontSize: '12.5px', border: '1px dashed var(--rule)', borderRadius: '6px' }}>
+                  No title search history found for this property asset.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1px solid var(--rule-2)', borderRadius: '6px' }}>
+                  <table className="table" style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--rule)' }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Search Date</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Period (From - To)</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>EC Status</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Conducted By</th>
+                        {canEdit && <th style={{ padding: '8px 10px', textAlign: 'center' }}>Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {titleSearches
+                        .filter(s => String(s.landId) === String(selectedViewLand.id))
+                        .map(s => (
+                          <tr key={s.id} style={{ borderBottom: '1px solid var(--rule-2)' }}>
+                            <td style={{ padding: '8px 10px' }}>{formatDate(s.searchDate)}</td>
+                            <td style={{ padding: '8px 10px' }}>{formatDate(s.periodFrom)} to {formatDate(s.periodTo)}</td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <Chip type={ENC[s.ecStatus]?.[1] || 'c-grey'} label={ENC[s.ecStatus]?.[0] || s.ecStatus} />
+                            </td>
+                            <td style={{ padding: '8px 10px' }}>{s.conductedByUser?.name || '—'}</td>
+                            {canEdit && (
+                              <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                                <button
+                                  type="button"
+                                  className="btn sm danger-text"
+                                  style={{ padding: '2px 6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--tape)' }}
+                                  onClick={() => handleTitleSearchDelete(s.id)}
+                                >
+                                  Delete
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--rule)', paddingTop: '16px', marginTop: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>Linked Documents</h4>
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="btn sm primary"
+                    onClick={() => {
+                      setDocForm({
+                        name: '',
+                        documentCategoryId: '',
+                        file: null,
+                      });
+                      setIsDocModalOpen(true);
+                    }}
+                  >
+                    + Upload Document
+                  </button>
+                )}
+              </div>
+
+              {documents.filter(d => String(d.landId) === String(selectedViewLand.id)).length === 0 ? (
+                <div style={{ padding: '12px', textAlign: 'center', color: 'var(--muted)', fontSize: '12.5px', border: '1px dashed var(--rule)', borderRadius: '6px' }}>
+                  No linked documents found for this property asset.
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', border: '1px solid var(--rule-2)', borderRadius: '6px' }}>
+                  <table className="table" style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--rule)' }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Code</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Name</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Category</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Type & Size</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documents
+                        .filter(d => String(d.landId) === String(selectedViewLand.id))
+                        .map(d => (
+                          <tr key={d.id} style={{ borderBottom: '1px solid var(--rule-2)' }}>
+                            <td style={{ padding: '8px 10px' }} className="mono">{d.documentCode}</td>
+                            <td style={{ padding: '8px 10px', fontWeight: 500 }}>{d.name}</td>
+                            <td style={{ padding: '8px 10px' }}>
+                              <Chip type="ghost" label={d.documentCategory?.name || '—'} />
+                            </td>
+                            <td style={{ padding: '8px 10px', fontSize: '10.5px' }} className="mono">
+                              {d.fileType} ({d.fileSize})
+                            </td>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <button
+                                type="button"
+                                className="btn sm ghost"
+                                style={{ marginRight: '6px', padding: '2px 8px' }}
+                                onClick={() => handleDocDownload(d)}
+                              >
+                                Download
+                              </button>
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  className="btn sm danger-text"
+                                  style={{ padding: '2px 6px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--tape)' }}
+                                  onClick={() => handleDocDelete(d.id)}
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -610,12 +990,120 @@ export default function Land() {
 
           <div className="fgrid" style={{ marginTop: '12px' }}>
             <div className="f">
+              <label>Sub Division Number</label>
+              <input
+                type="text"
+                placeholder="e.g. 2A"
+                value={form.subDivisionNo}
+                onChange={setField('subDivisionNo')}
+              />
+            </div>
+            <div className="f">
+              <label>Sub Registrar Office (SRO)</label>
+              <input
+                type="text"
+                placeholder="e.g. Madanapalle SRO"
+                value={form.sro}
+                onChange={setField('sro')}
+              />
+            </div>
+          </div>
+
+          <div className="fgrid" style={{ marginTop: '12px' }}>
+            <div className="f">
+              <label>Registration District</label>
+              <input
+                type="text"
+                placeholder="e.g. Chittoor"
+                value={form.registrationDistrict}
+                onChange={setField('registrationDistrict')}
+              />
+            </div>
+            <div className="f">
+              <label>Document Number</label>
+              <input
+                type="text"
+                placeholder="e.g. 1024"
+                value={form.documentNo}
+                onChange={setField('documentNo')}
+              />
+            </div>
+          </div>
+
+          <div className="fgrid" style={{ marginTop: '12px' }}>
+            <div className="f">
+              <label>Document Year</label>
+              <input
+                type="number"
+                placeholder="e.g. 2024"
+                value={form.documentYear}
+                onChange={setField('documentYear')}
+              />
+            </div>
+            <div className="f">
+              <label>Registration Date</label>
+              <input
+                type="date"
+                value={form.registrationDate}
+                onChange={setField('registrationDate')}
+              />
+            </div>
+          </div>
+
+          <div className="fgrid" style={{ marginTop: '12px' }}>
+            <div className="f">
+              <label>Acquisition Type</label>
+              <input
+                type="text"
+                placeholder="e.g. Sale Deed / Gift Deed"
+                value={form.acquisitionType}
+                onChange={setField('acquisitionType')}
+              />
+            </div>
+            <div className="f">
+              <label>Current Owner Name</label>
+              <input
+                type="text"
+                placeholder="e.g. K. Subbarayudu"
+                value={form.currentOwnerName}
+                onChange={setField('currentOwnerName')}
+              />
+            </div>
+          </div>
+
+          <div className="f" style={{ marginTop: '12px' }}>
+            <label>Remarks</label>
+            <textarea
+              placeholder="Any additional notes..."
+              value={form.remarks}
+              onChange={setField('remarks')}
+              rows="2"
+              style={{
+                fontSize: '12.5px',
+                padding: '8px 10px',
+                border: '1px solid var(--rule)',
+                background: 'var(--card)',
+                color: 'var(--ink)',
+                borderRadius: '5px',
+                outline: 'none',
+                width: '100%',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+          </div>
+
+          <div className="fgrid" style={{ marginTop: '12px' }}>
+            <div className="f">
               <label>Encumbrance</label>
               <select value={form.encumbranceStatus} onChange={setField('encumbranceStatus')}>
                 <option value="clear">Clear</option>
                 <option value="noted">Encumbrance noted</option>
                 <option value="pending">EC awaited</option>
               </select>
+              <span className="mut" style={{ fontSize: '10px', marginTop: '4px', display: 'block', lineHeight: '1.3' }}>
+                Mortgage/loan charges verification (Clear = No liabilities, Noted = Charges exist, Awaited = Search pending).
+              </span>
             </div>
             <div className="f">
               <label>Title Status</label>
@@ -624,6 +1112,9 @@ export default function Land() {
                 <option value="disputed">Disputed</option>
                 <option value="under_scrutiny">Under scrutiny</option>
               </select>
+              <span className="mut" style={{ fontSize: '10px', marginTop: '4px', display: 'block', lineHeight: '1.3' }}>
+                Ownership marketability status (Clear = Clean title, Disputed = Court dispute, Scrutiny = Link docs validation in progress).
+              </span>
             </div>
           </div>
 
@@ -633,6 +1124,221 @@ export default function Land() {
             </button>
             <button type="submit" className="btn" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Add Title Search Modal */}
+      <Modal
+        isOpen={isTitleSearchModalOpen}
+        onClose={() => setIsTitleSearchModalOpen(false)}
+        title="Add Title Search Record"
+      >
+        <form onSubmit={handleTitleSearchSubmit} className="fgrid" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+          <div className="fgrid" style={{ gap: '12px' }}>
+            <div className="f">
+              <label>Search Date</label>
+              <input
+                type="date"
+                value={titleSearchForm.searchDate}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, searchDate: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="f">
+              <label>Conducted By</label>
+              <select
+                value={titleSearchForm.conductedBy}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, conductedBy: e.target.value }))}
+                required
+              >
+                <option value="">Select legal team member</option>
+                {advocates.map((a) => (
+                  <option key={a.id} value={a.userId || ''}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="fgrid" style={{ gap: '12px', marginTop: '12px' }}>
+            <div className="f">
+              <label>Search Period From</label>
+              <input
+                type="date"
+                value={titleSearchForm.periodFrom}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, periodFrom: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="f">
+              <label>Search Period To</label>
+              <input
+                type="date"
+                value={titleSearchForm.periodTo}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, periodTo: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="fgrid" style={{ gap: '12px', marginTop: '12px' }}>
+            <div className="f">
+              <label>EC Status</label>
+              <select
+                value={titleSearchForm.ecStatus}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, ecStatus: e.target.value }))}
+                required
+              >
+                <option value="clear">Clear</option>
+                <option value="noted">Encumbrance noted</option>
+                <option value="pending">EC awaited</option>
+              </select>
+            </div>
+            <div className="f">
+              <label>EC Reference Number</label>
+              <input
+                type="text"
+                placeholder="e.g. EC-1024/2026"
+                value={titleSearchForm.ecReferenceNo}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, ecReferenceNo: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '16px', borderTop: '1px solid var(--rule-2)', paddingTop: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px' }}>
+              <input
+                type="checkbox"
+                checked={titleSearchForm.revenueRecordsVerified}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, revenueRecordsVerified: e.target.checked }))}
+              />
+              Revenue Records Verified
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px' }}>
+              <input
+                type="checkbox"
+                checked={titleSearchForm.registrationRecordsVerified}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, registrationRecordsVerified: e.target.checked }))}
+              />
+              Registration Records Verified
+            </label>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '10px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px' }}>
+              <input
+                type="checkbox"
+                checked={titleSearchForm.litigationChecked}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, litigationChecked: e.target.checked }))}
+              />
+              Litigation Checked
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12.5px' }}>
+              <input
+                type="checkbox"
+                checked={titleSearchForm.documentsVerified}
+                onChange={(e) => setTitleSearchForm(p => ({ ...p, documentsVerified: e.target.checked }))}
+              />
+              Original Docs Verified
+            </label>
+          </div>
+
+          <div className="f" style={{ marginTop: '12px' }}>
+            <label>Search Remarks / Notes</label>
+            <textarea
+              placeholder="e.g. Verified link records at sub-registrar office, found no active mortgage..."
+              value={titleSearchForm.remarks}
+              onChange={(e) => setTitleSearchForm(p => ({ ...p, remarks: e.target.value }))}
+              rows="3"
+              style={{
+                fontSize: '12.5px',
+                padding: '8px 10px',
+                border: '1px solid var(--rule)',
+                background: 'var(--card)',
+                color: 'var(--ink)',
+                borderRadius: '5px',
+                outline: 'none',
+                width: '100%',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+          </div>
+
+          <div className="modal-foot" style={{ marginTop: '20px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn g" onClick={() => setIsTitleSearchModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn primary" disabled={saving}>
+              {saving ? 'Adding...' : 'Add Search'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Upload Document Modal */}
+      <Modal
+        isOpen={isDocModalOpen}
+        onClose={() => setIsDocModalOpen(false)}
+        title="Upload Land Document"
+      >
+        <form onSubmit={handleDocSubmit} className="fgrid" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+          <div className="f" style={{ marginBottom: '12px' }}>
+            <label>Document Name</label>
+            <input
+              type="text"
+              placeholder="e.g. Sale Deed copy"
+              value={docForm.name}
+              onChange={(e) => setDocForm(p => ({ ...p, name: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="f" style={{ marginBottom: '12px' }}>
+            <label>Category</label>
+            <select
+              value={docForm.documentCategoryId}
+              onChange={(e) => setDocForm(p => ({ ...p, documentCategoryId: e.target.value }))}
+              required
+            >
+              <option value="">Select category</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="f" style={{ marginBottom: '16px' }}>
+            <label>File Selection</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                setDocForm(p => ({
+                  ...p,
+                  file,
+                  name: p.name || (file ? file.name.replace(/\.[^.]+$/, '') : ''),
+                }));
+              }}
+              required
+            />
+            <span className="mut" style={{ fontSize: '10px', marginTop: '4px', display: 'block' }}>
+              Accepted file types: PDF, DOC, DOCX, TXT. Max size: 5MB.
+            </span>
+          </div>
+
+          <div className="modal-foot" style={{ marginTop: '16px', padding: '12px 0 0', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn g" onClick={() => setIsDocModalOpen(false)} disabled={saving}>
+              Cancel
+            </button>
+            <button type="submit" className="btn primary" disabled={saving}>
+              {saving ? 'Uploading...' : 'Upload Document'}
             </button>
           </div>
         </form>

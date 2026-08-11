@@ -31,6 +31,7 @@ const Alerts = React.lazy(() => import('./pages/Alerts'));
 const Reports = React.lazy(() => import('./pages/Reports'));
 const BareActs = React.lazy(() => import('./pages/BareActs'));
 const Amend = React.lazy(() => import('./pages/Amend'));
+const LegalTexts = React.lazy(() => import('./pages/LegalTexts'));
 const Calculators = React.lazy(() => import('./pages/Calculators'));
 const Roles = React.lazy(() => import('./pages/Roles'));
 const MasterSettings = React.lazy(() => import('./pages/MasterSettings'));
@@ -104,6 +105,7 @@ const AppContent = () => {
               <Route path="/reports" element={<ProtectedRoute element={<Reports />} moduleKey="reports" />} />
               <Route path="/acts" element={<ProtectedRoute element={<BareActs />} moduleKey="acts" />} />
               <Route path="/amend" element={<ProtectedRoute element={<Amend />} moduleKey="amend" />} />
+              <Route path="/texts" element={<ProtectedRoute element={<LegalTexts />} moduleKey="legalTexts" />} />
               <Route path="/tools" element={<ProtectedRoute element={<Calculators />} moduleKey="tools" />} />
               <Route path="/roles" element={<ProtectedRoute element={<Roles />} moduleKey="roles" />} />
               <Route path="/tenants" element={<ProtectedRoute element={<Tenants />} moduleKey="tenants" />} />

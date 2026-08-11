@@ -155,6 +155,15 @@ const getIcon = (key) => {
           <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path>
         </svg>
       );
+    case 'legalTexts':
+      return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          <line x1="10" y1="6" x2="16" y2="6"></line>
+          <line x1="10" y1="10" x2="16" y2="10"></line>
+        </svg>
+      );
     case 'tools':
       return (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -245,6 +254,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
     if (key === 'masters') return '/settings/masters';
     if (key === 'tenantSettings') return '/settings/tenant';
     if (key === 'plans') return '/settings/plans';
+    if (key === 'legalTexts') return '/texts';
     return `/${key}`;
   };
 

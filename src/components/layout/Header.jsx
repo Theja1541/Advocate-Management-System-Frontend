@@ -173,7 +173,9 @@ export default function Header({ toggleSidebar }) {
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.25 }}>
                   {user?.n}
                 </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{user?.role}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {user?.role ? user.role.replace(/\s+\d+$/, '') : ''}
+                </div>
               </div>
             </div>
             <button

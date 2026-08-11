@@ -76,14 +76,19 @@ export default function CaseApproval() {
     setLoading(true);
     setError('');
     try {
-      const [caseList, clientList, typeList] = await Promise.all([
+      const [casesResult, clientsResult, typesResult] = await Promise.allSettled([
         getCases(),
         getClients(),
         getCaseTypes(true),
       ]);
-      setCases(caseList);
-      setClients(clientList);
-      setCaseTypes(typeList);
+
+      if (casesResult.status === 'rejected') {
+        throw casesResult.reason;
+      }
+
+      setCases(casesResult.value || []);
+      setClients(clientsResult.status === 'fulfilled' ? clientsResult.value || [] : []);
+      setCaseTypes(typesResult.status === 'fulfilled' ? typesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load approval queue');
     } finally {
