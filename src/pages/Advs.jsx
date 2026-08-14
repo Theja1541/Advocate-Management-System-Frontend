@@ -182,7 +182,7 @@ export default function Advs() {
       password: '',
       roleId: advocate.roleId || '',
       tenantAdminId: advocate.tenantAdmin?.id ? String(advocate.tenantAdmin.id) : '',
-      groupAdminIds: (advocate.groupAdmins || []).map(ga => String(ga.id)),
+      groupAdminIds: (advocate.groupAdmins || []).map(ga => parseInt(ga.id, 10)),
     });
     setError('');
     setIsModalOpen(true);
@@ -236,7 +236,7 @@ export default function Advs() {
       experience: String(form.experience).trim(),
       relation: form.relation,
       status: form.status,
-      tenantAdminId: form.tenantAdminId ? parseInt(form.tenantAdminId, 10) : undefined,
+      tenantAdminId: form.tenantAdminId ? parseInt(form.tenantAdminId, 10) : null,
       groupAdminIds: form.groupAdminIds.map(id => parseInt(id, 10)),
     };
 
@@ -716,16 +716,17 @@ export default function Advs() {
           {canEdit && (
             <FormSection title="Assignments">
               <FormGrid columns={2}>
-                <FormField label="Assigned Tenant Admin">
+                <FormField label="Assigned Tenant Admin" required={isGroupAdminUser}>
                   <select
                     value={form.tenantAdminId}
                     onChange={setField('tenantAdminId')}
+                    required={isGroupAdminUser}
                     style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
                   >
-                    <option value="">Select Tenant Admin (Optional)</option>
+                    <option value="">{isGroupAdminUser ? 'Select Tenant Admin' : 'Select Tenant Admin (Optional)'}</option>
                     {systemUsers
                       .filter(u => {
-                        const rn = u.role?.name?.toLowerCase() || '';
+                        const rn = (typeof u.role === 'object' ? u.role?.name : u.role)?.toLowerCase() || '';
                         return rn.includes('tenant admin') || rn === 'admin';
                       })
                       .map(ta => (
@@ -735,22 +736,39 @@ export default function Advs() {
                 </FormField>
 
                 <FormField label="Assigned Group Admins">
-                  <select
-                    multiple
-                    value={form.groupAdminIds}
-                    onChange={(e) => setForm(p => ({ ...p, groupAdminIds: Array.from(e.target.selectedOptions, option => option.value) }))}
-                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)', minHeight: '80px' }}
-                  >
+                  <div style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', maxHeight: '150px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', backgroundColor: 'var(--bg-surface)' }}>
                     {systemUsers
                       .filter(u => {
-                        const rn = u.role?.name?.toLowerCase() || '';
+                        const rn = (typeof u.role === 'object' ? u.role?.name : u.role)?.toLowerCase() || '';
                         return rn.includes('group admin');
                       })
                       .map(ga => (
-                        <option key={ga.id} value={ga.id}>{ga.name}</option>
+                        <label key={ga.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: 'var(--text-sm)', cursor: 'pointer', margin: 0, textTransform: 'none', color: 'var(--text-primary)' }}>
+                          <input
+                            type="checkbox"
+                            checked={(form.groupAdminIds || []).includes(ga.id)}
+                            style={{ width: 'auto', margin: 0, cursor: 'pointer', accentColor: 'var(--primary)', transform: 'scale(1.1)' }}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setForm(p => {
+                                const ids = p.groupAdminIds || [];
+                                return {
+                                  ...p,
+                                  groupAdminIds: checked ? [...ids, ga.id] : ids.filter(id => id !== ga.id)
+                                };
+                              });
+                            }}
+                          />
+                          {ga.name}
+                        </label>
                       ))}
-                  </select>
-                  <small style={{ display: 'block', marginTop: '4px', color: 'var(--text-secondary)' }}>Hold Ctrl/Cmd to select multiple</small>
+                    {systemUsers.filter(u => {
+                        const rn = (typeof u.role === 'object' ? u.role?.name : u.role)?.toLowerCase() || '';
+                        return rn.includes('group admin');
+                    }).length === 0 && (
+                      <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No Group Admins available.</span>
+                    )}
+                  </div>
                 </FormField>
               </FormGrid>
             </FormSection>

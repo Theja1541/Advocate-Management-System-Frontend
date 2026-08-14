@@ -119,7 +119,7 @@ export default function Land() {
         getCases(),
         getAdvocates(),
         getTitleSearches(),
-        getDocuments(),
+        hasPermission('docs', 'V') ? getDocuments() : Promise.resolve([]),
         getDocumentCategories(),
       ]);
 
