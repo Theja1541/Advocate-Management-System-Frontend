@@ -55,6 +55,9 @@ export default function Login() {
           av: initialsFromName(name),
           advocateId: data.data.user.advocateId ?? null,
           mustChangePassword: data.data.user.mustChangePassword,
+          availableContexts: data.data.user.availableContexts,
+          tenantId: data.data.user.tenantId,
+          tenant: data.data.user.tenant,
         };
 
         login(mappedUser, data.token);

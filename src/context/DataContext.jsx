@@ -54,7 +54,7 @@ const groupAmendments = (amendmentList) => {
 };
 
 export const DataProvider = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasPermission } = useAuth();
 
   const [cases, setCases] = useState([]);
   const [diary, setDiary] = useState([]);
@@ -103,7 +103,7 @@ export const DataProvider = ({ children }) => {
         getAlerts(),
         getLands(),
         getOpinions(),
-        getMemberships().catch(() => []),
+        hasPermission('member', 'V') ? getMemberships().catch(() => []) : Promise.resolve([]),
         getActs(),
         getAmendments(),
         getRoles(),

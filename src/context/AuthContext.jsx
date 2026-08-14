@@ -27,6 +27,24 @@ export const AuthProvider = ({ children }) => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+  const [activeAdminContext, setActiveAdminContext] = useState(() => {
+    const saved = localStorage.getItem('activeAdminContext');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        if (u && u.availableContexts && u.availableContexts.length > 0) {
+          const defaultCtx = u.availableContexts[0];
+          localStorage.setItem('activeAdminContext', JSON.stringify(defaultCtx));
+          return defaultCtx;
+        }
+      } catch (e) {}
+    }
+    return null;
+  });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return !!localStorage.getItem('token');
   });
@@ -38,6 +56,46 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     try {
+      // Sync User Profile (including availableContexts)
+      try {
+        const meData = await authService.getMe();
+        if (meData?.data?.user) {
+          const fetchedUser = meData.data.user;
+          setUser((prevUser) => {
+            const updated = {
+              ...prevUser,
+              ...fetchedUser,
+              n: fetchedUser.name,
+            };
+            localStorage.setItem('user', JSON.stringify(updated));
+
+            // Validate activeAdminContext against new contexts
+            const activeCtxStr = localStorage.getItem('activeAdminContext');
+            if (activeCtxStr && fetchedUser.availableContexts) {
+              try {
+                const activeCtx = JSON.parse(activeCtxStr);
+                const isValid = fetchedUser.availableContexts.some(
+                  (c) => String(c.id) === String(activeCtx.id) && c.type === activeCtx.type
+                );
+                if (!isValid) {
+                  if (fetchedUser.availableContexts.length > 0) {
+                    const defaultCtx = fetchedUser.availableContexts[0];
+                    setActiveAdminContext(defaultCtx);
+                    localStorage.setItem('activeAdminContext', JSON.stringify(defaultCtx));
+                  } else {
+                    setActiveAdminContext(null);
+                    localStorage.removeItem('activeAdminContext');
+                  }
+                }
+              } catch (e) {}
+            }
+            return updated;
+          });
+        }
+      } catch (err) {
+        // ignore getMe errors to not block permissions load
+      }
+
       const roles = await getRoles();
       const detailed = await Promise.all(roles.map((r) => getRoleById(r.id)));
       const next = {};
@@ -68,6 +126,11 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    if (userData.availableContexts && userData.availableContexts.length > 0) {
+      const defaultCtx = userData.availableContexts[0];
+      setActiveAdminContext(defaultCtx);
+      localStorage.setItem('activeAdminContext', JSON.stringify(defaultCtx));
+    }
   };
 
   const logout = async () => {
@@ -79,9 +142,16 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       setPermByRole({});
+      setActiveAdminContext(null);
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('activeAdminContext');
     }
+  };
+
+  const switchAdminContext = (context) => {
+    setActiveAdminContext(context);
+    localStorage.setItem('activeAdminContext', JSON.stringify(context));
   };
 
 const normalizeRole = (role) => {
@@ -162,6 +232,8 @@ const normalizeRole = (role) => {
         hasPermission,
         refreshPermissions,
         permByRole,
+        activeAdminContext,
+        switchAdminContext,
       }}
     >
       {children}

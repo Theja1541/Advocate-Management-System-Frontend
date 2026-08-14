@@ -4,13 +4,15 @@ import { useAuth } from '../../context/AuthContext';
 import { getAlerts } from '../../services/alertService';
 
 export default function Header({ toggleSidebar }) {
-  const { user, logout } = useAuth();
+  const { user, logout, activeAdminContext, switchAdminContext } = useAuth();
   const navigate = useNavigate();
 
   const [searchVal, setSearchVal] = useState('');
   const [activeAlerts, setActiveAlerts] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchAlerts = () => {
@@ -28,6 +30,9 @@ export default function Header({ toggleSidebar }) {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -84,6 +89,49 @@ export default function Header({ toggleSidebar }) {
               onChange={(e) => setSearchVal(e.target.value)}
             />
           </form>
+
+          {user?.availableContexts && user.availableContexts.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Context</span>
+              <select
+                value={activeAdminContext?.id || ''}
+                onChange={(e) => {
+                  const selectedId = String(e.target.value);
+                  const selected = user.availableContexts.find(ctx => String(ctx.id) === selectedId);
+                  if (selected) {
+                    switchAdminContext(selected);
+                    window.location.reload();
+                  }
+                }}
+                style={{
+                  padding: '6px 28px 6px 12px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--card)',
+                  fontSize: '13.5px',
+                  fontWeight: 500,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg fill='none' stroke='%238B95AF' viewBox='0 0 24 24' width='14' height='14'><path d='M6 9l6 6 6-6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center',
+                  minWidth: '180px',
+                  maxWidth: '260px',
+                  textOverflow: 'ellipsis',
+                  outline: 'none',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                }}
+              >
+                {user.availableContexts.map(ctx => (
+                  <option key={`${ctx.type}-${ctx.id}`} value={ctx.id}>
+                    {ctx.name || (ctx.type === 'TENANT_ADMIN' ? 'Tenant Admin' : 'Group Admin')}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div 
             className="bell" 
             title="Notification Center" 
@@ -165,8 +213,15 @@ export default function Header({ toggleSidebar }) {
               </div>
             )}
           </div>
-          <div className="me" style={{ gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div 
+            className="me" 
+            style={{ gap: '14px', position: 'relative', cursor: 'pointer' }}
+            ref={profileDropdownRef}
+          >
+            <div 
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+            >
               <div className="av">{avatar}</div>
               <div className="w">
                 <div style={{ fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Signed in</div>
@@ -178,24 +233,47 @@ export default function Header({ toggleSidebar }) {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className="btn outline"
-                onClick={() => navigate('/change-password')}
-                style={{ padding: '6px 12px', fontSize: '12px' }}
-              >
-                Change Password
-              </button>
-              <button
-                className="btn signout-btn"
-                onClick={() => {
-                  void logout();
+
+            {showProfileDropdown && (
+              <div
+                className="dropdown"
+                style={{
+                  top: '100%',
+                  right: 0,
+                  marginTop: '8px',
+                  width: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  zIndex: 100,
+                  padding: '8px',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
                 }}
-                style={{ padding: '6px 12px', fontSize: '12px' }}
               >
-                Sign Out
-              </button>
-            </div>
+                <button
+                  className="btn outline"
+                  onClick={() => {
+                    setShowProfileDropdown(false);
+                    navigate('/change-password');
+                  }}
+                  style={{ padding: '8px 12px', fontSize: '13px', marginBottom: '8px', width: '100%' }}
+                >
+                  Change Password
+                </button>
+                <button
+                  className="btn signout-btn"
+                  onClick={() => {
+                    void logout();
+                  }}
+                  style={{ padding: '8px 12px', fontSize: '13px', width: '100%' }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

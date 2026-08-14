@@ -92,13 +92,14 @@ export default function GroupAdmins() {
     }
   };
 
-  const handleAssignAdvocate = async () => {
-    if (!selectedAdvocateId) {
+  const handleAssignAdvocate = async (advId) => {
+    const idToAssign = advId || selectedAdvocateId;
+    if (!idToAssign) {
       notify('Please select an advocate to assign', 'warning');
       return;
     }
     try {
-      await assignAdvocateToGroupAdmin(assigningGA.id, selectedAdvocateId);
+      await assignAdvocateToGroupAdmin(assigningGA.id, idToAssign);
       notify('Advocate assigned successfully', 'success');
       const updatedAssigned = await getAssignedAdvocates(assigningGA.id);
       setAssignedAdvocates(updatedAssigned);
@@ -493,148 +494,165 @@ export default function GroupAdmins() {
             style={{
               background: 'var(--bg-card, #ffffff)',
               borderRadius: '12px',
-              padding: '24px',
+              padding: '0',
               width: '100%',
               maxWidth: '650px',
               maxHeight: '90vh',
-              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
               boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
+              overflow: 'hidden'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--rule, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-header, #f8fafc)' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>
-                  Assigned Advocates: {assigningGA.name}
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-main)' }}>
+                  Manage Advocates
                 </h3>
-                <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{assigningGA.email}</span>
+                <span style={{ fontSize: '13px', color: 'var(--muted)' }}>For {assigningGA.name} ({assigningGA.email})</span>
               </div>
               <button
                 onClick={() => setAssigningGA(null)}
-                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--muted)' }}
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '6px', padding: '6px', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex' }}
               >
-                ×
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
             </div>
 
-            {/* Currently Assigned List */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '13.5px', fontWeight: '600', marginBottom: '10px' }}>Currently Assigned ({assignedAdvocates.length})</h4>
-              {assignedAdvocates.length === 0 ? (
-                <p style={{ fontSize: '13px', color: 'var(--muted)', fontStyle: 'italic' }}>No advocates assigned yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {assignedAdvocates.map((adv) => (
-                    <div
-                      key={adv.id}
+            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+              {/* Currently Assigned List */}
+              <div style={{ marginBottom: '32px' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#2563eb" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                  Currently Assigned ({assignedAdvocates.length})
+                </h4>
+                
+                {assignedAdvocates.length === 0 ? (
+                  <div style={{ padding: '20px', background: 'var(--surface)', borderRadius: '8px', border: '1px dashed var(--border)', textAlign: 'center', fontSize: '13px', color: 'var(--muted)' }}>
+                    No advocates are currently assigned to this Group Admin.
+                  </div>
+                ) : (
+                  <div style={{ border: '1px solid var(--rule)', borderRadius: '8px', overflow: 'hidden' }}>
+                    {assignedAdvocates.map((adv, idx) => (
+                      <div
+                        key={adv.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 16px',
+                          background: idx % 2 === 0 ? 'var(--card)' : 'var(--surface)',
+                          borderBottom: idx === assignedAdvocates.length - 1 ? 'none' : '1px solid var(--rule)'
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>{adv.name}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{adv.enrolment || adv.email || 'No additional details'}</div>
+                        </div>
+                        {canManageAdvocates && (
+                          <button
+                            onClick={() => handleRemoveAdvocate(adv.id)}
+                            className="btn btn-sm btn-outline-danger"
+                            title="Remove assignment"
+                            style={{ padding: '6px 12px', fontSize: '12px', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)', background: 'transparent' }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Assign Existing Advocate Form */}
+              {canManageAdvocates && (
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Assign New Advocates
+                  </h4>
+
+                  <div style={{ position: 'relative', marginBottom: '12px' }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" strokeWidth="2" style={{ position: 'absolute', left: '12px', top: '10px' }}>
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search advocates by name or email..."
+                      value={advocateSearchQuery}
+                      onChange={(e) => handleAdvocateSearch(e.target.value)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: 'rgba(37, 99, 235, 0.08)',
-                        border: '1px solid rgba(37, 99, 235, 0.2)',
-                        padding: '6px 12px',
-                        borderRadius: '20px',
-                        fontSize: '12.5px',
-                        fontWeight: '500',
+                        width: '100%',
+                        padding: '10px 12px 10px 36px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-color, #cbd5e1)',
+                        fontSize: '13.5px',
+                        background: 'var(--surface)'
                       }}
-                    >
-                      <span>{adv.name}</span>
-                      {adv.enrolment && <span style={{ fontSize: '11px', opacity: 0.7 }}>({adv.enrolment})</span>}
-                      {canManageAdvocates && (
-                        <button
-                          onClick={() => handleRemoveAdvocate(adv.id)}
-                          title="Remove assignment"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '14px',
-                            padding: '0 2px',
-                            fontWeight: 'bold',
-                          }}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    />
+                  </div>
+                  
+                  <div style={{ maxHeight: '240px', overflowY: 'auto', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '8px', background: 'var(--card)' }}>
+                    {tenantAdvocates.filter((adv) => !assignedAdvocates.some((aa) => aa.id === adv.id)).length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--muted)' }}>
+                        {advocateSearchQuery ? 'No advocates match your search.' : 'All available advocates are already assigned.'}
+                      </div>
+                    ) : (
+                      tenantAdvocates
+                        .filter((adv) => !assignedAdvocates.some((aa) => aa.id === adv.id))
+                        .map((adv) => (
+                          <div
+                            key={adv.id}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '12px 16px',
+                              borderBottom: '1px solid var(--rule, #f1f5f9)'
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>{adv.name}</div>
+                              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{adv.email || adv.enrolment || 'No email'}</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedAdvocateId(adv.id);
+                                handleAssignAdvocate(adv.id);
+                              }}
+                              className="btn btn-sm btn-primary"
+                              style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '6px' }}
+                            >
+                              Assign
+                            </button>
+                          </div>
+                        ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-
-            {/* Assign Existing Advocate Form */}
-            {canManageAdvocates && (
-              <div
+            
+            <div style={{ padding: '16px 24px', borderTop: '1px solid var(--rule)', background: 'var(--bg-header, #f8fafc)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setAssigningGA(null)}
+                className="btn outline"
                 style={{
-                  borderTop: '1px solid var(--border-color, #e2e8f0)',
-                  paddingTop: '16px',
+                  padding: '8px 20px',
+                  borderRadius: '6px',
                 }}
               >
-                <h4 style={{ fontSize: '13.5px', fontWeight: '600', marginBottom: '10px' }}>Assign Advocate to this Group Admin</h4>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <input
-                    type="text"
-                    placeholder="Search tenant advocates..."
-                    value={advocateSearchQuery}
-                    onChange={(e) => handleAdvocateSearch(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      fontSize: '13px',
-                      marginBottom: '10px',
-                    }}
-                  />
-                  <select
-                    value={selectedAdvocateId}
-                    onChange={(e) => setSelectedAdvocateId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '9px 12px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      fontSize: '13px',
-                    }}
-                  >
-                    <option value="">Select Advocate to Assign...</option>
-                    {tenantAdvocates
-                      .filter((adv) => !assignedAdvocates.some((aa) => aa.id === adv.id))
-                      .map((adv) => (
-                        <option key={adv.id} value={adv.id}>
-                          {adv.name} {adv.enrolment ? `(${adv.enrolment})` : ''} - {adv.email || 'No email'}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setAssigningGA(null)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '6px',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Done
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAssignAdvocate}
-                    className="btn btn-primary"
-                    style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}
-                  >
-                    Assign Advocate
-                  </button>
-                </div>
-              </div>
-            )}
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -31,6 +31,20 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  const activeContext = localStorage.getItem('activeAdminContext');
+  if (activeContext) {
+    try {
+      const parsed = JSON.parse(activeContext);
+      if (parsed?.type && parsed?.id) {
+        config.headers['X-Admin-Context-Type'] = parsed.type;
+        config.headers['X-Admin-Context-Id'] = parsed.id;
+      }
+    } catch (e) {
+      // Ignore
+    }
+  }
+
   return config;
 }, (error) => {
   activeRequests = Math.max(0, activeRequests - 1);
@@ -97,6 +111,16 @@ api.interceptors.response.use(
       error.response?.data?.errors?.[0]?.msg ||
       error.message ||
       'Request failed';
+
+    if (
+      status === 403 &&
+      (message.includes('Invalid Group Admin context') || message.includes('Invalid Tenant Admin context'))
+    ) {
+      clearAuthStorage();
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
+    }
 
     return Promise.reject(
       Object.assign(new Error(message), {
