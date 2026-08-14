@@ -41,10 +41,15 @@ export default function Roles() {
     try {
       const [roleList, moduleList] = await Promise.all([getRoles(targetTenantId), getModules()]);
       const detailed = await Promise.all(roleList.map((r) => getRoleById(r.id, targetTenantId)));
-      const filteredRoles = user?.role === 'Super Admin' ? detailed : detailed.filter((r) => r.name !== 'Super Admin');
+      const filteredRoles = detailed.filter((r) => {
+        if (r.name === 'Group Admin') return false;
+        if (r.name === 'Super Admin') return user?.role === 'Super Admin';
+        if (r.name === 'Tenant Admin') return user?.role === 'Super Admin';
+        return true;
+      });
 
       const nextMatrix = {};
-      filteredRoles.forEach((role) => {
+      detailed.forEach((role) => {
         nextMatrix[role.id] = {};
         (role.modules || []).forEach((mod) => {
           nextMatrix[role.id][mod.id] = getAccessLevel(mod);
@@ -52,7 +57,13 @@ export default function Roles() {
       });
 
       setRoles(filteredRoles);
-      setModules(moduleList);
+      // We will keep 'detailed' in state if needed, but we can just find Tenant Admin directly
+      const tenantAdminRole = detailed.find((r) => r.name === 'Tenant Admin');
+      setModules(
+        user?.role === 'Super Admin'
+          ? moduleList
+          : moduleList.filter((m) => tenantAdminRole && nextMatrix[tenantAdminRole.id]?.[m.id] && nextMatrix[tenantAdminRole.id]?.[m.id] !== '---')
+      );
       setMatrix(nextMatrix);
     } catch (err) {
       setError(err.message || 'Failed to load roles');
@@ -317,7 +328,7 @@ export default function Roles() {
                 </tr>
               </thead>
               <tbody>
-                {(isSuperAdminManagingTenant ? modules : modules.filter(m => { const tenantAdminRole = roles.find(r => r.name.toLowerCase().includes("tenant admin")); return tenantAdminRole && matrix[tenantAdminRole.id]?.[m.id] && matrix[tenantAdminRole.id]?.[m.id] !== "---" })).map((m) => (
+                {modules.map((m) => (
                   <tr key={m.id}>
                     <td>
                       <span className="nm" style={{ fontSize: 'var(--text-sm)' }}>

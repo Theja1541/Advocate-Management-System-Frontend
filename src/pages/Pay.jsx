@@ -81,16 +81,21 @@ export default function Pay() {
     setLoading(true);
     setError('');
     try {
-      const [paymentList, caseList, clientList, advocateList] = await Promise.all([
+      const [paymentsResult, casesResult, clientsResult, advocatesResult] = await Promise.allSettled([
         getPayments(),
         getCases(),
         getClients(),
         getAdvocates(),
       ]);
-      setPayments(paymentList);
-      setCases(caseList);
-      setClients(clientList);
-      setAdvocates(advocateList);
+
+      if (paymentsResult.status === 'rejected') {
+        throw paymentsResult.reason;
+      }
+
+      setPayments(paymentsResult.value || []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setClients(clientsResult.status === 'fulfilled' ? clientsResult.value || [] : []);
+      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load payments');
     } finally {

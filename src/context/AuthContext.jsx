@@ -84,27 +84,60 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+const normalizeRole = (role) => {
+  if (!role) return '';
+  const r = String(role).trim().toLowerCase();
+  if (r.includes('super admin') || r.includes('super_admin')) return 'Super Admin';
+  if (r.includes('tenant admin') || r.includes('tenant_admin') || r === 'admin') return 'Tenant Admin';
+  if (r.includes('group admin') || r.includes('group_admin')) return 'Group Admin';
+  if (r.includes('advocate')) return 'Advocate';
+  if (r.includes('sub admin') || r.includes('sub_admin')) return 'Sub Admin';
+  if (r.includes('staff')) return 'Staff/Bearer';
+  return role;
+};
+
   const hasPermission = (key, action = 'V') => {
     if (key === 'dash') return true;
-    const userRole = user?.role || 'Super Admin';
-    
-    // Allow Tenant Admin to access Tenant Settings
-    if (key === 'tenantSettings' && userRole === 'Admin') return true;
-    
-    if (userRole === 'Super Admin') {
-      if (key === 'roles') return false; // Hidden for Super Admin
-      return true; // Super Admin bypasses all other permission checks
+    const rawRole = typeof user?.role === 'object' ? (user?.role?.name || '') : String(user?.role || '');
+    const normRole = normalizeRole(rawRole);
+
+    if (normRole === 'Super Admin') {
+      if (['dash', 'tenants', 'plans', 'tenantSettings'].includes(key)) return true;
+      return false; // Restrict Super Admin to only Dashboard, Tenants, Subscription Plans, and Tenant Settings
     }
 
+    if (normRole === 'Tenant Admin') {
+      if (['tenants', 'plans'].includes(key)) return false;
+      // Fall through to matrix check
+    }
+
+    if (normRole === 'Group Admin') {
+      // Hidden for Group Admin: platform/tenant settings, Group Admin management & Membership
+      if (['tenants', 'plans', 'tenantSettings', 'group-admins', 'member'].includes(key)) return false;
+      // Fall through to matrix check
+    }
+
+
     const keyCode = KEY_ALIASES[key] || key;
-    const rolePerms = permByRole[userRole];
-    
+    let targetRoleForPerms = normRole;
+    if (normRole === 'Group Admin') {
+      targetRoleForPerms = 'Tenant Admin'; // Group Admin inherits Tenant Admin's matrix exactly
+    }
+
+    // Force using the targetRoleForPerms matrix for Group Admin, ignoring its own rawRole matrix
+    let rolePerms = normRole === 'Group Admin' ? permByRole[targetRoleForPerms] : (permByRole[rawRole] || permByRole[targetRoleForPerms]);
+
+    if (!rolePerms && Object.keys(permByRole).length > 0) {
+      const matchedKey = Object.keys(permByRole).find((k) => normalizeRole(k) === targetRoleForPerms);
+      if (matchedKey) rolePerms = permByRole[matchedKey];
+    }
+
     if (!rolePerms) {
       return false; // Wait until permissions matrix loads
     }
 
     let perm = rolePerms[keyCode];
-    
+
     // Fallback for aliases or legacy keys
     if (!perm && key !== keyCode) {
       perm = rolePerms[key];
@@ -116,6 +149,7 @@ export const AuthProvider = ({ children }) => {
     perm = perm || '---';
     return perm.includes(action);
   };
+
 
   return (
     <AuthContext.Provider

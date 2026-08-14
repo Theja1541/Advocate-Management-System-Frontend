@@ -346,12 +346,6 @@ export default function MasterSettings() {
           Document Categories
         </button>
         <button 
-          className={`btn ${activeTab === 'stateFees' ? 'primary' : 'ghost'}`} 
-          onClick={() => setActiveTab('stateFees')}
-        >
-          🏛️ State Fee Rules
-        </button>
-        <button 
           className={`btn ${activeTab === 'systemLogo' ? 'primary' : 'ghost'}`} 
           onClick={() => setActiveTab('systemLogo')}
         >

@@ -59,16 +59,21 @@ export default function Daybook() {
     setLoading(true);
     setError('');
     try {
-      const [entryList, paymentList, caseList, clientList] = await Promise.all([
+      const [entriesResult, paymentsResult, casesResult, clientsResult] = await Promise.allSettled([
         getDaybookEntries(),
         getPayments(),
         getCases(),
         getClients(),
       ]);
-      setEntries(entryList);
-      setPayments(paymentList);
-      setCases(caseList);
-      setClients(clientList);
+
+      if (entriesResult.status === 'rejected') {
+        throw entriesResult.reason;
+      }
+
+      setEntries(entriesResult.value || []);
+      setPayments(paymentsResult.status === 'fulfilled' ? paymentsResult.value || [] : []);
+      setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
+      setClients(clientsResult.status === 'fulfilled' ? clientsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load day book');
     } finally {
@@ -588,7 +593,7 @@ export default function Daybook() {
             <button type="button" className="btn g" onClick={closeEdit} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save changes'}
             </button>
           </div>
@@ -683,7 +688,7 @@ export default function Daybook() {
             <button type="button" className="btn g" onClick={() => setShowEntryForm(false)} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save entry'}
             </button>
           </div>

@@ -24,10 +24,16 @@ export const deleteAdvocate = async (id) => {
   await api.delete(`/advocates/${id}`);
 };
 
+export const searchAdvocates = async (queryStr) => {
+  const { data } = await api.get(`/advocates/search?q=${encodeURIComponent(queryStr || '')}`);
+  return data?.data?.advocates || [];
+};
+
 export default {
   getAdvocates,
   getAdvocateById,
   createAdvocate,
   updateAdvocate,
   deleteAdvocate,
+  searchAdvocates,
 };

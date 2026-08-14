@@ -103,7 +103,7 @@ export const DataProvider = ({ children }) => {
         getAlerts(),
         getLands(),
         getOpinions(),
-        getMemberships(),
+        getMemberships().catch(() => []),
         getActs(),
         getAmendments(),
         getRoles(),
@@ -426,6 +426,7 @@ export const DataProvider = ({ children }) => {
       roleId: Number(roleId),
       moduleId: Number(moduleId),
       accessLevel,
+      targetTenantId,
     });
 
     const resolvedRoleName =

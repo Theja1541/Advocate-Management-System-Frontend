@@ -66,11 +66,17 @@ export default function Tasks() {
     setLoading(true);
     setError('');
     try {
-      const [taskList, advocateList] = await Promise.all([
+      const [tasksResult, advocatesResult] = await Promise.allSettled([
         getTasks(),
         getAdvocates(),
       ]);
-      setTasks(taskList);
+
+      if (tasksResult.status === 'rejected') {
+        throw tasksResult.reason;
+      }
+
+      setTasks(tasksResult.value || []);
+      const advocateList = advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : [];
       setAdvocates(advocateList.filter((a) => a.userId));
     } catch (err) {
       setError(err.message || 'Failed to load tasks');
