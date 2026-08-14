@@ -22,4 +22,13 @@ export const getMe = async (token) => {
   return data;
 };
 
-export default { login, logout, refresh, getMe };
+export const changePassword = async (currentPassword, newPassword, confirmPassword) => {
+  const { data } = await api.post('/auth/change-password', {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  });
+  return data;
+};
+
+export default { login, logout, refresh, getMe, changePassword };

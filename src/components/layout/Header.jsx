@@ -60,7 +60,7 @@ export default function Header({ toggleSidebar }) {
             className="sb-toggle-btn mobile-only"
             title="Toggle Sidebar"
             aria-label="Toggle Sidebar"
-            style={{ background: 'none', border: 'none', padding: '6px', cursor: 'pointer', color: '#F1F2EE' }}
+            style={{ background: 'none', border: 'none', padding: '6px', cursor: 'pointer', color: 'var(--text-secondary)' }}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -178,15 +178,24 @@ export default function Header({ toggleSidebar }) {
                 </div>
               </div>
             </div>
-            <button
-              className="btn signout-btn"
-              onClick={() => {
-                void logout();
-              }}
-              style={{ padding: '6px 12px', fontSize: '12px' }}
-            >
-              Sign Out
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                className="btn outline"
+                onClick={() => navigate('/change-password')}
+                style={{ padding: '6px 12px', fontSize: '12px' }}
+              >
+                Change Password
+              </button>
+              <button
+                className="btn signout-btn"
+                onClick={() => {
+                  void logout();
+                }}
+                style={{ padding: '6px 12px', fontSize: '12px' }}
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       </div>

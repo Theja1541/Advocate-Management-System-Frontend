@@ -40,8 +40,10 @@ const formatDateTime = (value) => {
 };
 
 export default function LegalTexts() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const canEdit = hasPermission('legalTexts', 'E');
+  const rawRole = typeof user?.role === 'object' ? (user?.role?.name || '') : String(user?.role || '');
+  const isGroupAdminUser = /group[\s_]?admin/i.test(rawRole);
   const { showToast } = useToast();
   const fileInputRef = React.useRef(null);
 
@@ -84,14 +86,18 @@ export default function LegalTexts() {
         search: query.trim() || undefined,
         category: categoryFilter || undefined,
       });
-      setTexts(res.data || []);
+      let rows = res.data || [];
+      if (isGroupAdminUser && user?.id != null) {
+        rows = rows.filter((item) => Number(item.createdBy ?? item.created_by) === Number(user.id));
+      }
+      setTexts(rows);
       setTotalCount(res.total || 0);
     } catch (err) {
       setError(err.message || 'Failed to load legal texts');
     } finally {
       setLoading(false);
     }
-  }, [page, query, categoryFilter]);
+  }, [page, query, categoryFilter, isGroupAdminUser, user?.id]);
 
   useEffect(() => {
     loadData();
@@ -547,7 +553,7 @@ export default function LegalTexts() {
             <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : 'Save'}
             </button>
           </div>

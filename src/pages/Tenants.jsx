@@ -65,6 +65,8 @@ export default function Tenants() {
   const [newPassword, setNewPassword] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -284,6 +286,7 @@ export default function Tenants() {
               <tr>
                 <th style={{ padding: '16px' }}>Law Firm</th>
                 <th>Contact</th>
+                <th>Group Admins</th>
                 <th>Subscription</th>
                 <th>Usage</th>
                 <th>Status</th>
@@ -293,11 +296,11 @@ export default function Tenants() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading tenants...</td>
+                  <td colSpan={7} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading tenants...</td>
                 </tr>
               ) : filteredTenants.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>No tenants found.</td>
+                  <td colSpan={7} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-secondary)' }}>No tenants found.</td>
                 </tr>
               ) : (
                 filteredTenants.map(t => (
@@ -314,6 +317,11 @@ export default function Tenants() {
                     <td>
                       <div style={{ fontSize: '13px' }}>{t.contactPerson || t.name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t.email}</div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '12px', background: 'rgba(37, 99, 235, 0.1)', color: 'var(--primary)', fontWeight: 600, fontSize: '12.5px' }}>
+                        👥 {t.groupAdminsCount ?? 0} Group Admins
+                      </div>
                     </td>
                     <td>
                       <div style={{ fontSize: '13px' }}>{t.plan?.name || 'Custom Plan'}</div>
@@ -497,7 +505,12 @@ export default function Tenants() {
                   <input type="email" required value={form.adminEmail} onChange={e => setForm({ ...form, adminEmail: e.target.value })} />
                 </FormField>
                 <FormField label="Admin Password" required>
-                  <input type="password" required value={form.adminPassword} onChange={e => setForm({ ...form, adminPassword: e.target.value })} />
+                  <div style={{ position: 'relative' }}>
+                    <input type={showAdminPassword ? "text" : "password"} required value={form.adminPassword} onChange={e => setForm({ ...form, adminPassword: e.target.value })} style={{ width: '100%', paddingRight: '40px' }} />
+                    <button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
+                      {showAdminPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
                 </FormField>
               </FormGrid>
             </FormSection>
@@ -523,12 +536,18 @@ export default function Tenants() {
             Resetting password for the Tenant Admin of <strong>{selectedTenant?.name}</strong>.
           </p>
           <FormField label="New Password" required>
-            <input
-              type="password"
-              required
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showResetPassword ? "text" : "password"}
+                required
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                style={{ width: '100%', paddingRight: '40px' }}
+              />
+              <button type="button" onClick={() => setShowResetPassword(!showResetPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
+                {showResetPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </FormField>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
             <button type="button" className="btn secondary" onClick={() => setIsPasswordModalOpen(false)} disabled={saving}>Cancel</button>

@@ -540,7 +540,7 @@ export default function PaymentReceipt({
             <button type="button" className="btn g" onClick={onClose}>
               Close
             </button>
-            <button type="button" className="btn" onClick={handlePrint}>
+            <button type="button" className="btn primary" onClick={handlePrint}>
               Print / Save as PDF
             </button>
           </div>

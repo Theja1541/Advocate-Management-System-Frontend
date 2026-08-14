@@ -471,7 +471,7 @@ export default function Refs() {
             <button type="button" className="btn g" onClick={closeModal} disabled={saving}>
               Cancel
             </button>
-            <button type="submit" className="btn" disabled={saving}>
+            <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Saving…' : editingRef ? 'Save changes' : 'Add Reference'}
             </button>
           </div>

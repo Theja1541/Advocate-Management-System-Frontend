@@ -103,7 +103,7 @@ export const DataProvider = ({ children }) => {
         getAlerts(),
         getLands(),
         getOpinions(),
-        getMemberships(),
+        getMemberships().catch(() => []),
         getActs(),
         getAmendments(),
         getRoles(),

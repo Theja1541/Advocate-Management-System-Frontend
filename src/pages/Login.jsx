@@ -11,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [logoUrl, setLogoUrl] = useState(null);
   const navigate = useNavigate();
 
@@ -45,7 +46,7 @@ export default function Login() {
     try {
       const data = await loginRequest(email, password);
 
-      if (data.status === 'success' && data.token && data.data?.user) {
+      if ((data.status === 'success' || data.status === 'PASSWORD_CHANGE_REQUIRED') && data.token && data.data?.user) {
         const name = data.data.user.name;
         const mappedUser = {
           id: data.data.user.id,
@@ -53,10 +54,15 @@ export default function Login() {
           role: data.data.user.role,
           av: initialsFromName(name),
           advocateId: data.data.user.advocateId ?? null,
+          mustChangePassword: data.data.user.mustChangePassword,
         };
 
         login(mappedUser, data.token);
-        navigate('/');
+        if (data.status === 'PASSWORD_CHANGE_REQUIRED' || data.data.user.mustChangePassword) {
+          navigate('/change-password');
+        } else {
+          navigate('/');
+        }
       } else {
         setErrorMsg(data.message || 'Incorrect email or password');
       }
@@ -122,18 +128,23 @@ export default function Login() {
               />
             </div>
 
-            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', position: 'relative' }}>
               <label htmlFor="login-password" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Password</label>
-              <input
-                id="login-password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-                style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  style={{ width: '100%', padding: '10px 40px 10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
             </div>
 
             <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>

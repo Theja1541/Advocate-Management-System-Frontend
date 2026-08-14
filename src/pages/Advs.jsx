@@ -12,6 +12,7 @@ import {
 } from '../services/advocateService';
 import { getCases } from '../services/caseService';
 import { getRoles } from '../services/roleService';
+import { getUsers } from '../services/userService';
 
 const emptyForm = {
   name: '',
@@ -25,6 +26,8 @@ const emptyForm = {
   createLogin: true,
   password: '',
   roleId: '',
+  tenantAdminId: '',
+  groupAdminIds: [],
 };
 
 const STATUS_FILTERS = [
@@ -66,6 +69,8 @@ const experienceYears = (experience) => {
 export default function Advs() {
   const { hasPermission, user } = useAuth();
   const canEdit = hasPermission('advs', 'E');
+  const rawRole = typeof user?.role === 'object' ? (user?.role?.name || '') : String(user?.role || '');
+  const isGroupAdminUser = /group[\s_]?admin/i.test(rawRole);
 
   const [advocates, setAdvocates] = useState([]);
   const [cases, setCases] = useState([]);
@@ -81,30 +86,34 @@ export default function Advs() {
   const [editingAdvocate, setEditingAdvocate] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [roles, setRoles] = useState([]);
+  const [systemUsers, setSystemUsers] = useState([]);
 
   const loadAdvocates = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [advocatesResult, casesResult, rolesResult] = await Promise.allSettled([
+      const [advocatesResult, casesResult, rolesResult, usersResult] = await Promise.allSettled([
         getAdvocates(),
         getCases(),
         getRoles(),
+        getUsers(),
       ]);
 
       if (advocatesResult.status === 'rejected') {
         throw advocatesResult.reason;
       }
 
-      setAdvocates(advocatesResult.value || []);
+      let rows = advocatesResult.value || [];
+      setAdvocates(rows);
       setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
       setRoles(rolesResult.status === 'fulfilled' ? rolesResult.value || [] : []);
+      setSystemUsers(usersResult.status === 'fulfilled' ? usersResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load advocates');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isGroupAdminUser, user?.id]);
 
   useEffect(() => {
     loadAdvocates();
@@ -172,6 +181,8 @@ export default function Advs() {
       createLogin: !advocate.hasLogin,
       password: '',
       roleId: advocate.roleId || '',
+      tenantAdminId: advocate.tenantAdmin?.id ? String(advocate.tenantAdmin.id) : '',
+      groupAdminIds: (advocate.groupAdmins || []).map(ga => String(ga.id)),
     });
     setError('');
     setIsModalOpen(true);
@@ -225,6 +236,8 @@ export default function Advs() {
       experience: String(form.experience).trim(),
       relation: form.relation,
       status: form.status,
+      tenantAdminId: form.tenantAdminId ? parseInt(form.tenantAdminId, 10) : undefined,
+      groupAdminIds: form.groupAdminIds.map(id => parseInt(id, 10)),
     };
 
     if (wantsLogin && !form.roleId) {
@@ -248,13 +261,11 @@ export default function Advs() {
     try {
       if (editingAdvocate) {
         const updated = await updateAdvocate(editingAdvocate.id, payload);
-        setAdvocates((prev) =>
-          prev.map((a) => (a.id === updated.id ? updated : a))
-        );
+        await loadAdvocates();
         setSelectedViewAdvocate(updated);
       } else {
-        const created = await createAdvocate(payload);
-        setAdvocates((prev) => [...prev, created]);
+        await createAdvocate(payload);
+        await loadAdvocates();
       }
       closeModal();
     } catch (err) {
@@ -403,10 +414,14 @@ export default function Advs() {
                     <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: 'var(--space-1)', flexWrap: 'wrap' }}>
                       <Chip type={relationChipType(relation)} label={relation} />
                       {a.hasLogin && <Chip type="success" label="Login enabled" />}
+                      {a.groupAdmins && a.groupAdmins.map((ga) => (
+                        <Chip key={ga.id} type="primary" label={`GA: ${ga.name}`} />
+                      ))}
                       {a.status === 'inactive' && (
                         <Chip type="ghost" label="Inactive" />
                       )}
                     </div>
+
                   </div>
                 </div>
                 <div
@@ -539,6 +554,31 @@ export default function Advs() {
                 <span className="mono" style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{getCaseload(selectedViewAdvocate.id)}</span>
               </div>
             </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
+              <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Assigned Group Admins</span>
+              {selectedViewAdvocate.groupAdmins && selectedViewAdvocate.groupAdmins.length > 0 ? (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {selectedViewAdvocate.groupAdmins.map((ga) => (
+                    <Chip key={ga.id} type="primary" label={`${ga.name} (${ga.email})`} />
+                  ))}
+                </div>
+              ) : (
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No Group Admins assigned yet.</span>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 'var(--space-3)' }}>
+              <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Assigned Tenant Admin</span>
+              {selectedViewAdvocate.tenantAdmin ? (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <Chip type="primary" label={`${selectedViewAdvocate.tenantAdmin.name} (${selectedViewAdvocate.tenantAdmin.email})`} />
+                </div>
+              ) : (
+                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No Tenant Admin assigned explicitly.</span>
+              )}
+            </div>
+
 
             <div style={{ marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)', display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end', borderTop: '1px solid var(--border)' }}>
               <button type="button" className="btn secondary" onClick={() => setIsViewModalOpen(false)}>Close</button>
@@ -673,6 +713,49 @@ export default function Advs() {
             </FormGrid>
           </FormSection>
 
+          {canEdit && (
+            <FormSection title="Assignments">
+              <FormGrid columns={2}>
+                <FormField label="Assigned Tenant Admin">
+                  <select
+                    value={form.tenantAdminId}
+                    onChange={setField('tenantAdminId')}
+                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                  >
+                    <option value="">Select Tenant Admin (Optional)</option>
+                    {systemUsers
+                      .filter(u => {
+                        const rn = u.role?.name?.toLowerCase() || '';
+                        return rn.includes('tenant admin') || rn === 'admin';
+                      })
+                      .map(ta => (
+                        <option key={ta.id} value={ta.id}>{ta.name}</option>
+                      ))}
+                  </select>
+                </FormField>
+
+                <FormField label="Assigned Group Admins">
+                  <select
+                    multiple
+                    value={form.groupAdminIds}
+                    onChange={(e) => setForm(p => ({ ...p, groupAdminIds: Array.from(e.target.selectedOptions, option => option.value) }))}
+                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)', minHeight: '80px' }}
+                  >
+                    {systemUsers
+                      .filter(u => {
+                        const rn = u.role?.name?.toLowerCase() || '';
+                        return rn.includes('group admin');
+                      })
+                      .map(ga => (
+                        <option key={ga.id} value={ga.id}>{ga.name}</option>
+                      ))}
+                  </select>
+                  <small style={{ display: 'block', marginTop: '4px', color: 'var(--text-secondary)' }}>Hold Ctrl/Cmd to select multiple</small>
+                </FormField>
+              </FormGrid>
+            </FormSection>
+          )}
+
           {((!editingAdvocate && form.email) || (editingAdvocate && !editingAdvocate.hasLogin)) && (
             <FormSection title="Login Details">
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
@@ -705,7 +788,16 @@ export default function Advs() {
                     >
                       <option value="">Select Role</option>
                       {roles
-                        .filter(r => user?.role === 'Super Admin' || r.name !== 'Super Admin')
+                        .filter(r => {
+                          const normalized = r.name ? r.name.toLowerCase() : '';
+                          const isSuperAdminRole = normalized.includes('super admin');
+                          const isTenantAdminRole = normalized.includes('tenant admin') || normalized === 'admin';
+                          const isGroupAdminRole = normalized.includes('group admin');
+                          
+                          if (user?.role === 'Super Admin') return true;
+                          // Non-super admins cannot create Super Admin, Tenant Admin, or Group Admin login accounts via Add Advocate modal
+                          return !isSuperAdminRole && !isTenantAdminRole && !isGroupAdminRole;
+                        })
                         .map(r => (
                           <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
@@ -728,7 +820,15 @@ export default function Advs() {
                   >
                     <option value="">Select Role</option>
                     {roles
-                      .filter(r => user?.role === 'Super Admin' || r.name !== 'Super Admin')
+                      .filter(r => {
+                        const normalized = r.name ? r.name.toLowerCase() : '';
+                        const isSuperAdminRole = normalized.includes('super admin');
+                        const isTenantAdminRole = normalized.includes('tenant admin') || normalized === 'admin';
+                        const isGroupAdminRole = normalized.includes('group admin');
+                        
+                        if (user?.role === 'Super Admin') return true;
+                        return !isSuperAdminRole && !isTenantAdminRole && !isGroupAdminRole;
+                      })
                       .map(r => (
                         <option key={r.id} value={r.id}>{r.name}</option>
                     ))}

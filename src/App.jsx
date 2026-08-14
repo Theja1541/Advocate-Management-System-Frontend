@@ -13,6 +13,7 @@ import { Suspense } from 'react';
 
 // Page components using lazy loading for route-based code splitting
 const Login = React.lazy(() => import('./pages/Login'));
+const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Cases = React.lazy(() => import('./pages/Cases'));
 const CaseApproval = React.lazy(() => import('./pages/CaseApproval'));
@@ -23,6 +24,8 @@ const Refs = React.lazy(() => import('./pages/Refs'));
 const Land = React.lazy(() => import('./pages/Land'));
 const Opinions = React.lazy(() => import('./pages/Opinions'));
 const Advs = React.lazy(() => import('./pages/Advs'));
+const GroupAdmins = React.lazy(() => import('./pages/GroupAdmins'));
+
 const Clients = React.lazy(() => import('./pages/Clients'));
 const Member = React.lazy(() => import('./pages/Member'));
 const Daybook = React.lazy(() => import('./pages/Daybook'));
@@ -70,6 +73,19 @@ const AppContent = () => {
     );
   }
 
+  const { user } = useAuth();
+  
+  if (user?.mustChangePassword) {
+    return (
+      <Suspense fallback={<GlobalLoader forceShow={true} />}>
+        <Routes>
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="*" element={<Navigate to="/change-password" replace />} />
+        </Routes>
+      </Suspense>
+    );
+  }
+
   return (
     <div className={`wrap ${isSidebarCollapsed ? 'collapsed' : ''}`}>
       <Sidebar isCollapsed={isSidebarCollapsed} toggleSidebar={toggleSidebar} closeMobileMenu={closeSidebarOnMobile} />
@@ -88,6 +104,7 @@ const AppContent = () => {
           <Suspense fallback={<GlobalLoader forceShow={true} />}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/change-password" element={<ChangePassword />} />
               <Route path="/cases" element={<ProtectedRoute element={<Cases />} moduleKey="cases" />} />
               <Route path="/approve" element={<ProtectedRoute element={<CaseApproval />} moduleKey="approve" />} />
               <Route path="/hearings" element={<ProtectedRoute element={<Hearings />} moduleKey="diary" />} />
@@ -97,6 +114,8 @@ const AppContent = () => {
               <Route path="/land" element={<ProtectedRoute element={<Land />} moduleKey="land" />} />
               <Route path="/opinions" element={<ProtectedRoute element={<Opinions />} moduleKey="opinions" />} />
               <Route path="/advs" element={<ProtectedRoute element={<Advs />} moduleKey="advs" />} />
+              <Route path="/group-admins" element={<ProtectedRoute element={<GroupAdmins />} moduleKey="group-admins" />} />
+
               <Route path="/clients" element={<ProtectedRoute element={<Clients />} moduleKey="clients" />} />
               <Route path="/member" element={<ProtectedRoute element={<Member />} moduleKey="member" />} />
               <Route path="/daybook" element={<ProtectedRoute element={<Daybook />} moduleKey="daybook" />} />

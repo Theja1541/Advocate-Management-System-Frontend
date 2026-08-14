@@ -1090,17 +1090,46 @@ footer .fr{border-top:1px solid var(--rule);padding-top:12px;font-family:'IBM Pl
   }
   
   /* Header wrapping options */
+  header {
+    height: auto !important;
+    padding-bottom: 8px;
+  }
   .hwrap {
-    padding: 8px 12px !important;
+    flex-wrap: wrap;
+    padding: 8px 16px !important;
     gap: 8px !important;
+    justify-content: space-between;
+  }
+  .logo {
+    order: 1;
+    margin-right: auto;
+  }
+  .hright {
+    display: contents;
+  }
+  .bell {
+    order: 2;
+  }
+  .me {
+    order: 3;
+    padding-left: 12px;
+    border-left: none;
+    gap: 8px;
+  }
+  .me .w {
+    display: none;
+  }
+  .me .btn.signout-btn {
+    padding: 6px 10px;
+    font-size: 11px;
   }
   
   /* Stack search field on top of items */
   .find {
     min-width: 100% !important;
-    order: 3;
+    order: 4;
     margin-top: 6px;
-    padding: 6px 10px !important;
+    padding: 8px 12px !important;
   }
   
   /* Spacing overrides for mobile containers */

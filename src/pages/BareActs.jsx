@@ -564,7 +564,7 @@ export default function BareActs() {
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
                 <button type="button" className="btn g" onClick={() => setShowCreateModal(false)}>Cancel</button>
-                <button type="submit" className="btn" disabled={isSubmitting}>
+                <button type="submit" className="btn primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Uploading...' : 'Save'}
                 </button>
               </div>
@@ -623,7 +623,7 @@ export default function BareActs() {
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
                 <button type="button" className="btn g" onClick={() => setShowEditModal(false)}>Cancel</button>
-                <button type="submit" className="btn" disabled={isSubmitting}>
+                <button type="submit" className="btn primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Updating...' : 'Save'}
                 </button>
               </div>

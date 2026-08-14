@@ -32,7 +32,9 @@ const emptyForm = {
 const isBlankId = (value) => !value || value === '—';
 
 export default function Clients() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
+  const rawRole = typeof user?.role === 'object' ? (user?.role?.name || '') : String(user?.role || '');
+  const isGroupAdminUser = /group[\s_]?admin/i.test(rawRole);
   const [clients, setClients] = useState([]);
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,14 +58,20 @@ export default function Clients() {
         throw clientsResult.reason;
       }
 
-      setClients(clientsResult.value || []);
+      let rows = clientsResult.value || [];
+      if (isGroupAdminUser && user?.id != null) {
+        rows = rows.filter(
+          (c) => Number(c.createdBy ?? c.created_by) === Number(user.id)
+        );
+      }
+      setClients(rows);
       setCases(casesResult.status === 'fulfilled' ? casesResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load clients');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isGroupAdminUser, user?.id]);
 
   useEffect(() => {
     loadClients();

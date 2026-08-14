@@ -5,7 +5,8 @@ export const NAV = [
    { k: 'land', l: 'Land Details' }, 
    { k: 'opinions', l: 'Legal Opinions' }
  ] },
- { g: 'People', items: [{ k: 'advs', l: 'Advocates' }, { k: 'clients', l: 'Clients' }, { k: 'member', l: 'Membership' }] },
+ { g: 'People', items: [{ k: 'group-admins', l: 'Group Admins' }, { k: 'advs', l: 'Advocates' }, { k: 'clients', l: 'Clients' }, { k: 'member', l: 'Membership' }] },
+
  { g: 'Office', items: [{ k: 'daybook', l: 'Day Book' }, { k: 'pay', l: 'Payments' }, { k: 'alerts', l: 'Notification Center' }, { k: 'reports', l: 'Reports' }] },
  { g: 'Library', items: [{ k: 'acts', l: 'Bare Acts' }, { k: 'amend', l: 'Amendment Tracker' }, { k: 'legalTexts', l: 'Legal Texts' }] },
  { g: 'Tools', items: [{ k: 'tools', l: 'Calculators' }] },

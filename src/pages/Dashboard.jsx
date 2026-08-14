@@ -80,6 +80,90 @@ export default function Dashboard() {
   const overdue = activeAlerts.filter(a => a.alertType.includes('OVERDUE') || a.alertType.includes('MISSED')).length;
   const totalActive = activeAlerts.length;
 
+  if (isSuperAdmin) {
+    const totalTenants = superStats?.totalTenants ?? superStats?.total ?? 0;
+    const activeTenants = superStats?.activeTenants ?? superStats?.active ?? 0;
+    const suspendedTenants = superStats?.suspendedTenants ?? superStats?.suspended ?? (totalTenants - activeTenants);
+
+    return (
+      <>
+        <PageHeader
+          title="Super Admin Dashboard"
+          description="Overview of platform tenants, active subscriptions, and administrative settings."
+          actions={
+            <button className="btn primary" onClick={() => navigate('/tenants')}>
+              Manage Tenants
+            </button>
+          }
+        />
+
+        {error ? (
+          <div className="card" style={{ marginBottom: 'var(--space-2)', color: 'var(--danger)', padding: 'var(--space-3)' }}>
+            {error}
+            <button type="button" className="btn outline sm" style={{ marginLeft: 'var(--space-2)' }} onClick={loadDashboard}>
+              Retry
+            </button>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="card">
+            <div className="empty">Loading super admin dashboard…</div>
+          </div>
+        ) : (
+          <>
+            <h3 style={{ marginTop: 'var(--space-3)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-heading)' }}>
+              Tenant Metrics
+            </h3>
+            <div className="kpis">
+              <div style={{ cursor: 'pointer' }} onClick={() => navigate('/tenants')}>
+                <KPICard label="Total Tenants" value={totalTenants} status="all registered law firms / organizations" />
+              </div>
+              <div style={{ cursor: 'pointer' }} onClick={() => navigate('/tenants')}>
+                <KPICard label="Active Tenants" value={activeTenants} status="currently operational" type="success" />
+              </div>
+              <div style={{ cursor: 'pointer' }} onClick={() => navigate('/tenants')}>
+                <KPICard label="Suspended Tenants" value={suspendedTenants} status="account suspended or inactive" type="danger" />
+              </div>
+            </div>
+
+            <div className="card" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+                <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)' }}>Quick Portal Navigation</h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                <div 
+                  className="card" 
+                  style={{ padding: '16px', cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s' }}
+                  onClick={() => navigate('/tenants')}
+                >
+                  <h4 style={{ margin: '0 0 8px 0', color: 'var(--primary)' }}>Tenants Management</h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)' }}>Create, edit, suspend, and view details of all tenant law firms.</p>
+                </div>
+                <div 
+                  className="card" 
+                  style={{ padding: '16px', cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s' }}
+                  onClick={() => navigate('/settings/plans')}
+                >
+                  <h4 style={{ margin: '0 0 8px 0', color: 'var(--primary)' }}>Subscription Plans</h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)' }}>Manage pricing tiers, user limits, and storage quotas.</p>
+                </div>
+                <div 
+                  className="card" 
+                  style={{ padding: '16px', cursor: 'pointer', border: '1px solid var(--border)', transition: 'all 0.2s' }}
+                  onClick={() => navigate('/settings/tenant')}
+                >
+                  <h4 style={{ margin: '0 0 8px 0', color: 'var(--primary)' }}>Tenant Settings</h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)' }}>Configure custom platform branding and tenant logo.</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
