@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { DEMO_CREDENTIALS } from '../data/credentials';
 import { login as loginRequest } from '../services/authService';
 import { getPublicSettings } from '../services/settingsService';
 
@@ -31,12 +30,6 @@ export default function Login() {
 
   const initialsFromName = (name = '') =>
     name.split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2).toUpperCase() || 'U';
-
-  const applyDemo = (cred) => {
-    setEmail(cred.email);
-    setPassword(cred.password);
-    setErrorMsg('');
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -154,27 +147,6 @@ export default function Login() {
               {loading ? 'Signing In…' : 'Sign In'}
             </button>
           </form>
-
-          <div className="login-demos" style={{ marginTop: '24px' }}>
-            <div className="login-demos-label" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', marginBottom: '12px' }}>Demo credentials — click to fill</div>
-            <div className="login-demos-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {DEMO_CREDENTIALS.map((cred) => (
-                <button
-                  key={cred.email}
-                  type="button"
-                  className={`btn outline sm${email === cred.email ? ' is-active' : ''}`}
-                  onClick={() => applyDemo(cred)}
-                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 'var(--radius-md)' }}
-                >
-                  <div style={{ minWidth: 0, textAlign: 'left' }}>
-                    <div className="login-demo-role" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{cred.role}</div>
-                    <div className="login-demo-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>{cred.email}</div>
-                  </div>
-                  <div className="login-demo-pass" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>{cred.password}</div>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
     </div>
