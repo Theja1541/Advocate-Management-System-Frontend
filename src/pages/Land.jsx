@@ -11,13 +11,15 @@ import {
   updateLand,
   deleteLand,
 } from '../services/landService';
-import { getClients } from '../services/clientService';
+import { getClients, createClient } from '../services/clientService';
 import { getCases } from '../services/caseService';
 import { getAdvocates } from '../services/advocateService';
 import { getTitleSearches, createTitleSearch, deleteTitleSearch } from '../services/titleSearchService';
 import { getDocuments, uploadDocument, downloadDocument, deleteDocument } from '../services/documentService';
 import { getDocumentCategories } from '../services/caseMastersService';
 import SearchableSelect from '../components/ui/SearchableSelect';
+import { FormSection, FormGrid, FormField } from '../components/ui/FormLayout';
+import { formatAadhaar, formatPan, formatMobile } from '../utils/formatters';
 
 
 const ENC = {
@@ -100,6 +102,57 @@ export default function Land() {
   const [selectedViewLand, setSelectedViewLand] = useState(null);
   const [editingLand, setEditingLand] = useState(null);
   const [form, setForm] = useState(emptyForm);
+
+  const [isAddClientModalOpen, setIsAddClientModalOpen] = useState(false);
+  const [clientForm, setClientForm] = useState({
+    name: '',
+    mobile: '',
+    email: '',
+    village: '',
+    aadhaarMasked: '',
+    panMasked: '',
+  });
+  const [clientSaving, setClientSaving] = useState(false);
+  const [clientError, setClientError] = useState('');
+
+  const handleAddClientSubmit = async (e) => {
+    e.preventDefault();
+    if (!clientForm.name.trim() || !clientForm.mobile.trim()) {
+      setClientError('Please fill out Name and Mobile number.');
+      return;
+    }
+    const aadhaarDigits = clientForm.aadhaarMasked.replace(/\D/g, '');
+    if (clientForm.aadhaarMasked.trim() && aadhaarDigits.length !== 12) {
+      setClientError('Aadhaar must be 12 digits.');
+      return;
+    }
+    const pan = clientForm.panMasked.trim().toUpperCase();
+    if (pan && !/^[A-Z]{5}\d{4}[A-Z]$/.test(pan)) {
+      setClientError('PAN must be in format ABCDE1234F.');
+      return;
+    }
+    setClientSaving(true);
+    setClientError('');
+    const payload = {
+      name: clientForm.name.trim(),
+      mobile: clientForm.mobile.trim(),
+      email: clientForm.email.trim() || undefined,
+      village: clientForm.village.trim() || undefined,
+      aadhaarMasked: clientForm.aadhaarMasked.trim() || undefined,
+      panMasked: pan || undefined,
+    };
+    try {
+      const created = await createClient(payload);
+      setClients((prev) => [...prev, created]);
+      setForm((prev) => ({ ...prev, clientId: String(created.id) }));
+      setIsAddClientModalOpen(false);
+      setClientForm({ name: '', mobile: '', email: '', village: '', aadhaarMasked: '', panMasked: '' });
+    } catch (err) {
+      setClientError(err.message || 'Failed to create client');
+    } finally {
+      setClientSaving(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -463,12 +516,12 @@ export default function Land() {
         </div>
       </div>
 
-      <div className="filt">
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {filterButtons.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={filter === btn.key ? 'on' : ''}
+            className={`btn ${filter === btn.key ? 'primary' : 'secondary'}`}
             onClick={() => setFilter(btn.key)}
           >
             {btn.label}
@@ -911,7 +964,21 @@ export default function Land() {
           </div>
 
           <div className="f" style={{ marginTop: '12px' }}>
-            <label>Client / Owner</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label style={{ margin: 0 }}>Client / Owner</label>
+              <button
+                type="button"
+                className="btn sm"
+                style={{ padding: '2px 8px', fontSize: '11px', background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)' }}
+                onClick={() => {
+                  setClientForm({ name: '', mobile: '', email: '', village: '', aadhaarMasked: '', panMasked: '' });
+                  setClientError('');
+                  setIsAddClientModalOpen(true);
+                }}
+              >
+                + Add Client
+              </button>
+            </div>
             <SearchableSelect
               options={clients}
               value={form.clientId}
@@ -1340,6 +1407,53 @@ export default function Land() {
             <button type="submit" className="btn primary" disabled={saving}>
               {saving ? 'Uploading...' : 'Upload Document'}
             </button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        isOpen={isAddClientModalOpen}
+        onClose={() => setIsAddClientModalOpen(false)}
+        title="Add Client"
+      >
+        <form onSubmit={handleAddClientSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {clientError && (
+            <div style={{ padding: 'var(--space-2) var(--space-3)', backgroundColor: 'rgba(235, 94, 85, 0.1)', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-sm)' }}>
+              {clientError}
+            </div>
+          )}
+          <FormSection title="Personal Information">
+            <FormGrid columns={2}>
+              <FormField label="Client Name" required={true}>
+                <input type="text" placeholder="e.g. K. Subbarayudu" value={clientForm.name} onChange={(e) => setClientForm(p => ({ ...p, name: e.target.value }))} required />
+              </FormField>
+              <FormField label="Mobile" required={true}>
+                <input type="text" inputMode="tel" placeholder="+91 98765 43210" value={clientForm.mobile} onChange={(e) => setClientForm(p => ({ ...p, mobile: formatMobile(e.target.value) }))} maxLength={17} required />
+              </FormField>
+              <FormField label="Email">
+                <input type="email" placeholder="e.g. name@mail.in" value={clientForm.email} onChange={(e) => setClientForm(p => ({ ...p, email: e.target.value }))} />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+          <FormSection title="Address Details">
+            <FormGrid columns={1}>
+              <FormField label="Village / Town">
+                <input type="text" placeholder="e.g. Kalikiri" value={clientForm.village} onChange={(e) => setClientForm(p => ({ ...p, village: e.target.value }))} />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+          <FormSection title="Identity Documents">
+            <FormGrid columns={2}>
+              <FormField label="Aadhaar">
+                <input type="text" inputMode="numeric" placeholder="1234 5678 9012" value={clientForm.aadhaarMasked} onChange={(e) => setClientForm(p => ({ ...p, aadhaarMasked: formatAadhaar(e.target.value) }))} maxLength={14} />
+              </FormField>
+              <FormField label="PAN">
+                <input type="text" placeholder="ABCDE1234F" value={clientForm.panMasked} onChange={(e) => setClientForm(p => ({ ...p, panMasked: formatPan(e.target.value) }))} maxLength={10} style={{ textTransform: 'uppercase' }} />
+              </FormField>
+            </FormGrid>
+          </FormSection>
+          <div className="modal-foot" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-3) 0 0', display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn ghost" onClick={() => setIsAddClientModalOpen(false)} disabled={clientSaving}>Cancel</button>
+            <button type="submit" className="btn primary" disabled={clientSaving}>{clientSaving ? 'Saving…' : 'Add Client'}</button>
           </div>
         </form>
       </Modal>

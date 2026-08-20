@@ -299,24 +299,24 @@ export default function Tasks() {
         </div>
       </div>
 
-      <div className="filt" style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button
           type="button"
-          className={statusFilter === 'all' ? 'btn primary' : 'btn ghost'}
+          className={`btn ${statusFilter === 'all' ? 'primary' : 'secondary'}`}
           onClick={() => setStatusFilter('all')}
         >
           All Tasks
         </button>
         <button
           type="button"
-          className={statusFilter === 'pending' ? 'btn primary' : 'btn ghost'}
+          className={`btn ${statusFilter === 'pending' ? 'primary' : 'secondary'}`}
           onClick={() => setStatusFilter('pending')}
         >
           Pending
         </button>
         <button
           type="button"
-          className={statusFilter === 'completed' ? 'btn primary' : 'btn ghost'}
+          className={`btn ${statusFilter === 'completed' ? 'primary' : 'secondary'}`}
           onClick={() => setStatusFilter('completed')}
         >
           Completed

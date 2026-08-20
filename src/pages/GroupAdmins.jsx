@@ -22,7 +22,7 @@ export default function GroupAdmins() {
   // Modal States
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingGA, setEditingGA] = useState(null);
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', status: 'active' });
+  const [formData, setFormData] = useState({ name: '', email: '',  status: 'active' });
 
   // Advocate Assignment Modal
   const [assigningGA, setAssigningGA] = useState(null);
@@ -66,7 +66,7 @@ export default function GroupAdmins() {
       }
       setIsCreateModalOpen(false);
       setEditingGA(null);
-      setFormData({ name: '', email: '', password: '', status: 'active' });
+      setFormData({ name: '', email: '',  status: 'active' });
       fetchGroupAdmins();
     } catch (err) {
       notify(err.response?.data?.message || 'Operation failed', 'error');
@@ -75,7 +75,7 @@ export default function GroupAdmins() {
 
   const openEditModal = (ga) => {
     setEditingGA(ga);
-    setFormData({ name: ga.name, email: ga.email, password: '', status: ga.status || 'active' });
+    setFormData({ name: ga.name, email: ga.email,  status: ga.status || 'active' });
     setIsCreateModalOpen(true);
   };
 
@@ -122,18 +122,6 @@ export default function GroupAdmins() {
     }
   };
 
-  const handleResetPassword = async (ga) => {
-    if (!window.confirm(`Are you sure you want to reset the password for ${ga.name}?`)) return;
-    try {
-      const res = await resetUserPassword(ga.id);
-      if (res.status === 'success') {
-        notify(`Password reset successful.`, 'success');
-        window.alert(`Temporary password for ${ga.name}:\n\n${res.tempPassword}\n\nPlease copy this securely and provide it to the user. It will not be shown again.`);
-      }
-    } catch (err) {
-      notify(err.response?.data?.message || 'Failed to reset password', 'error');
-    }
-  };
 
   const handleAdvocateSearch = async (val) => {
     setAdvocateSearchQuery(val);
@@ -187,161 +175,7 @@ export default function GroupAdmins() {
         </div>
 
         {isTenantAdminOrSuper && (
-          <button
-            onClick={() => {
-              setEditingGA(null);
-              setFormData({ name: '', email: '', password: '', status: 'active' });
-              setIsCreateModalOpen(true);
-            }}
-            className="btn btn-primary"
-            style={{
-              padding: '10px 18px',
-              fontSize: '13.5px',
-              fontWeight: '600',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              cursor: 'pointer',
-            }}
-          >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Create Group Admin
-          </button>
-        )}
-      </div>
-
-      {/* Filter / Search Bar */}
-      <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search Group Admins by name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: '10px 14px',
-            fontSize: '13.5px',
-            borderRadius: '8px',
-            border: '1px solid var(--border-color, #e2e8f0)',
-            background: 'var(--bg-card, #ffffff)',
-          }}
-        />
-      </div>
-
-      {/* Table List */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>Loading Group Admins...</div>
-      ) : filteredGAs.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '48px',
-            background: 'var(--bg-card, #ffffff)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-color, #e2e8f0)',
-          }}
-        >
-          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="var(--muted, #94a3b8)" strokeWidth="1.5">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-          </svg>
-          <h3 style={{ marginTop: '12px', color: 'var(--text-main)' }}>No Group Admins Found</h3>
-          <p style={{ fontSize: '13px', color: 'var(--muted)' }}>
-            {search ? 'No matching records found for search filter.' : 'Create a Group Admin to get started.'}
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            background: 'var(--bg-card, #ffffff)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-color, #e2e8f0)',
-            overflow: 'hidden',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13.5px' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-header, #f8fafc)', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
-                <th style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-muted, #475569)' }}>Name</th>
-                <th style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-muted, #475569)' }}>Email</th>
-                <th style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-muted, #475569)' }}>Status</th>
-                <th style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-muted, #475569)' }}>Assigned Advocates</th>
-                <th style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-muted, #475569)', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredGAs.map((ga) => (
-                <tr
-                  key={ga.id}
-                  style={{ borderBottom: '1px solid var(--border-color, #f1f5f9)', transition: 'background 0.15s' }}
-                >
-                  <td style={{ padding: '14px 18px', fontWeight: '600', color: 'var(--text-main, #0f172a)' }}>
-                    {ga.name}
-                  </td>
-                  <td style={{ padding: '14px 18px', color: 'var(--muted, #64748b)' }}>{ga.email}</td>
-                  <td style={{ padding: '14px 18px' }}>
-                    <span
-                      style={{
-                        padding: '3px 10px',
-                        borderRadius: '12px',
-                        fontSize: '11.5px',
-                        fontWeight: '600',
-                        textTransform: 'uppercase',
-                        background: ga.status === 'active' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: ga.status === 'active' ? '#15803d' : '#b91c1c',
-                      }}
-                    >
-                      {ga.status || 'active'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px 18px' }}>
-                    <button
-                      onClick={() => openAssignModal(ga)}
-                      style={{
-                        background: 'rgba(37, 99, 235, 0.08)',
-                        color: '#2563eb',
-                        border: '1px solid rgba(37, 99, 235, 0.2)',
-                        padding: '4px 12px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}
-                    >
-                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                      </svg>
-                      {ga.advocateCount || (ga.assignedAdvocates ? ga.assignedAdvocates.length : 0)} Advocate(s)
-                    </button>
-                  </td>
-                  <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                      <button
-                        onClick={() => openAssignModal(ga)}
-                        className="btn btn-sm btn-outline-secondary"
-                        style={{ padding: '5px 10px', fontSize: '12px' }}
-                      >
-                        Manage Advocates
-                      </button>
-                      {isTenantAdminOrSuper && (
-                        <>
-                          <button
-                            onClick={() => handleResetPassword(ga)}
-                            className="btn btn-sm btn-outline-secondary"
-                            style={{ padding: '5px 10px', fontSize: '12px' }}
-                          >
-                            Reset Password
-                          </button>
+          
                           <button
                             onClick={() => openEditModal(ga)}
                             className="btn btn-sm btn-outline-primary"
@@ -409,23 +243,6 @@ export default function GroupAdmins() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-color, #cbd5e1)',
-                  }}
-                />
-              </div>
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '600', marginBottom: '6px' }}>
-                  Password {editingGA ? '(Leave blank to keep unchanged)' : '*'}
-                </label>
-                <input
-                  type="password"
-                  required={!editingGA}
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -659,3 +476,6 @@ export default function GroupAdmins() {
     </div>
   );
 }
+
+
+

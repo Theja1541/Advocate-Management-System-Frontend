@@ -24,7 +24,7 @@ import PdfFindViewer from '../components/documents/PdfFindViewer';
 import { useSmartText } from '../hooks/useSmartText';
 import SmartTextGroupModal from '../components/ui/SmartTextGroupModal';
 import SmartTextContextPanel from '../components/ui/SmartTextContextPanel';
-
+import DocumentCategoriesModal from '../components/documents/DocumentCategoriesModal';
 const emptyForm = {
   name: '',
   documentCategoryId: '',
@@ -96,6 +96,7 @@ export default function Docs() {
   });
   const [filter, setFilter] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [viewerState, setViewerState] = useState({
@@ -649,9 +650,14 @@ export default function Docs() {
   ];
 
   const headerActions = canEdit ? (
-    <button className="btn primary" onClick={openModal} disabled={!cases.length}>
-      Upload document
-    </button>
+    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+      <button className="btn secondary" onClick={() => setIsCategoryModalOpen(true)}>
+        Document Categories
+      </button>
+      <button className="btn primary" onClick={openModal} disabled={!cases.length}>
+        Upload document
+      </button>
+    </div>
   ) : null;
 
   return (
@@ -661,6 +667,7 @@ export default function Docs() {
         description="Everything filed, ordered or received — held against the case it belongs to."
         actions={headerActions}
       />
+      <DocumentCategoriesModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)} />
 
       <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
         <div className="fgrid">

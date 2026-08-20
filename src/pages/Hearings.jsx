@@ -452,25 +452,33 @@ export default function Hearings() {
         </div>
       </div>
 
-      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
-        <button type="button" className={`btn sm ${statusFilter === 'all' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('all')}>All Statuses</button>
-        <button type="button" className={`btn sm ${statusFilter === 'Scheduled' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Scheduled')}>Scheduled</button>
-        <button type="button" className={`btn sm ${statusFilter === 'In Progress' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('In Progress')}>In Progress</button>
-        <button type="button" className={`btn sm ${statusFilter === 'Completed' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Completed')}>Completed</button>
-        <button type="button" className={`btn sm ${statusFilter === 'Adjourned' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Adjourned')}>Adjourned</button>
-        <button type="button" className={`btn sm ${statusFilter === 'Cancelled' ? 'primary' : 'outline'}`} onClick={() => setStatusFilter('Cancelled')}>Cancelled</button>
-      </div>
       <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
-        {courtFilters.map((btn) => (
-          <button
-            key={btn.key}
-            type="button"
-            className={`btn sm ${courtFilter === btn.key ? 'primary' : 'outline'}`}
-            onClick={() => setCourtFilter(btn.key)}
-          >
-            {btn.label}
-          </button>
-        ))}
+        <select
+          className="input"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{ padding: '8px 12px', border: '1px solid var(--rule)', borderRadius: '6px' }}
+        >
+          <option value="all">All Statuses</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+          <option value="Adjourned">Adjourned</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+
+        <select
+          className="input"
+          value={courtFilter}
+          onChange={(e) => setCourtFilter(e.target.value)}
+          style={{ padding: '8px 12px', border: '1px solid var(--rule)', borderRadius: '6px' }}
+        >
+          {courtFilters.map((btn) => (
+            <option key={btn.key} value={btn.key}>
+              {btn.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && !isModalOpen && (

@@ -5,7 +5,6 @@ import Chip from '../components/ui/Chip';
 import DataTable from '../components/ui/DataTable';
 import { inr } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
-import { LADDER } from '../data/mockData';
 import { getCases, updateCase } from '../services/caseService';
 import { getClients } from '../services/clientService';
 import { getCaseTypes } from '../services/caseMastersService';
@@ -13,12 +12,6 @@ import { getCaseTypes } from '../services/caseMastersService';
 const TITLE_META_SEP = ' :: ';
 const TITLE_VS_SEP = ' — vs ';
 
-const LEVEL_FILTERS = [
-  { key: 'all', label: 'All pending' },
-  { key: '0', label: 'Level 1' },
-  { key: '1', label: 'Level 2' },
-  { key: '2', label: 'Level 3' },
-];
 
 const parseTitle = (title = '') => {
   const [head = '', stage = 'Filing', val = '0', fee = '10'] = String(title).split(TITLE_META_SEP);
@@ -52,12 +45,49 @@ const formatHistoryDate = (value) => {
 const getApprovalLevel = (c) => {
   const level = Number(c.approvalLevel);
   if (Number.isNaN(level) || level < 0) return 0;
-  return Math.min(3, level);
+  return level;
 };
 
 export default function CaseApproval() {
-  const { hasPermission, user } = useAuth();
+  const { hasPermission, user, permByRole } = useAuth();
   const canApprove = hasPermission('approve', 'A');
+
+  const approvalLadder = React.useMemo(() => {
+    if (!permByRole) return [];
+    
+    const rolesWithA = [];
+    Object.keys(permByRole).forEach((roleName) => {
+      const perms = permByRole[roleName];
+      const acc = perms['approve'] || perms['Case Approval'];
+      if (acc && acc.includes('A') && roleName !== 'Group Admin') {
+        rolesWithA.push(roleName);
+      }
+    });
+
+    const hierarchy = [
+      'Staff/Bearer',
+      'Advocate',
+      'Sub Admin',
+      'Admin',
+      'Tenant Admin',
+      'Super Admin'
+    ];
+
+    const ladderRoles = hierarchy.filter(h => rolesWithA.includes(h));
+    const others = rolesWithA.filter(r => !hierarchy.includes(r)).sort();
+
+    return [...ladderRoles, ...others].map(role => [
+      role.includes('Admin') ? role + ' Approval' : role + ' Verification',
+      role
+    ]);
+  }, [permByRole]);
+
+  const maxLevel = approvalLadder.length;
+
+  const LEVEL_FILTERS = React.useMemo(() => [
+    { key: 'all', label: 'All pending' },
+    ...approvalLadder.map((_, i) => ({ key: String(i), label: `Level ${i + 1}` }))
+  ], [approvalLadder]);
 
   const [cases, setCases] = useState([]);
   const [pageSize, setPageSize] = useState(10);
@@ -142,7 +172,7 @@ export default function CaseApproval() {
   });
 
   const completedCases = enriched.filter((c) => {
-    if (c.lvl < 3) return false;
+    if (c.lvl < maxLevel) return false;
     if (c.status !== 'Active' && c.status !== 'Closed') return false;
     if (caseTypeFilter !== 'all' && c.caseTypeDisplay !== caseTypeFilter) return false;
     if (!q) return true;
@@ -169,8 +199,8 @@ export default function CaseApproval() {
     let nextStatus = caseItem.status;
 
     if (direction > 0) {
-      nextLevel = Math.min(3, current + 1);
-      nextStatus = nextLevel >= 3 ? 'Active' : 'Pending Approval';
+      nextLevel = Math.min(maxLevel, current + 1);
+      nextStatus = nextLevel >= maxLevel ? 'Active' : 'Pending Approval';
     } else {
       nextLevel = Math.max(0, current - 1);
       nextStatus = 'Pending Approval';
@@ -204,7 +234,7 @@ export default function CaseApproval() {
     <>
       <PageHeader
         title="Case Approval"
-        description="A civil case becomes active only after clearing all three levels. Each step records who approved it and when."
+        description={`A civil case becomes active only after clearing all ${maxLevel} levels. Each step records who approved it and when.`}
       />
 
       <div className="card" style={{ marginBottom: '14px' }}>
@@ -235,12 +265,18 @@ export default function CaseApproval() {
         </div>
       </div>
 
-      <div className="filt">
+      <div className="filt" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         {LEVEL_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={levelFilter === btn.key ? 'on' : ''}
+            className={`btn sm ${levelFilter === btn.key ? 'primary' : 'outline'}`}
+            style={{
+              borderColor: '#2563eb',
+              color: levelFilter === btn.key ? '#fff' : '#2563eb',
+              backgroundColor: levelFilter === btn.key ? '#2563eb' : 'transparent',
+              fontWeight: 500
+            }}
             onClick={() => setLevelFilter(btn.key)}
           >
             {btn.label}
@@ -262,7 +298,14 @@ export default function CaseApproval() {
         </div>
       )}
 
-      {loading ? (
+      {maxLevel === 0 ? (
+        <div className="card">
+          <div className="empty" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontWeight: 500 }}>No Case Approval approvers configured.</div>
+            <div className="mut">Grant "Approve" permission for Case Approval in Roles & Access to enable case approval.</div>
+          </div>
+        </div>
+      ) : loading ? (
         <div className="card">
           <div className="empty">Loading approval queue…</div>
         </div>
@@ -294,19 +337,34 @@ export default function CaseApproval() {
                   {c.totalPayable ? ` · Fee: ${inr(c.totalPayable)}` : ''}
                 </div>
               </div>
-              <Chip type="c-brass" label={`At level ${Math.min(c.lvl + 1, 3)} of 3`} />
+              <Chip type="c-brass" label={`At level ${Math.min(c.lvl + 1, maxLevel)} of ${maxLevel}`} />
             </div>
 
-            <ApprovalLadder ladder={LADDER} currentLevel={c.lvl} />
+            <ApprovalLadder ladder={approvalLadder} currentLevel={c.lvl} />
 
-            {canApprove ? (
+            {c.lvl >= maxLevel ? (
+              <div style={{ marginTop: '12px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div style={{ fontSize: '12px', fontStyle: 'italic', color: 'var(--tape)' }}>
+                  This case was started under a previous approval configuration. Please review the approval configuration before continuing.
+                </div>
+                {canApprove && (
+                  <button
+                    className="btn g"
+                    disabled={actingId === c.id || c.lvl <= 0}
+                    onClick={() => applyApprovalChange(c, -1)}
+                  >
+                    Send back
+                  </button>
+                )}
+              </div>
+            ) : canApprove ? (
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 <button
                   className="btn b"
-                  disabled={actingId === c.id || c.lvl >= 3}
+                  disabled={actingId === c.id || c.lvl >= maxLevel}
                   onClick={() => applyApprovalChange(c, 1)}
                 >
-                  {actingId === c.id ? 'Updating…' : `Approve level ${Math.min(c.lvl + 1, 3)}`}
+                  {actingId === c.id ? 'Updating…' : `Approve level ${Math.min(c.lvl + 1, maxLevel)}`}
                 </button>
                 <button
                   className="btn g"
@@ -331,7 +389,7 @@ export default function CaseApproval() {
           <div className="empty">
             {enriched.some((c) => c.status === 'Pending Approval')
               ? 'No cases match this search or filter.'
-              : 'No cases awaiting approval. Every filing has cleared all three levels.'}
+              : `No cases awaiting approval. Every filing has cleared all ${maxLevel} levels.`}
           </div>
         </div>
       )}

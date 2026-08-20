@@ -16,3 +16,18 @@ export const uploadSuperAdminLogo = async (file) => {
   });
   return data.data;
 };
+
+export const getSmtpSettings = async () => {
+  const { data } = await api.get('/settings/smtp');
+  return data.data;
+};
+
+export const updateSmtpSettings = async (payload) => {
+  const { data } = await api.put('/settings/smtp', payload);
+  return data;
+};
+
+export const testSmtpSettings = async (testEmail) => {
+  const { data } = await api.post('/settings/smtp/test', { test_email: testEmail });
+  return data;
+};

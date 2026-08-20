@@ -13,6 +13,7 @@ import { getClients } from '../services/clientService';
 import { getAdvocates } from '../services/advocateService';
 import { getCaseTypes, getCaseStages, getCourts } from "../services/caseMastersService";
 import { calculateCourtFeeClient } from '../services/courtFeeCalculator.service';
+import CivilCasesSettings from '../components/cases/CivilCasesSettings';
 
 const PAGE_SIZE = 10;
 const TITLE_VS_SEP = ' — vs ';
@@ -83,6 +84,7 @@ export default function Cases() {
   const [searchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('search') || '');
   const [filter, setFilter] = useState('all');
+  const [mainTab, setMainTab] = useState('cases');
 
   useEffect(() => {
     const newQuery = searchParams.get('search') || '';
@@ -454,7 +456,26 @@ export default function Cases() {
         actions={headerActions}
       />
 
-      <div className="kpis" style={{ marginBottom: 'var(--space-4)' }}>
+      <div className="filt" style={{ marginBottom: 'var(--space-4)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-2)', display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+        <button 
+          className={`btn ${mainTab === 'cases' ? 'primary' : 'ghost'}`} 
+          onClick={() => setMainTab('cases')}
+        >
+          Civil Cases
+        </button>
+        <button 
+          className={`btn ${mainTab === 'settings' ? 'primary' : 'ghost'}`} 
+          onClick={() => setMainTab('settings')}
+        >
+          Master Settings
+        </button>
+      </div>
+
+      {mainTab === 'settings' ? (
+        <CivilCasesSettings />
+      ) : (
+        <>
+          <div className="kpis" style={{ marginBottom: 'var(--space-4)' }}>
         <KPICard label="Total Matters" value={statusCounts.all} />
         <KPICard label="Active Cases" value={statusCounts.Active} status="issued" type="success" />
         <KPICard label="Pending Approval" value={statusCounts['Pending Approval']} status="warning" type="warning" />
@@ -597,8 +618,8 @@ export default function Cases() {
           </tbody>
         </table>
       </div>
-
-      
+      </>
+      )}
 
       {/* Case Details View Modal */}
       <Modal

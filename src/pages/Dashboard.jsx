@@ -63,7 +63,7 @@ export default function Dashboard() {
 
   const headerActions = (
     <>
-      <button className="btn secondary" onClick={() => navigate('/hearings')}>Open hearings</button>
+      <button className="btn" style={{ backgroundColor: '#f97316', color: '#fff', border: 'none' }} onClick={() => navigate('/hearings')}>Case Diary</button>
       <button className="btn primary" onClick={() => navigate('/cases')}>New case</button>
     </>
   );
@@ -188,34 +188,48 @@ export default function Dashboard() {
       ) : (
         <>
           <div className="kpis">
-            <KPICard label="Total cases" value={kpis.totalCases || 0} status="on the register" />
-            <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="success" />
-            <KPICard label="Closed" value={kpis.closedCases || 0} status="disposed" />
-            <KPICard
-              label="Today's hearings"
-              value={kpis.todayHearings || causeList.length || 0}
-              status={`${kpis.pendingHearings ?? causeMeta.pendingCount ?? 0} still to be called`}
-              type="danger"
-            />
-            <KPICard
-              label="Pending payments"
-              value={inr(kpis.duePaymentAmount || 0)}
-              status={`across ${kpis.pendingPaymentsCount || 0} matters`}
-              type="warning"
-              valueStyle={{ fontSize: 'var(--text-xl)' }}
-            />
-            <KPICard
-              label="Pending tasks"
-              value={kpis.pendingTasks || 0}
-              status="approvals & filings"
-              type="warning"
-            />
-            <KPICard
-              label="Disputed title"
-              value={kpis.disputedTitle || 0}
-              status="land records"
-              type="danger"
-            />
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/cases')}>
+              <KPICard label="Total cases" value={kpis.totalCases || 0} status="on the register" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/cases', { state: { status: 'active' } })}>
+              <KPICard label="Active" value={kpis.activeCases || 0} status="before the courts" type="success" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/cases', { state: { status: 'closed' } })}>
+              <KPICard label="Closed" value={kpis.closedCases || 0} status="disposed" />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/hearings')}>
+              <KPICard
+                label="Today's hearings"
+                value={kpis.todayHearings || causeList.length || 0}
+                status={`${kpis.pendingHearings ?? causeMeta.pendingCount ?? 0} still to be called`}
+                type="danger"
+              />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/pay')}>
+              <KPICard
+                label="Pending payments"
+                value={inr(kpis.duePaymentAmount || 0)}
+                status={`across ${kpis.pendingPaymentsCount || 0} matters`}
+                type="warning"
+                valueStyle={{ fontSize: 'var(--text-xl)' }}
+              />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/tasks')}>
+              <KPICard
+                label="Pending tasks"
+                value={kpis.pendingTasks || 0}
+                status="approvals & filings"
+                type="warning"
+              />
+            </div>
+            <div style={{ cursor: 'pointer' }} onClick={() => navigate('/land')}>
+              <KPICard
+                label="Disputed title"
+                value={kpis.disputedTitle || 0}
+                status="land records"
+                type="danger"
+              />
+            </div>
           </div>
 
           <h3 style={{ marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)', fontFamily: 'var(--font-heading)' }}>Notifications Center</h3>

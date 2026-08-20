@@ -80,11 +80,11 @@ export default function Calculators() {
   }, [selectedStateCode, cv]);
 
   const renderTabs = () => (
-    <div className="tabs">
-      <button className={tab === 'court' ? 'on' : ''} onClick={() => setTab('court')}>🏛️ Court Fee</button>
-      <button className={tab === 'fee' ? 'on' : ''} onClick={() => setTab('fee')}>Advocate fee</button>
-      <button className={tab === 'pct' ? 'on' : ''} onClick={() => setTab('pct')}>Percentage</button>
-      <button className={tab === 'area' ? 'on' : ''} onClick={() => setTab('area')}>Area converter</button>
+    <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      <button className={`btn ${tab === 'court' ? 'primary' : 'secondary'}`} onClick={() => setTab('court')}>🏛️ Court Fee</button>
+      <button className={`btn ${tab === 'fee' ? 'primary' : 'secondary'}`} onClick={() => setTab('fee')}>Advocate fee</button>
+      <button className={`btn ${tab === 'pct' ? 'primary' : 'secondary'}`} onClick={() => setTab('pct')}>Percentage</button>
+      <button className={`btn ${tab === 'area' ? 'primary' : 'secondary'}`} onClick={() => setTab('area')}>Area converter</button>
     </div>
   );
 
@@ -231,7 +231,7 @@ export default function Calculators() {
                 <div className="ser" style={{ fontSize: '20px', fontWeight: 700 }}>
                   {inr((calculatedFee * x[1]) / 100)}
                 </div>
-                <div className="mut mono" style={{ fontSize: '10.5px' }}>{x[1]}% share</div>
+                <div className="mut mono" style={{ fontSize: '12px' }}>{x[1]}% share</div>
               </div>
             ))}
           </div>

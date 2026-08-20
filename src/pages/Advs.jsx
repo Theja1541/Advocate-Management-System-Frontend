@@ -219,10 +219,7 @@ export default function Advs() {
       return;
     }
 
-    if (form.password.trim() && form.password.trim().length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
+    
 
     setSaving(true);
     setError('');
@@ -250,10 +247,10 @@ export default function Advs() {
 
     if (!editingAdvocate) {
       payload.createLogin = Boolean(form.createLogin && form.email.trim());
-      if (form.password.trim()) payload.password = form.password.trim();
+      
     } else if (!editingAdvocate.hasLogin && form.createLogin) {
       payload.createLogin = true;
-      if (form.password.trim()) payload.password = form.password.trim();
+      
     } else if (editingAdvocate.hasLogin && form.password.trim()) {
       payload.password = form.password.trim();
     }
@@ -322,12 +319,12 @@ export default function Advs() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {STATUS_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={`btn sm ${statusFilter === btn.key ? 'primary' : 'ghost'}`}
+            className={`btn ${statusFilter === btn.key ? 'primary' : 'secondary'}`}
             onClick={() => setStatusFilter(btn.key)}
           >
             {btn.label}
@@ -335,12 +332,12 @@ export default function Advs() {
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {RELATION_FILTERS.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={`btn sm ${relationFilter === btn.key ? 'primary' : 'ghost'}`}
+            className={`btn ${relationFilter === btn.key ? 'primary' : 'secondary'}`}
             onClick={() => setRelationFilter(btn.key)}
           >
             {btn.label}
@@ -787,16 +784,7 @@ export default function Advs() {
               </div>
               {form.createLogin && (
                 <FormGrid columns={2}>
-                  <FormField label="Initial Password" required>
-                    <input
-                      type="password"
-                      placeholder="At least 6 characters"
-                      value={form.password}
-                      onChange={setField('password')}
-                      required
-                      style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
-                    />
-                  </FormField>
+                  
                   <FormField label="System Access Role" required>
                     <select
                       value={form.roleId}
@@ -852,15 +840,7 @@ export default function Advs() {
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Reset Password (leave blank to keep current)">
-                  <input
-                    type="password"
-                    placeholder="New password (min 6 chars)"
-                    value={form.password}
-                    onChange={setField('password')}
-                    style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
-                  />
-                </FormField>
+                
               </FormGrid>
             </FormSection>
           )}
@@ -878,3 +858,6 @@ export default function Advs() {
     </>
   );
 }
+
+
+

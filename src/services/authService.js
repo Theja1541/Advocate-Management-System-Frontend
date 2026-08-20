@@ -32,3 +32,9 @@ export const changePassword = async (currentPassword, newPassword, confirmPasswo
 };
 
 export default { login, logout, refresh, getMe, changePassword };
+
+export const forgotPassword = async (email) => {
+  const { data } = await api.post('/auth/forgot-password', { email });
+  return data;
+};
+

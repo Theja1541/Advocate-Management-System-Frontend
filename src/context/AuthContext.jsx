@@ -172,8 +172,8 @@ const normalizeRole = (role) => {
     const normRole = normalizeRole(rawRole);
 
     if (normRole === 'Super Admin') {
-      if (['dash', 'tenants', 'plans', 'tenantSettings'].includes(key)) return true;
-      return false; // Restrict Super Admin to only Dashboard, Tenants, Subscription Plans, and Tenant Settings
+      if (['dash', 'tenants', 'plans', 'tenantSettings', 'masters', 'smtp'].includes(key)) return true;
+      return false; // Restrict Super Admin to only Dashboard, Tenants, Subscription Plans, Tenant Settings, Settings, and SMTP
     }
 
     if (normRole === 'Tenant Admin') {
