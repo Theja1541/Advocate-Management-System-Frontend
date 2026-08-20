@@ -1,7 +1,8 @@
 import api from './api';
 
-export const getGroupAdmins = async () => {
-  const { data } = await api.get('/group-admins');
+export const getGroupAdmins = async (tenantId) => {
+  const url = tenantId ? `/group-admins?tenantId=${tenantId}` : '/group-admins';
+  const { data } = await api.get(url);
   return data?.data?.groupAdmins || [];
 };
 

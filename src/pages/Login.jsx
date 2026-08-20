@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { login as loginRequest } from '../services/authService';
+import { login as loginRequest, forgotPassword } from '../services/authService';
 import { getPublicSettings } from '../services/settingsService';
 
 export default function Login() {
@@ -11,6 +11,8 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState('');
   const [logoUrl, setLogoUrl] = useState(null);
   const navigate = useNavigate();
 
@@ -74,6 +76,23 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setForgotSuccess('');
+    setLoading(true);
+
+    try {
+      const data = await forgotPassword(email);
+      setForgotSuccess(data.message || 'Password reset link sent.');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Failed to request password reset.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-page">
       <aside className="login-brand" aria-hidden={false}>
@@ -108,45 +127,78 @@ export default function Login() {
           </p>
 
           {errorMsg && <div className="login-error">{errorMsg}</div>}
+          {forgotSuccess && <div className="login-error" style={{ backgroundColor: 'rgba(40,167,69,0.1)', color: 'var(--success)', borderColor: 'var(--success)' }}>{forgotSuccess}</div>}
 
-          <form onSubmit={handleLogin} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
-              <label htmlFor="login-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Email Address</label>
-              <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="name@legaldesk.in"
-                required
-                autoComplete="email"
-                style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
-              />
-            </div>
-
-            <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', position: 'relative' }}>
-              <label htmlFor="login-password" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Password</label>
-              <div style={{ position: 'relative' }}>
+          {!forgotMode ? (
+            <form onSubmit={handleLogin} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+                <label htmlFor="login-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Email Address</label>
                 <input
-                  id="login-password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="name@legaldesk.in"
                   required
-                  autoComplete="current-password"
-                  style={{ width: '100%', padding: '10px 40px 10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
+                  autoComplete="email"
+                  style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
               </div>
-            </div>
 
-            <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
-              {loading ? 'Signing In…' : 'Sign In'}
-            </button>
-          </form>
+              <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label htmlFor="login-password" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Password</label>
+                  <button type="button" onClick={() => { setForgotMode(true); setErrorMsg(''); setForgotSuccess(''); }} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>Forgot Password?</button>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    autoComplete="current-password"
+                    style={{ width: '100%', padding: '10px 40px 10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
+                {loading ? 'Signing In…' : 'Sign In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
+                Enter your email address and we will send you a temporary password to regain access.
+              </p>
+              
+              <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+                <label htmlFor="forgot-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Email Address</label>
+                <input
+                  id="forgot-email"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="name@legaldesk.in"
+                  required
+                  style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
+                />
+              </div>
+
+              <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
+                {loading ? 'Sending...' : 'Send Temporary Password'}
+              </button>
+              
+              <button type="button" onClick={() => { setForgotMode(false); setErrorMsg(''); setForgotSuccess(''); }} className="btn secondary" style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px', background: 'var(--bg-sec)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                Back to Sign In
+              </button>
+            </form>
+          )}
         </div>
       </section>
     </div>

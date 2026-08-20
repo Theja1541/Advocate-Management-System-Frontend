@@ -10,4 +10,9 @@ export const resetUserPassword = async (id) => {
   return data;
 };
 
-export default { getUsers, resetUserPassword };
+export const updateUser = async (id, payload) => {
+  const { data } = await api.put(`/users/${id}`, payload);
+  return data?.data?.user;
+};
+
+export default { getUsers, resetUserPassword, updateUser };

@@ -75,7 +75,7 @@ export default function Header({ toggleSidebar }) {
           </button>
         </div>
         <div className="hright">
-          <form className="find" onSubmit={handleSearchSubmit}>
+          <form className="find" onSubmit={handleSearchSubmit} style={{ backgroundColor: '#f1f5f9' }}>
             <button type="submit" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: '14px', height: '14px', color: '#8B95AF' }}>
                 <circle cx="11" cy="11" r="7" />

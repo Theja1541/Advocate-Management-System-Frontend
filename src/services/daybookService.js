@@ -1,7 +1,8 @@
 import api from './api';
 
-export const getDaybookEntries = async () => {
-  const { data } = await api.get('/daybook');
+export const getDaybookEntries = async (tenantId) => {
+  const url = tenantId ? `/daybook?tenantId=${tenantId}` : '/daybook';
+  const { data } = await api.get(url);
   return data?.data?.entries || [];
 };
 

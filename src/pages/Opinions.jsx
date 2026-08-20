@@ -426,12 +426,12 @@ export default function Opinions() {
         </div>
       </div>
 
-      <div className="filt">
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {filterButtons.map((btn) => (
           <button
             key={btn.key}
             type="button"
-            className={filter === btn.key ? 'on' : ''}
+            className={`btn ${filter === btn.key ? 'primary' : 'secondary'}`}
             onClick={() => setFilter(btn.key)}
           >
             {btn.label}

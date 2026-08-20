@@ -217,6 +217,13 @@ const getIcon = (key) => {
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
         </svg>
       );
+    case 'smtp':
+      return (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+      );
     default:
       return null;
   }
@@ -239,14 +246,12 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
   const [superAdminLogo, setSuperAdminLogo] = useState(null);
 
   useEffect(() => {
-    if (user?.role === 'Super Admin') {
-      getPublicSettings().then(settings => {
-        if (settings?.logo) {
-          setSuperAdminLogo(settings.logo);
-        }
-      }).catch(err => console.error("Failed to fetch super admin logo:", err));
-    }
-  }, [user?.role]);
+    getPublicSettings().then(settings => {
+      if (settings?.logo) {
+        setSuperAdminLogo(settings.logo);
+      }
+    }).catch(err => console.error("Failed to fetch super admin logo:", err));
+  }, []);
 
   // Manage collapsed state for dropdown menus (groups)
   const [collapsedGroups, setCollapsedGroups] = useState({
@@ -313,9 +318,11 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
           <img 
-            src={user?.role === 'Super Admin' && superAdminLogo 
-              ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${superAdminLogo}`
-              : (user?.tenant?.logo ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${user.tenant.logo}` : "/logo.png")
+            src={user?.tenant?.logo 
+              ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${user.tenant.logo}`
+              : (superAdminLogo 
+                  ? `${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${superAdminLogo}` 
+                  : "/logo.png")
             } 
             alt="Logo" 
             className="seal" 

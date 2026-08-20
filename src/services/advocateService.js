@@ -1,7 +1,8 @@
 import api from './api';
 
-export const getAdvocates = async () => {
-  const { data } = await api.get('/advocates');
+export const getAdvocates = async (tenantId) => {
+  const url = tenantId ? `/advocates?tenantId=${tenantId}` : '/advocates';
+  const { data } = await api.get(url);
   return data?.data?.advocates || [];
 };
 

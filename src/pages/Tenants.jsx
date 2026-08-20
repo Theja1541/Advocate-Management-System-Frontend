@@ -10,8 +10,7 @@ import {
   getTenants,
   createTenant,
   updateTenant,
-  resetTenantAdminPassword,
-  deleteTenant,
+
   getDashboardStats,
   uploadTenantLogo
 } from '../services/tenantService';
@@ -33,12 +32,12 @@ const emptyForm = {
   storageLimit: '',
   maxUsers: '',
   subscriptionStart: '',
+  subscriptionMonths: '',
   subscriptionEnd: '',
   website: '',
   gstNumber: '',
   adminName: '',
   adminEmail: '',
-  adminPassword: '',
 };
 
 export default function Tenants() {
@@ -52,21 +51,18 @@ export default function Tenants() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   
-  const [searchName, setSearchName] = useState('');
-  const [searchCode, setSearchCode] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPlan, setFilterPlan] = useState('');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  
+
   const [form, setForm] = useState(emptyForm);
   const [selectedTenant, setSelectedTenant] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
+
   const [logoFile, setLogoFile] = useState(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [showAdminPassword, setShowAdminPassword] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -97,13 +93,14 @@ export default function Tenants() {
 
   const filteredTenants = useMemo(() => {
     return tenants.filter(t => {
-      const matchName = t.name.toLowerCase().includes(searchName.toLowerCase());
-      const matchCode = searchCode ? t.code?.toLowerCase().includes(searchCode.toLowerCase()) : true;
+      const query = searchQuery.toLowerCase();
+      const matchSearch = t.name.toLowerCase().includes(query) || 
+                          (t.code && t.code.toLowerCase().includes(query));
       const matchStatus = filterStatus ? t.status === filterStatus : true;
       const matchPlan = filterPlan ? String(t.planId) === filterPlan : true;
-      return matchName && matchCode && matchStatus && matchPlan;
+      return matchSearch && matchStatus && matchPlan;
     });
-  }, [tenants, searchName, searchCode, filterStatus, filterPlan]);
+  }, [tenants, searchQuery, filterStatus, filterPlan]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,7 +134,6 @@ export default function Tenants() {
         await createTenant(payload, {
           name: form.adminName,
           email: form.adminEmail,
-          password: form.adminPassword
         });
       }
       setIsModalOpen(false);
@@ -159,29 +155,6 @@ export default function Tenants() {
     }
   };
 
-  const handleDelete = async (tenant) => {
-    if (!window.confirm(`Are you sure you want to delete ${tenant.name}? This is permanent and deletes all associated data.`)) return;
-    try {
-      await deleteTenant(tenant.id);
-      loadData();
-    } catch (err) {
-      alert(err.message || 'Failed to delete tenant');
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await resetTenantAdminPassword(selectedTenant.id, newPassword);
-      setIsPasswordModalOpen(false);
-      alert('Password reset successfully');
-    } catch (err) {
-      alert(err.message || 'Failed to reset password');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleLogoUpload = async (e) => {
     e.preventDefault();
@@ -234,6 +207,13 @@ export default function Tenants() {
     return 'warning';
   };
 
+  const calculateExpiry = (startDate, months) => {
+    if (!startDate || !months || isNaN(months)) return '';
+    const date = new Date(startDate);
+    date.setMonth(date.getMonth() + parseInt(months, 10));
+    return date.toISOString().split('T')[0];
+  };
+
   return (
     <>
       <PageHeader
@@ -255,16 +235,9 @@ export default function Tenants() {
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', padding: '16px', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
           <div className="f" style={{ flex: 1, minWidth: '200px' }}>
             <input 
-              placeholder="Search by Firm Name..." 
-              value={searchName} 
-              onChange={e => setSearchName(e.target.value)}
-            />
-          </div>
-          <div className="f" style={{ width: '150px' }}>
-            <input 
-              placeholder="Tenant Code..." 
-              value={searchCode} 
-              onChange={e => setSearchCode(e.target.value)}
+              placeholder="Search by Firm Name or Tenant Code..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="f" style={{ width: '150px' }}>
@@ -275,7 +248,7 @@ export default function Tenants() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
-          <button className="btn secondary" style={{ height: '42px' }} onClick={() => { setSearchName(''); setSearchCode(''); setFilterStatus(''); setFilterPlan(''); }}>
+          <button className="btn secondary" style={{ height: '42px' }} onClick={() => { setSearchQuery(''); setFilterStatus(''); setFilterPlan(''); }}>
             Clear
           </button>
         </div>
@@ -344,15 +317,15 @@ export default function Tenants() {
                           setIsModalOpen(true);
                         }}>✏️</button>
                         
+                        <button className="btn outline sm" title="View Details" onClick={() => navigate(`/tenants/${t.id}/details`)}>
+                          👁️
+                        </button>
+                        
                         <button className="btn outline sm" title="Roles & Permissions" onClick={() => navigate(`/tenants/${t.id}/roles`)}>
                           🛡️
                         </button>
                         
-                        <button className="btn outline sm" title="Reset Admin Password" onClick={() => {
-                          setSelectedTenant(t);
-                          setNewPassword('');
-                          setIsPasswordModalOpen(true);
-                        }}>🔑</button>
+                        
 
                         {t.status === 'active' ? (
                           <button className="btn outline sm" style={{ color: 'var(--warning)', borderColor: 'var(--warning)' }} title="Suspend" onClick={() => handleStatusChange(t, 'suspended')}>
@@ -363,10 +336,6 @@ export default function Tenants() {
                             ▶️
                           </button>
                         )}
-                        
-                        <button className="btn outline sm text-danger" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} title="Delete" onClick={() => handleDelete(t)}>
-                          🗑️
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -475,12 +444,36 @@ export default function Tenants() {
               <FormField label="User Limit">
                 <input type="number" min="1" value={form.maxUsers} onChange={e => setForm({ ...form, maxUsers: e.target.value })} placeholder="Override plan limit" />
               </FormField>
-              <FormField label="Start Date">
-                <input type="date" value={form.subscriptionStart} onChange={e => setForm({ ...form, subscriptionStart: e.target.value })} />
-              </FormField>
-              <FormField label="Expiry Date">
-                <input type="date" value={form.subscriptionEnd} onChange={e => setForm({ ...form, subscriptionEnd: e.target.value })} />
-              </FormField>
+                              {(() => {
+                  const selectedPlan = plans.find(p => p.id === parseInt(form.planId, 10));
+                  const isLifetime = selectedPlan && selectedPlan.billingCycle === 'lifetime';
+                  return !isLifetime && (
+                    <FormField label="Duration (Months)">
+                      <input 
+                        type="number" 
+                        min="1" 
+                        value={form.subscriptionMonths || ''} 
+                        onChange={e => {
+                          const m = e.target.value;
+                          const newEnd = calculateExpiry(form.subscriptionStart, m);
+                          setForm({ ...form, subscriptionMonths: m, subscriptionEnd: newEnd || form.subscriptionEnd });
+                        }} 
+                        placeholder="e.g. 1, 3, 12" 
+                      />
+                    </FormField>
+                  );
+                })()}
+
+                <FormField label="Start Date">
+                  <input type="date" value={form.subscriptionStart} onChange={e => {
+                    const newStart = e.target.value;
+                    const newEnd = calculateExpiry(newStart, form.subscriptionMonths);
+                    setForm({ ...form, subscriptionStart: newStart, subscriptionEnd: newEnd || form.subscriptionEnd });
+                  }} />
+                </FormField>
+                <FormField label="Expiry Date">
+                  <input type="date" value={form.subscriptionEnd} onChange={e => setForm({ ...form, subscriptionEnd: e.target.value })} />
+                </FormField>
             </FormGrid>
           </FormSection>
 
@@ -504,14 +497,6 @@ export default function Tenants() {
                 <FormField label="Admin Email" required>
                   <input type="email" required value={form.adminEmail} onChange={e => setForm({ ...form, adminEmail: e.target.value })} />
                 </FormField>
-                <FormField label="Admin Password" required>
-                  <div style={{ position: 'relative' }}>
-                    <input type={showAdminPassword ? "text" : "password"} required value={form.adminPassword} onChange={e => setForm({ ...form, adminPassword: e.target.value })} style={{ width: '100%', paddingRight: '40px' }} />
-                    <button type="button" onClick={() => setShowAdminPassword(!showAdminPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
-                      {showAdminPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                </FormField>
               </FormGrid>
             </FormSection>
           )}
@@ -525,36 +510,14 @@ export default function Tenants() {
         </form>
       </Modal>
 
-      <Modal
-        isOpen={isPasswordModalOpen}
-        onClose={() => !saving && setIsPasswordModalOpen(false)}
-        title="Reset Password"
-        maxWidth="400px"
-      >
-        <form onSubmit={handleResetPassword}>
-          <p style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-            Resetting password for the Tenant Admin of <strong>{selectedTenant?.name}</strong>.
-          </p>
-          <FormField label="New Password" required>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showResetPassword ? "text" : "password"}
-                required
-                value={newPassword}
-                onChange={e => setNewPassword(e.target.value)}
-                style={{ width: '100%', paddingRight: '40px' }}
-              />
-              <button type="button" onClick={() => setShowResetPassword(!showResetPassword)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }} title="Toggle password visibility">
-                {showResetPassword ? 'Hide' : 'Show'}
-              </button>
-            </div>
-          </FormField>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '24px' }}>
-            <button type="button" className="btn secondary" onClick={() => setIsPasswordModalOpen(false)} disabled={saving}>Cancel</button>
-            <button type="submit" className="btn primary" disabled={saving || !newPassword}>Reset Password</button>
-          </div>
-        </form>
-      </Modal>
+      
     </>
   );
 }
+
+
+
+
+
+
+

@@ -326,41 +326,37 @@ export default function Daybook() {
         </div>
       </div>
 
-      <div className="filt">
-        <button
-          type="button"
-          className={filter === 'all' ? 'on' : ''}
-          onClick={() => setFilter('all')}
+      <div className="filt" style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', flexWrap: 'wrap' }}>
+        <select
+          className="input"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          style={{ padding: '8px 12px', border: '1px solid var(--rule)', borderRadius: '6px' }}
         >
-          All
-        </button>
-        {DB_CATS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={filter === c ? 'on' : ''}
-            onClick={() => setFilter(c)}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
+          <option value="all">All</option>
+          {DB_CATS.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
-      <div className="filt">
-        {[
-          { key: 'all', label: 'All movements' },
-          { key: 'in', label: 'Received' },
-          { key: 'out', label: 'Paid out' },
-        ].map((btn) => (
-          <button
-            key={btn.key}
-            type="button"
-            className={typeFilter === btn.key ? 'on' : ''}
-            onClick={() => setTypeFilter(btn.key)}
-          >
-            {btn.label}
-          </button>
-        ))}
+        <select
+          className="input"
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          style={{ padding: '8px 12px', border: '1px solid var(--rule)', borderRadius: '6px' }}
+        >
+          {[
+            { key: 'all', label: 'All movements' },
+            { key: 'in', label: 'Received' },
+            { key: 'out', label: 'Paid out' },
+          ].map((btn) => (
+            <option key={btn.key} value={btn.key}>
+              {btn.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && !isEditOpen && !showEntryForm && (

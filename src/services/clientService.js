@@ -1,7 +1,8 @@
 import api from './api';
 
-export const getClients = async () => {
-  const { data } = await api.get('/clients');
+export const getClients = async (tenantId) => {
+  const url = tenantId ? `/clients?tenantId=${tenantId}` : '/clients';
+  const { data } = await api.get(url);
   return data?.data?.clients || [];
 };
 

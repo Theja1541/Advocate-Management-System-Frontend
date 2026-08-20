@@ -1,7 +1,8 @@
 import api from './api';
 
-export const getPayments = async () => {
-  const { data } = await api.get('/payments');
+export const getPayments = async (tenantId) => {
+  const url = tenantId ? `/payments?tenantId=${tenantId}` : '/payments';
+  const { data } = await api.get(url);
   return data?.data?.payments || [];
 };
 

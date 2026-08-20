@@ -14,7 +14,7 @@ import {
   renewMembership,
   deleteMembership,
 } from '../services/membershipService';
-import { getAdvocates } from '../services/advocateService';
+import { getGroupAdmins } from '../services/groupAdminService';
 
 
 
@@ -39,11 +39,12 @@ const PLAN_OPTIONS = [
 ];
 
 const emptyForm = {
-  advocateId: '',
+  groupAdminId: '',
   planName: PLAN_OPTIONS[0],
   feeAmount: '',
   startDate: '',
   expiryDate: '',
+  durationMonths: '',
 };
 
 const formatDate = (value) => {
@@ -63,12 +64,19 @@ const addOneYear = (dateStr) => {
   return d.toISOString().slice(0, 10);
 };
 
+const addMonths = (dateStr, months) => {
+  if (!dateStr || !months || isNaN(months)) return '';
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setMonth(d.getMonth() + parseInt(months, 10));
+  return d.toISOString().slice(0, 10);
+};
+
 export default function Member() {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const canEdit = hasPermission('member', 'E');
 
   const [members, setMembers] = useState([]);
-  const [advocates, setAdvocates] = useState([]);
+  const [groupAdmins, setGroupAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actingId, setActingId] = useState(null);
@@ -87,9 +95,9 @@ export default function Member() {
     setLoading(true);
     setError('');
     try {
-      const [membershipsResult, advocatesResult] = await Promise.allSettled([
+      const [membershipsResult, groupAdminsResult] = await Promise.allSettled([
         getMemberships(),
-        getAdvocates(),
+        getGroupAdmins(user?.tenantId), // Passing tenantId to ensure tenant isolation if needed by the service
       ]);
 
       if (membershipsResult.status === 'rejected') {
@@ -97,13 +105,13 @@ export default function Member() {
       }
 
       setMembers(membershipsResult.value || []);
-      setAdvocates(advocatesResult.status === 'fulfilled' ? advocatesResult.value || [] : []);
+      setGroupAdmins(groupAdminsResult.status === 'fulfilled' ? groupAdminsResult.value || [] : []);
     } catch (err) {
       setError(err.message || 'Failed to load memberships');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.tenantId]);
 
   useEffect(() => {
     loadData();
@@ -113,9 +121,9 @@ export default function Member() {
     setPage(1);
   }, [query, statusFilter]);
 
-  const getAdvocateName = (membership) =>
-    membership?.advocate?.name ||
-    advocates.find((a) => String(a.id) === String(membership.advocateId))?.name ||
+  const getGroupAdminName = (membership) =>
+    membership?.groupAdmin?.name ||
+    groupAdmins.find((ga) => String(ga.id) === String(membership.groupAdminId))?.name ||
     '—';
 
   const activeCount = members.filter((m) => m.status === 'active').length;
@@ -127,7 +135,7 @@ export default function Member() {
     if (statusFilter !== 'all' && m.status !== statusFilter) return false;
     if (!q) return true;
     const haystack = [
-      getAdvocateName(m),
+      getGroupAdminName(m),
       m.planName,
       m.status,
       MST[m.status]?.[0],
@@ -145,10 +153,10 @@ export default function Member() {
   const pageStart = (currentPage - 1) * pageSize;
   const pagedMembers = filteredMembers.slice(pageStart, pageStart + pageSize);
 
-  const assignedAdvocateIds = new Set(members.map((m) => String(m.advocateId)));
-  const availableAdvocates = advocates.filter((a) => {
-    if (editingMember && String(a.id) === String(editingMember.advocateId)) return true;
-    return !assignedAdvocateIds.has(String(a.id));
+  const assignedGroupAdminIds = new Set(members.map((m) => String(m.groupAdminId)));
+  const availableGroupAdmins = groupAdmins.filter((ga) => {
+    if (editingMember && String(ga.id) === String(editingMember.groupAdminId)) return true;
+    return !assignedGroupAdminIds.has(String(ga.id));
   });
 
   const openAddModal = () => {
@@ -156,7 +164,7 @@ export default function Member() {
     setEditingMember(null);
     setForm({
       ...emptyForm,
-      advocateId: availableAdvocates[0] ? String(availableAdvocates[0].id) : '',
+      groupAdminId: availableGroupAdmins[0] ? String(availableGroupAdmins[0].id) : '',
       startDate: today,
       expiryDate: addOneYear(today),
       feeAmount: '12000',
@@ -168,7 +176,7 @@ export default function Member() {
   const openEditModal = (m) => {
     setEditingMember(m);
     setForm({
-      advocateId: m.advocateId != null ? String(m.advocateId) : '',
+      groupAdminId: m.groupAdminId != null ? String(m.groupAdminId) : '',
       planName: m.planName || PLAN_OPTIONS[0],
       feeAmount: String(m.feeAmount ?? ''),
       startDate: m.startDate || '',
@@ -192,8 +200,16 @@ export default function Member() {
   const setField = (key) => (e) => {
     const value = e.target.value;
     setForm((prev) => {
-      if (key === 'startDate' && value && !editingMember) {
-        return { ...prev, startDate: value, expiryDate: addOneYear(value) };
+      if (key === 'durationMonths') {
+        const newEnd = addMonths(prev.startDate, value);
+        return { ...prev, durationMonths: value, expiryDate: newEnd || prev.expiryDate };
+      }
+      if (key === 'startDate' && value) {
+        if (prev.durationMonths) {
+          return { ...prev, startDate: value, expiryDate: addMonths(value, prev.durationMonths) || prev.expiryDate };
+        } else if (!editingMember) {
+          return { ...prev, startDate: value, expiryDate: addOneYear(value) };
+        }
       }
       return { ...prev, [key]: value };
     });
@@ -201,7 +217,7 @@ export default function Member() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.advocateId || !form.planName || !form.feeAmount || !form.startDate || !form.expiryDate) {
+    if (!form.groupAdminId || !form.planName || !form.feeAmount || !form.startDate || !form.expiryDate) {
       setError('Please fill out all required fields.');
       return;
     }
@@ -209,7 +225,7 @@ export default function Member() {
     setSaving(true);
     setError('');
     const payload = {
-      advocateId: Number(form.advocateId),
+      groupAdminId: Number(form.groupAdminId),
       planName: form.planName.trim(),
       feeAmount: Number(form.feeAmount),
       startDate: form.startDate,
@@ -251,7 +267,7 @@ export default function Member() {
 
   const handleDelete = async (m) => {
     const confirmed = window.confirm(
-      `Delete membership for "${getAdvocateName(m)}"? This cannot be undone.`
+      `Delete membership for "${getGroupAdminName(m)}"? This cannot be undone.`
     );
     if (!confirmed) return;
     setError('');
@@ -267,7 +283,7 @@ export default function Member() {
   };
 
   const headers = [
-    { label: 'Advocate' },
+    { label: 'Group Admin' },
     { label: 'Plan' },
     { label: 'Fee', className: 'r' },
     { label: 'Start' },
@@ -280,7 +296,7 @@ export default function Member() {
     <button
       className="btn primary"
       onClick={openAddModal}
-      disabled={!availableAdvocates.length && !editingMember}
+      disabled={!availableGroupAdmins.length && !editingMember}
     >
       Add membership
     </button>
@@ -311,7 +327,7 @@ export default function Member() {
             <label style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)' }}>Search memberships</label>
             <input
               type="text"
-              placeholder="Advocate, plan, status…"
+              placeholder="Group Admin, plan, status…"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
@@ -366,7 +382,7 @@ export default function Member() {
                 style={{ cursor: 'pointer' }}
               >
                 <td>
-                  <span className="nm">{getAdvocateName(m)}</span>
+                  <span className="nm">{getGroupAdminName(m)}</span>
                 </td>
                 <td className="mut">{m.planName}</td>
                 <td className="r mono">{inr(Number(m.feeAmount || 0))}</td>
@@ -450,8 +466,8 @@ export default function Member() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', borderBottom: '1px solid var(--border)', paddingBottom: 'var(--space-3)' }}>
               <div>
-                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Advocate</span>
-                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{getAdvocateName(selectedViewMember)}</span>
+                <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Group Admin</span>
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--text-primary)' }}>{getGroupAdminName(selectedViewMember)}</span>
               </div>
               <div>
                 <span className="mono font-semibold" style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--text-secondary)', display: 'block', marginBottom: 'var(--space-1)' }}>Status</span>
@@ -536,17 +552,17 @@ export default function Member() {
           )}
           <FormSection title="Account & Role">
             <FormGrid columns={2}>
-              <FormField label="Advocate" required={true}>
+              <FormField label="Group Admin" required={true}>
                 <select
-                  value={form.advocateId}
-                  onChange={setField('advocateId')}
+                  value={form.groupAdminId}
+                  onChange={setField('groupAdminId')}
                   disabled={!!editingMember}
                   required
                   style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
                 >
-                  {availableAdvocates.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
+                  {availableGroupAdmins.map((ga) => (
+                    <option key={ga.id} value={ga.id}>
+                      {ga.name}
                     </option>
                   ))}
                 </select>
@@ -575,7 +591,18 @@ export default function Member() {
           </FormSection>
 
           <FormSection title="Membership Details">
-            <FormGrid columns={2}>
+            <FormGrid>
+              <FormField label="Duration (Months)" required={false}>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.durationMonths || ''}
+                  onChange={setField('durationMonths')}
+                  placeholder="e.g. 1, 3, 12"
+                  style={{ padding: 'var(--space-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: 'var(--text-sm)' }}
+                />
+              </FormField>
+
               <FormField label="Start Date" required={true}>
                 <input
                   type="date"
