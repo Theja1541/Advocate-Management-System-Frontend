@@ -397,7 +397,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                       onClick={handleNavLinkClick}
                     >
                       {getIcon(item.k)}
-                      <span className="nb-label" style={{ fontSize: '13px', fontWeight: '400', color: 'rgba(255, 255, 255, 0.75)' }}>{item.l}</span>
+                      <span className="nb-label" style={{ fontSize: '13px', fontWeight: '400', color: '#FFFFFF' }}>{item.l}</span>
                     </NavLink>
                   </li>
                 ))}
@@ -433,7 +433,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                 fontSize: '12px', 
                 fontWeight: isGroupActive ? '700' : '600', 
                 letterSpacing: '0.05em', 
-                color: isGroupActive ? '#FFFFFF' : '#8F9BBA',
+                color: '#FFFFFF',
                 textTransform: 'uppercase'
               }}>{group.g}</span>
               {!isCollapsed && (
@@ -448,7 +448,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                     transform: isGroupCollapsed ? 'rotate(-90deg)' : 'none',
                     transition: 'transform 0.2s',
                     opacity: 0.8,
-                    color: isGroupActive ? '#FFFFFF' : '#8F9BBA'
+                    color: '#FFFFFF'
                   }}
                 >
                   <polyline points="6 9 12 15 18 9"></polyline>
@@ -467,7 +467,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                       style={{ paddingLeft: isCollapsed ? '10px' : '18px' }}
                     >
                       {getIcon(item.k)}
-                      <span className="nb-label" style={{ fontSize: '12.5px', fontWeight: '400', color: 'rgba(255, 255, 255, 0.75)' }}>{item.l}</span>
+                      <span className="nb-label" style={{ fontSize: '12.5px', fontWeight: '400', color: '#FFFFFF' }}>{item.l}</span>
                     </NavLink>
                   </li>
                 ))}
