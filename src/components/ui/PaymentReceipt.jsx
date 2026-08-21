@@ -433,9 +433,9 @@ export default function PaymentReceipt({
                   </svg>
                 </div>
                 <div>
-                  <h2 className="firm-name">LEGAL DESK & ASSOCIATES</h2>
+                  <h2 className="firm-name">Law Suite — Complete Legal Practice Management</h2>
                   <p className="firm-subtitle">Advocates & Legal Consultants</p>
-                  <p className="firm-address">High Court Chambers Complex, Suite 402<br />contact@legaldesk.com • +91 98765 43210</p>
+                  <p className="firm-address">High Court Chambers Complex, Suite 402<br />contact@lawsuite.com • +91 98765 43210</p>
                 </div>
               </div>
               <div className="receipt-meta">
@@ -531,7 +531,7 @@ export default function PaymentReceipt({
                 <div style={{ height: '36px' }}></div>
                 <div className="signature-line"></div>
                 <p className="signature-label">Authorized Representative</p>
-                <p className="signature-firm">Legal Desk & Associates</p>
+                <p className="signature-firm">Law Suite — Complete Legal Practice Management</p>
               </div>
             </div>
           </div>

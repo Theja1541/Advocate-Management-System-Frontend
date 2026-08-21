@@ -211,12 +211,6 @@ const getIcon = (key) => {
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       );
-    case 'tenantSettings':
-      return (
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-        </svg>
-      );
     case 'smtp':
       return (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -267,7 +261,6 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
   const getRoutePath = (key) => {
     if (key === 'dash') return '/';
     if (key === 'masters') return '/settings/masters';
-    if (key === 'tenantSettings') return '/settings/tenant';
     if (key === 'plans') return '/settings/plans';
     if (key === 'legalTexts') return '/texts';
     return `/${key}`;
@@ -342,7 +335,7 @@ export default function Sidebar({ isCollapsed, toggleSidebar, isMobileOpen, clos
                 fontWeight: 700,
                 color: '#F1F2EE',
                 lineHeight: 1.2
-              }}>{user?.tenant?.name || 'Legal Desk'}</h2>
+              }}>{user?.tenant?.name || 'Law Suite'}</h2>
               <div style={{
                 fontSize: '7.5px',
                 fontFamily: "'Inter', sans-serif",

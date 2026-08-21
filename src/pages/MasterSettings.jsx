@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 export default function MasterSettings() {
   const { user, updateUserContext } = useAuth();
   const isSuperAdmin = user?.role === 'Super Admin';
-  const tenantId = user?.tenant?.id;
+  const tenantId = user?.tenantId || user?.tenant?.id;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,7 +47,8 @@ export default function MasterSettings() {
         if (data?.logo) {
           setCurrentLogo(data.logo);
           setLogoFile(null);
-          alert('Super Admin logo updated successfully. Refresh the page to see changes across the app.');
+          alert('Super Admin logo updated successfully.');
+          window.location.reload();
         }
       } else {
         if (!tenantId) throw new Error("Tenant ID not found.");
@@ -55,9 +56,8 @@ export default function MasterSettings() {
         if (data?.logo) {
           setCurrentLogo(data.logo);
           setLogoFile(null);
-          // Optional: if updateUserContext exists, we can call it to update the auth context
-          if (typeof updateUserContext === 'function') updateUserContext();
-          alert('Tenant logo updated successfully. Refresh the page to see changes across the app.');
+          alert('Tenant logo updated successfully.');
+          window.location.reload();
         }
       }
     } catch (err) {

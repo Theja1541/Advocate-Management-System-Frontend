@@ -10,7 +10,7 @@ export const NAV = [
  { g: 'Office', items: [{ k: 'daybook', l: 'Day Book' }, { k: 'pay', l: 'Payments' }, { k: 'alerts', l: 'Notification Center' }, { k: 'reports', l: 'Reports' }] },
  { g: 'Library', items: [{ k: 'acts', l: 'Bare Acts' }, { k: 'amend', l: 'Amendment Tracker' }, { k: 'legalTexts', l: 'Legal Texts' }] },
  { g: 'Tools', items: [{ k: 'tools', l: 'Calculators' }] },
- { g: 'Admin', items: [{ k: 'tenants', l: 'Tenants' }, { k: 'plans', l: 'Subscription Plans' }, { k: 'roles', l: 'Roles & Access' }, { k: 'masters', l: 'Settings' }, { k: 'smtp', l: 'SMTP Configuration' }, { k: 'tenantSettings', l: 'Tenant Settings' }] }
+ { g: 'Admin', items: [{ k: 'tenants', l: 'Tenants' }, { k: 'plans', l: 'Subscription Plans' }, { k: 'roles', l: 'Roles & Access' }, { k: 'masters', l: 'Settings' }, { k: 'smtp', l: 'SMTP Configuration' }] }
 ];
 
 export const COURTS = [];
