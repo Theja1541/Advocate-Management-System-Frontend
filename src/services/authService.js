@@ -48,3 +48,8 @@ export const resendMfa = async (userId) => {
   return data;
 };
 
+
+export const toggleMfa = async (password, enabled) => {
+  const { data } = await api.post('/auth/toggle-mfa', { password, enabled });
+  return data;
+};
