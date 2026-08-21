@@ -194,7 +194,7 @@ export default function SmtpSettings() {
 
                 <FormGrid columns={2}>
                   <FormField label="Sender Name" required>
-                    <input type="text" name="sender_name" value={formData.sender_name} onChange={handleChange} required placeholder="e.g. Legal Desk System" />
+                    <input type="text" name="sender_name" value={formData.sender_name} onChange={handleChange} required placeholder="e.g. Law Suite System" />
                   </FormField>
                   <FormField label="From Email" required>
                     <input type="email" name="from_email" value={formData.from_email} onChange={handleChange} required placeholder="noreply@example.com" />

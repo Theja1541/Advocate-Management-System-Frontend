@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { login as loginRequest, forgotPassword } from '../services/authService';
+import { login as loginRequest, forgotPassword, verifyMfa, resendMfa } from '../services/authService';
 import { getPublicSettings } from '../services/settingsService';
 
 export default function Login() {
@@ -13,6 +13,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState('');
+  
+  // MFA states
+  const [mfaMode, setMfaMode] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [mfaUserId, setMfaUserId] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   const [logoUrl, setLogoUrl] = useState(null);
   const navigate = useNavigate();
 
@@ -30,6 +37,18 @@ export default function Login() {
     fetchLogo();
   }, []);
 
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [resendCooldown]);
+
   const initialsFromName = (name = '') =>
     name.split(/\s+/).filter(Boolean).map(p => p[0]).join('').slice(0, 2).toUpperCase() || 'U';
 
@@ -40,6 +59,14 @@ export default function Login() {
 
     try {
       const data = await loginRequest(email, password);
+
+      if (data.status === 'MFA_REQUIRED' && data.userId) {
+        setMfaUserId(data.userId);
+        setMfaMode(true);
+        setResendCooldown(60);
+        setForgotSuccess('A 6-digit verification code has been sent to your email.');
+        return;
+      }
 
       if ((data.status === 'success' || data.status === 'PASSWORD_CHANGE_REQUIRED') && data.token && data.data?.user) {
         const name = data.data.user.name;
@@ -76,6 +103,64 @@ export default function Login() {
     }
   };
 
+  const handleVerifyMfa = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setForgotSuccess('');
+    setLoading(true);
+
+    try {
+      const data = await verifyMfa(mfaUserId, otp);
+
+      if ((data.status === 'success' || data.status === 'PASSWORD_CHANGE_REQUIRED') && data.token && data.data?.user) {
+        const name = data.data.user.name;
+        const mappedUser = {
+          id: data.data.user.id,
+          n: name,
+          role: data.data.user.role,
+          av: initialsFromName(name),
+          advocateId: data.data.user.advocateId ?? null,
+          mustChangePassword: data.data.user.mustChangePassword,
+          availableContexts: data.data.user.availableContexts,
+          tenantId: data.data.user.tenantId,
+          tenant: data.data.user.tenant,
+        };
+
+        login(mappedUser, data.token);
+        if (data.status === 'PASSWORD_CHANGE_REQUIRED' || data.data.user.mustChangePassword) {
+          navigate('/change-password');
+        } else {
+          navigate('/');
+        }
+      } else {
+        setErrorMsg(data.message || 'Invalid verification code');
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendMfa = async () => {
+    if (resendCooldown > 0) return;
+    setErrorMsg('');
+    setForgotSuccess('');
+    setLoading(true);
+
+    try {
+      const data = await resendMfa(mfaUserId);
+      setForgotSuccess(data.message || 'A new verification code has been sent.');
+      setResendCooldown(60);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || 'Failed to resend verification code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setErrorMsg('');
@@ -98,20 +183,20 @@ export default function Login() {
       <aside className="login-brand" aria-hidden={false}>
         <div className="login-brand-top">
           {logoUrl ? (
-            <img src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${logoUrl}`} alt="Legal Desk" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
+            <img src={`${import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '')}${logoUrl}`} alt="Law Suite - Complete Legal Practice Management" style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '8px' }} />
           ) : (
             <div className="login-seal">LD</div>
           )}
         </div>
 
         <div className="login-brand-hero">
-          <h1 className="login-brand-name">Legal Desk</h1>
+          <h1 className="login-brand-name">Law Suite � Complete Legal Practice Management</h1>
           <div className="login-brand-line" />
           <p className="login-brand-headline">
             Chambers-grade case management for modern advocates.
           </p>
           <p className="login-brand-sub">
-            Hearings, clients, filings, and fees — one quiet, ordered desk.
+            Hearings, clients, filings, and fees � one quiet, ordered desk.
           </p>
         </div>
 
@@ -123,13 +208,43 @@ export default function Login() {
           <p className="login-panel-eyebrow">Secure access</p>
           <h2 className="login-panel-title">Sign in</h2>
           <p className="login-panel-desc">
-            Enter your chamber credentials to continue.
+            {mfaMode ? 'Enter the verification code sent to your email.' : 'Enter your chamber credentials to continue.'}
           </p>
 
           {errorMsg && <div className="login-error">{errorMsg}</div>}
           {forgotSuccess && <div className="login-error" style={{ backgroundColor: 'rgba(40,167,69,0.1)', color: 'var(--success)', borderColor: 'var(--success)' }}>{forgotSuccess}</div>}
 
-          {!forgotMode ? (
+          {mfaMode ? (
+            <form onSubmit={handleVerifyMfa} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+                <label htmlFor="login-otp" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Verification Code</label>
+                <input
+                  id="login-otp"
+                  type="text"
+                  maxLength="6"
+                  value={otp}
+                  onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="123456"
+                  required
+                  autoComplete="one-time-code"
+                  style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '20px', letterSpacing: '4px', textAlign: 'center', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
+                />
+              </div>
+
+              <button type="submit" className="btn primary" disabled={loading || otp.length !== 6} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
+                {loading ? 'Verifying...' : 'Verify Code'}
+              </button>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <button type="button" onClick={handleResendMfa} disabled={resendCooldown > 0 || loading} style={{ background: 'none', border: 'none', color: resendCooldown > 0 ? 'var(--text-secondary)' : 'var(--brand)', cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer', fontSize: 'var(--text-sm)' }}>
+                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend Code'}
+                </button>
+                <button type="button" onClick={() => { setMfaMode(false); setOtp(''); setErrorMsg(''); setForgotSuccess(''); }} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 'var(--text-sm)' }}>
+                  Back to Sign In
+                </button>
+              </div>
+            </form>
+          ) : !forgotMode ? (
             <form onSubmit={handleLogin} className="login-form" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="login-field" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
                 <label htmlFor="login-email" style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Email Address</label>
@@ -138,7 +253,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@legaldesk.in"
+                  placeholder="name@lawsuite.in"
                   required
                   autoComplete="email"
                   style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
@@ -156,7 +271,7 @@ export default function Login() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="��������"
                     required
                     autoComplete="current-password"
                     style={{ width: '100%', padding: '10px 40px 10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
@@ -168,7 +283,7 @@ export default function Login() {
               </div>
 
               <button type="submit" className="btn primary" disabled={loading} style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}>
-                {loading ? 'Signing In…' : 'Sign In'}
+                {loading ? 'Signing In�' : 'Sign In'}
               </button>
             </form>
           ) : (
@@ -184,7 +299,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@legaldesk.in"
+                  placeholder="name@lawsuite.in"
                   required
                   style={{ padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '14px', color: 'var(--text-primary)', backgroundColor: 'var(--card)' }}
                 />
@@ -204,3 +319,4 @@ export default function Login() {
     </div>
   );
 }
+

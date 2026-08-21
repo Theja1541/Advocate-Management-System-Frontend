@@ -38,3 +38,13 @@ export const forgotPassword = async (email) => {
   return data;
 };
 
+export const verifyMfa = async (userId, otp) => {
+  const { data } = await api.post('/auth/verify-mfa', { userId, otp });
+  return data;
+};
+
+export const resendMfa = async (userId) => {
+  const { data } = await api.post('/auth/resend-mfa', { userId });
+  return data;
+};
+
